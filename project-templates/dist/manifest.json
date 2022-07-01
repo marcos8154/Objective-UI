@@ -1,0 +1,9 @@
+{
+    "name": "MyApp",
+    "short_name": "MyApp",
+    "description": "My app description",
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "standalone",
+    "orientation": "natural"
+}
