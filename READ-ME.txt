@@ -1,0 +1,7 @@
+1 - "FSUI.exe" requires .NET 5 installed - https://dotnet.microsoft.com/en-us/download/dotnet/5.0
+2 - the work will be more comfortable if you create an environment variable (user) in your OS pointing to "C:\FSUI\".
+    So you can call it without specifying a long path
+3 - to create a project, use this command inside the desired directory: FSUI.exe new-project 
+    To specify a project template, add -t=NAME_OF_TEMPLATE  
+    (You can do this from the VSCode terminal)
+	
