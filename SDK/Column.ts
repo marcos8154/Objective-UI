@@ -4,7 +4,6 @@ import { StyleProperty } from "./StyleProperty";
 
 export class ColumnOptions
 {
-    //    id: string;
     colClass?: string;
     colHeight?: string;
     rows?: Row[];
