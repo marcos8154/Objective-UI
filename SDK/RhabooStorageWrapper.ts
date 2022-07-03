@@ -7,15 +7,12 @@ export class RhabooInstance
     public instance: any | object = null;
 }
 
-
-
 export class RhabooStorageWrapper extends AppStorage
 {
     public static INSTANCES: Array<RhabooInstance> = [];
 
     public static addInstance(instance: RhabooInstance): void
     {
-
         RhabooStorageWrapper.INSTANCES.push(instance);
     }
 
@@ -64,7 +61,7 @@ export class RhabooStorageWrapper extends AppStorage
     public update(key: string, value: any): void
     {
         this.erase(key);
-        this.rhaboo.instance.write(key, value);
+        this.write(key, value);
     }
     public erase(key: string): void
     {
