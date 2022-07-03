@@ -7,15 +7,14 @@ import { DefaultLayoutPresenter } from './DefaultLayoutPresenter';
 import { PageShell as PageShell } from './PageShell';
 import { INotifiable } from './INotifiable';
 import { FSTemplateView } from './controls/FSTemplateView';
+import { AppStorage } from './AppStorage';
 
 export abstract class FSView implements INotifiable
 {
     abstract buildLayout(): ViewLayout;
     abstract composeView(): void;
     public onWidgetMessage(message: WidgetMessage): void
-    {
-
-    }
+    { }
 
     private view: FSView;
     protected shellPage: PageShell;
@@ -29,6 +28,16 @@ export abstract class FSView implements INotifiable
     }
 
     abstract onViewDidLoad(): void;
+
+    protected requestLocalStorage(schemaName: string): AppStorage
+    {
+        return this.shellPage.requestStorage('local', schemaName);
+    }
+
+    protected requestSessionStorage(schemaName: string): AppStorage
+    {
+        return this.shellPage.requestStorage('session', schemaName);
+    }
 
     protected viewContext(): FSWidgetContext
     {

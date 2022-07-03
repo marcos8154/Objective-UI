@@ -18,6 +18,9 @@ NativeLib.ts
 PageShell.ts
 Row.ts
 Misc.ts
+AppStorage.ts
+IAppStorageProvider.ts
+RhabooStorageWrapper.ts
 SelectOption.ts
 ViewDictionaryEntry.ts
 ViewLayout.ts

@@ -75,6 +75,7 @@ export class WebAPI
         this.request = {};
         this.request.method = method;
         this.apiUrl = url;
+        this.withHeaders(new Headers({ 'content-type': 'application/json' }));
     }
 
     public call(): void

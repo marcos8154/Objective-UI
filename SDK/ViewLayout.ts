@@ -6,12 +6,13 @@ import { Row } from "./Row";
 
 export class ViewLayout
 {
+    public static AUTO_GENERATE_COLUMNS = false;
 
+    
     private layoutDOM: Document;
     public layoutRows: Row[];
     public containerDivObj: Element;
     private containerDivName: string;
-    private shellPage: PageShell;
     private rawHtml: string;
     private fromString: boolean = false;
 
@@ -43,7 +44,6 @@ export class ViewLayout
 
     render(shellPage: PageShell, customPresenter?: ILayoutPresenter): Element
     {
-        this.shellPage = shellPage;
         this.containerDivObj = shellPage.elementById(this.containerDivName);
 
         if (this.fromString)

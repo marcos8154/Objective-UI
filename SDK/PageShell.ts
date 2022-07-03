@@ -1,5 +1,7 @@
+import { AppStorage } from "./AppStorage";
 import { FSPage } from "./FSPage";
 import { FSView } from "./FSView";
+import { IAppStorageProvider } from "./IAppStorageProvider";
 import { ISplittableView } from "./ISplittableView";
 import { NativeLib as NativeLib } from "./NativeLib";
 
@@ -12,6 +14,7 @@ export class PageShell {
     private importedLibs: NativeLib[];
     private page: FSPage;
 
+    private appStorageProvider: IAppStorageProvider = null;
     
     private appContainer: HTMLDivElement;
     private splitContainer: HTMLDivElement;
@@ -23,6 +26,16 @@ export class PageShell {
         this.page = fsPage;
     }
 
+    public setStorageProvider(provider: IAppStorageProvider): void
+    {
+        this.appStorageProvider = provider;
+    }
+
+
+    public requestStorage(type: string, schemaName: string): AppStorage
+    {
+        return this.appStorageProvider.onStorageRequested(type, schemaName);
+    }
 
     public enableSplitting(appContainerId: string, splitContainerId: string): void
     {

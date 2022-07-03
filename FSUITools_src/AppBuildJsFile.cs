@@ -27,13 +27,18 @@ namespace WebSdkTools
 
         public string BuildFile()
         {
+
+            /*
             int start = jsFile.FullName.IndexOf("dist");
             int end = jsFile.FullName.Length - start;
             string importName = jsFile.FullName.Substring(
                     startIndex: start,
                     length: end).Replace("\\", "/");
+            */
 
-            importName = $"    <script src=\"/{importName}\"></script>";
+
+            FileInfo info = new FileInfo(jsFile.FullName);
+            string importName = $"    <script src=\"/{info.Directory.Name}/{info.Name}\"></script>";
 
             if (fileActions.Count == 0) return importName;
             string[] lines = File.ReadAllLines(jsFile.FullName);

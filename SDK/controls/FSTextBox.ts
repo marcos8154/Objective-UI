@@ -1,6 +1,7 @@
 import { FSWidget } from "../FSWidget";
 import { IBindable } from "../IBindable";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
+import { Misc } from "../Misc";
 import { PageJsFunction } from "../PageJsFunction";
 import { WidgetBinder } from "../WidgetBinder";
 import { FSButton } from "./FSButton";
@@ -115,7 +116,7 @@ export class FSTextBox extends FSWidget implements IBindable
     private txInput: HTMLInputElement = null;
     private divContainer: HTMLDivElement = null;
 
-    constructor({ name, title, placeHolder, text }:
+    constructor({ name, title = '', placeHolder = '', text = '' }:
         {
             name: string;
             title?: string;
@@ -125,9 +126,11 @@ export class FSTextBox extends FSWidget implements IBindable
     {
         super(name);
 
-        this.initialTitle = title;
-        this.initialPlaceHolder = placeHolder;
-        this.initialText = text;
+
+
+        this.initialTitle = (Misc.isNullOrEmpty(title) ? '' : title);
+        this.initialPlaceHolder = (Misc.isNullOrEmpty(placeHolder) ? '' : placeHolder);
+        this.initialText = (Misc.isNullOrEmpty(text) ? '' : text);
     }
     getBinder(): WidgetBinder
     {
@@ -183,7 +186,7 @@ export class FSTextBox extends FSWidget implements IBindable
 
     public setText(newText: string): void
     {
-        this.txInput.value = newText;
+        this.txInput.value = (Misc.isNullOrEmpty(newText) ? '' : newText);
     }
 
     public setTitle(newTitle: string): void

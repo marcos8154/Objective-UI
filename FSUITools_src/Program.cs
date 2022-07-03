@@ -58,7 +58,7 @@ namespace WebSdkTools
                 bool createProject = args.Any(a => a.StartsWith("new-project"));
                 string template = $"{args.FirstOrDefault(a => a.StartsWith("-t="))}".Replace("-t=", "");
 
-                if(createProject)
+                if (createProject)
                 {
                     ProjectCreator pc = new ProjectCreator(template);
                     pc.Create();
@@ -77,7 +77,7 @@ namespace WebSdkTools
                 }
 
                 Console.WriteLine(
-$@"*** FS WEB SDK Tools 1.0.2 ***
+$@"*** FS WEB SDK Tools 1.0.3 ***
     > Working Dir: {workDir}
     > SDK Dir: {SDK_SRC_PATH}
 ");
@@ -183,7 +183,7 @@ $@"*** FS WEB SDK Tools 1.0.2 ***
                 DirectoryInfo projDir = new DirectoryInfo(PROJECT_DIR);
                 foreach (FileInfo tsFile in projDir.GetFiles("*.ts", SearchOption.AllDirectories))
                 {
-                   
+
                     if (File.ReadAllText(tsFile.FullName).Contains("extends FSPage"))
                     {
                         string outFile = $"{tsFile.Directory.FullName}\\FrontStoreUI.ts";
@@ -212,16 +212,18 @@ $@"*** FS WEB SDK Tools 1.0.2 ***
 
             Console.ForegroundColor = ConsoleColor.White;
 
+            string[] distFolders = new string[] { "dist", "wwwroot", "www", "publish" };
+
             DirectoryInfo? distDir = projDir.GetDirectories()
-                .FirstOrDefault(d => d.Name.Equals("dist"));
+                .FirstOrDefault(d => distFolders.Contains(d.Name));
             if (distDir == null)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("'dist' folder not found in project directory");
+                Console.WriteLine("An distribution folder not found in project directory. Valid folder names: 'dist' , 'wwwroot', 'www', 'publish'");
                 Environment.Exit(1);
             }
             else
-                Console.WriteLine("'dist' folder found");
+                Console.WriteLine($"Distribution folder found as '{distDir.Name}' ");
 
             BuildApp build = new BuildApp(distDir);
             build.Build(shellPageTemplate);

@@ -37,6 +37,9 @@ export class BindingContext<ViewModel>
 
     public getViewModel<ViewModel>(): ViewModel
     {
+        for(var i = 0; i < this._binders.length; i++)
+          this._binders[i].fillPropertyModel();
+          
         return this.viewModelInstance as unknown as ViewModel;
     }
 

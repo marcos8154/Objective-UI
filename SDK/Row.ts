@@ -2,6 +2,7 @@ import { Column } from "./Column";
 import { FSWidget } from "./FSWidget";
 import { Misc } from "./Misc";
 import { StyleProperty } from "./StyleProperty";
+import { ViewLayout } from "./ViewLayout";
 
 
 export class RowOptions
@@ -43,11 +44,14 @@ export class Row
 
         if ((this.rowColumns == null || this.rowColumns == undefined) || this.rowColumns.length == 0)
         {
-            var id: string = `col_${FSWidget.generateUUID()}`;
-            this.generatedColumnId = id;
-            this.rowColumns = [
-                new Column(id, { colClass: 'col-md-12 col-xs-12 col-lg-12 col-sm-12' })
-            ];
+            if (ViewLayout.AUTO_GENERATE_COLUMNS)
+            {
+                var id: string = `col_${FSWidget.generateUUID()}`;
+                this.generatedColumnId = id;
+                this.rowColumns = [
+                    new Column(id, { colClass: 'col-md-12 col-xs-12 col-lg-12 col-sm-12' })
+                ];
+            }
         }
         else
         {
