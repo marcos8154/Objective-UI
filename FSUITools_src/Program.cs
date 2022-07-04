@@ -212,7 +212,18 @@ $@"*** Objective-UI Build Tools 1.0.4 ***
 
             Console.ForegroundColor = ConsoleColor.White;
 
-            string[] distFolders = new string[] { "dist", "wwwroot", "www", "publish" };
+            string[] distFolders = new string[] {
+                "dist",
+                "wwwroot",
+                "www",
+                "publish",
+                "website",
+                "webroot",
+                "distribution",
+                "product",
+                "app",
+                "webapp"
+            };
 
             DirectoryInfo? distDir = projDir.GetDirectories()
                 .FirstOrDefault(d => distFolders.Contains(d.Name));
