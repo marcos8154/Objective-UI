@@ -1,7 +1,7 @@
-UIPage.ts
+Page.ts
 UIView.ts
-UIWidget.ts
-UIWidgetContext.ts
+Widget.ts
+WidgetContext.ts
 BindingContext.ts
 IBindable.ts
 WidgetBinderBehavior.ts
