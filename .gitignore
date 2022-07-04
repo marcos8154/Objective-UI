@@ -348,9 +348,9 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
-ref/FSUI.dll
-FSUI.runtimeconfig.json
-FSUI.runtimeconfig.dev.json
-FSUI.exe
-FSUI.dll
-FSUI.deps.json
+ref/OBJ-UI.dll
+OBJ-UI.runtimeconfig.json
+OBJ-UI.runtimeconfig.dev.json
+OBJ-UI.exe
+OBJ-UI.dll
+OBJ-UI.deps.json
