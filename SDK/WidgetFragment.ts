@@ -1,4 +1,4 @@
-import { FSWidget, WidgetContext as FSWidgetContext } from './FSWidget'
+import { Widget, WidgetContext as FSWidgetContext } from './Widget'
 import { INotifiable } from './INotifiable';
 import { PageShell } from './PageShell';
 
@@ -18,7 +18,7 @@ export class WidgetFragment implements INotifiable
     contextRoot: FSWidgetContext;
     fragmentId: string;
     containerElement: HTMLDivElement;
-    widgets: FSWidget[];
+    widgets: Widget[];
     widgetsLoaded: number;
 
     /**
@@ -66,11 +66,11 @@ export class WidgetFragment implements INotifiable
      * @param name Widget Instance Name
      * @returns Widget
      */
-    findWidget(name: string): FSWidget
+    findWidget(name: string): Widget
     {
         for (var i = 0; i < this.widgets.length; i++)
         {
-            var widget: FSWidget = this.widgets[i];
+            var widget: Widget = this.widgets[i];
             if (widget.widgetName == name)
                 return widget;
         }
@@ -140,11 +140,11 @@ export class WidgetFragment implements INotifiable
      * Attach a Widget to the Fragment
      * @param widget An Widget object
      */
-    attatchWidget(widget: FSWidget)
+    attatchWidget(widget: Widget)
     {
         for (var i = 0; i < this.widgets.length; i++)
         {
-            var existingWidget: FSWidget = this.widgets[i];
+            var existingWidget: Widget = this.widgets[i];
             if (widget.widgetName == existingWidget.widgetName)
                 throw `widget '${widget.widgetName}' has already been attached to this context.`;
         }
@@ -157,12 +157,12 @@ export class WidgetFragment implements INotifiable
      * Detach a Widget from the Fragment
      * @param widget An Widget object 
      */
-    dettatchwidget(widget: FSWidget): void
+    dettatchwidget(widget: Widget): void
     {
         var toRemove = -1;
         for (let index = 0; index < this.widgets.length; index++)
         {
-            var existingWidget: FSWidget = this.widgets[index];
+            var existingWidget: Widget = this.widgets[index];
             if (existingWidget.widgetName == widget.widgetName)
             {
                 toRemove = index;

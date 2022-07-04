@@ -1,4 +1,4 @@
-import { FSListView } from "./FSListView";
+import { UIList } from "./UIList";
 import { IListItemTemplate } from "./IListItemTemplate";
 
 export class ListItem implements IListItemTemplate
@@ -8,7 +8,7 @@ export class ListItem implements IListItemTemplate
     public itemText: string;
     public itemImageSource: string;
     public itemBadgeText: string;
-    private ownerList: FSListView;
+    private ownerList: UIList;
     private anchorElement: HTMLAnchorElement;
 
     
@@ -25,7 +25,7 @@ export class ListItem implements IListItemTemplate
         this.itemBadgeText = badgeText;
     }
 
-    public setOwnerList(listView: FSListView)
+    public setOwnerList(listView: UIList)
     {
         this.ownerList = listView;
     }

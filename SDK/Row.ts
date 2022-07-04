@@ -1,5 +1,5 @@
-import { Column } from "./Column";
-import { FSWidget } from "./FSWidget";
+import { Col } from "./Col";
+import { Widget } from "./Widget";
 import { Misc } from "./Misc";
 import { StyleProperty } from "./StyleProperty";
 import { ViewLayout } from "./ViewLayout";
@@ -10,7 +10,7 @@ export class RowOptions
     rowHeidth?: string;
     rowClass?: string;
 
-    columns?: Column[] = [];
+    columns?: Col[] = [];
 
     constructor()
     {
@@ -27,7 +27,7 @@ export class Row
     rowWidth: string;
     rowHeidth: string;
     flexGrow1: boolean;
-    rowColumns: Column[] = [];
+    rowColumns: Col[] = [];
 
     generatedColumnId: string;
 
@@ -46,10 +46,10 @@ export class Row
         {
             if (ViewLayout.AUTO_GENERATE_COLUMNS)
             {
-                var id: string = `col_${FSWidget.generateUUID()}`;
+                var id: string = `col_${Widget.generateUUID()}`;
                 this.generatedColumnId = id;
                 this.rowColumns = [
-                    new Column(id, { colClass: 'col-md-12 col-xs-12 col-lg-12 col-sm-12' })
+                    new Col(id, { colClass: 'col-md-12 col-xs-12 col-lg-12 col-sm-12' })
                 ];
             }
         }
@@ -57,7 +57,7 @@ export class Row
         {
             for (var i = 0; i < this.rowColumns.length; i++)
             {
-                var column: Column = this.rowColumns[i];
+                var column: Col = this.rowColumns[i];
                 if (Misc.isNullOrEmpty(column.colClass))
                     column.colClass = 'col-md-12 col-xs-12 col-lg-12 col-sm-12'
             }

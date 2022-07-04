@@ -1,6 +1,6 @@
 import { AppStorage } from "./AppStorage";
-import { FSPage } from "./FSPage";
-import { FSView } from "./FSView";
+import { Page } from "./Page";
+import { View } from "./UIView";
 import { IAppStorageProvider } from "./IAppStorageProvider";
 import { ISplittableView } from "./ISplittableView";
 import { NativeLib as NativeLib } from "./NativeLib";
@@ -12,14 +12,14 @@ export class PageShell {
 
     private baseDocument: Document;
     private importedLibs: NativeLib[];
-    private page: FSPage;
+    private page: Page;
 
     private appStorageProvider: IAppStorageProvider = null;
     
     private appContainer: HTMLDivElement;
     private splitContainer: HTMLDivElement;
 
-    constructor(mainDocument: Document, fsPage: FSPage) 
+    constructor(mainDocument: Document, fsPage: Page) 
     {
         this.baseDocument = mainDocument;
         this.importedLibs = [];
@@ -96,7 +96,7 @@ export class PageShell {
         self.splitContainer.style.borderLeft = '3px solid gray';
     }
 
-    public requestSplitView(ownerSplitView: ISplittableView, splittedCallingView: FSView)
+    public requestSplitView(ownerSplitView: ISplittableView, splittedCallingView: View)
     {
         if (this.currentViewSplitted) return;
  
@@ -111,7 +111,7 @@ export class PageShell {
         this.currentViewSplitted = true;
 
         self.splitContainer.style.borderLeft = '3px solid gray';
-        this.navigateToView((splittedCallingView as unknown) as FSView);
+        this.navigateToView((splittedCallingView as unknown) as View);
         
         (splittedCallingView as unknown as ISplittableView).onConnectViews(ownerSplitView);
     }
@@ -145,7 +145,7 @@ export class PageShell {
         return element;
     }
 
-    public navigateToView(view:FSView): void
+    public navigateToView(view:View): void
     {
         this.page.navigateToView(view);
     }

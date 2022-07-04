@@ -1,4 +1,4 @@
-import { Column } from "./Column";
+import { Col } from "./Col";
 import { DefaultLayoutPresenter } from "./DefaultLayoutPresenter";
 import { ILayoutPresenter } from "./ILayoutPresenter";
 import { PageShell } from "./PageShell";
@@ -102,7 +102,7 @@ export class ViewLayout
         return result;
     }
 
-    private ScanColumns(columns: Column[]): string[]
+    private ScanColumns(columns: Col[]): string[]
     {
         var result: string[] = [];
         for (var i = 0; i < columns.length; i++)

@@ -1,5 +1,5 @@
 import { AppStorage } from "./AppStorage";
-import { PageJsFunction } from "./PageJsFunction";
+import { VirtualFunction } from "./VirtualFunction";
 
 export class RhabooInstance
 {
@@ -34,7 +34,7 @@ export class RhabooStorageWrapper extends AppStorage
         super(type, schemaName);
 
         var rhabooInstanceType = (type == 'local' ? 'persistent' : 'perishable');
-        var activate = new PageJsFunction({
+        var activate = new VirtualFunction({
             fnName: 'rhabooInstance',
             fnContent: `
                 var rb = Rhaboo.${rhabooInstanceType}('${schemaName}');

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WebSdkTools
+namespace ObjUITools
 {
     internal interface IAppBuildAction
     {

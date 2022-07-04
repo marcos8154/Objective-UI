@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WebSdkTools.AppBuildActions
+namespace ObjUITools.AppBuildActions
 {
     internal class RemoveLine : IAppBuildAction
     {

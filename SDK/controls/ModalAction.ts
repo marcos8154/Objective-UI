@@ -1,5 +1,5 @@
 import { Misc } from "../Misc";
-import { FSModalView } from "./FSModalView";
+import { UIDialog } from "./UIDialog";
 
 export class ModalAction
 {
@@ -21,7 +21,7 @@ export class ModalAction
             this.classes = ['btn', 'btn-primary'];
     }
 
-    public setButton(button: HTMLButtonElement, modal: FSModalView)
+    public setButton(button: HTMLButtonElement, modal: UIDialog)
     {
         var self = this;
         if (Misc.isNull(this.onClick) == false)

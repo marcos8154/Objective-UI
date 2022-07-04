@@ -3,7 +3,7 @@ import { ViewLayout } from './ViewLayout';
 import { Row } from "./Row";
 import { PageShell } from './PageShell';
 import { StyleProperty } from './StyleProperty';
-import { Column } from './Column';
+import { Col } from './Col';
 import { Misc } from './Misc';
 
 export class DefaultLayoutPresenter implements ILayoutPresenter
@@ -60,7 +60,7 @@ export class DefaultLayoutPresenter implements ILayoutPresenter
         {
             for (let index = 0; index < row.rowColumns.length; index++)
             {
-                const column: Column = row.rowColumns[index];
+                const column: Col = row.rowColumns[index];
 
                 //an sub-div column
                 const colDiv: HTMLDivElement = document.createElement("div");

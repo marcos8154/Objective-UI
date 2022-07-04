@@ -1,7 +1,7 @@
-import { FSDataGrid } from "./FSDataGrid";
+import { UIDataGrid } from "./UIDataGrid";
 import { IDataGridItemTemplate } from "./IDataGridItemTemplate";
 
 export interface IDataGridItemTemplateProvider
 {
-    getDataGridItemTemplate(sender: FSDataGrid, viewModel: any | object): IDataGridItemTemplate;
+    getDataGridItemTemplate(sender: UIDataGrid, viewModel: any | object): IDataGridItemTemplate;
 }

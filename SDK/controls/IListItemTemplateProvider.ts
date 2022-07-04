@@ -1,7 +1,7 @@
-import { FSListView } from "./FSListView";
+import { UIList } from "./UIList";
 import { IListItemTemplate } from "./IListItemTemplate";
 
 export interface IListItemTemplateProvider
 {
-    getListItemTemplate(sender: FSListView, viewModel: any|object): IListItemTemplate;
+    getListItemTemplate(sender: UIList, viewModel: any|object): IListItemTemplate;
 }

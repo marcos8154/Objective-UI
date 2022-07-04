@@ -1,12 +1,12 @@
 import { PageShell } from "../PageShell";
-import { FSDataGrid } from "./FSDataGrid";
+import { UIDataGrid } from "./UIDataGrid";
 import { IDataGridItemTemplate } from "./IDataGridItemTemplate";
 
 export class DataGridItem implements IDataGridItemTemplate
 {
     public value: any;
     public itemName: string;
-    private ownerDatagrid: FSDataGrid;
+    private ownerDatagrid: UIDataGrid;
     public rowElement: HTMLTableRowElement;
     private pageShell: PageShell;
 
@@ -21,7 +21,7 @@ export class DataGridItem implements IDataGridItemTemplate
         this.value = model;
     }
 
-    setOwnerDataGrid(dataGrid: FSDataGrid): void
+    setOwnerDataGrid(dataGrid: UIDataGrid): void
     {
         this.ownerDatagrid = dataGrid;
     }

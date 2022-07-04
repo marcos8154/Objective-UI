@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Text;
 
-namespace WebSdkTools
+namespace ObjUITools
 {
     public class Program
     {
@@ -21,7 +21,7 @@ namespace WebSdkTools
                 Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Cyan;
 
-                SDK_SRC_PATH = @"C:\FSUI\SDK\";
+                SDK_SRC_PATH = @"C:\Objective-UI\SDK\";
 
                 string workDir = Directory.GetCurrentDirectory();
 
@@ -77,7 +77,7 @@ namespace WebSdkTools
                 }
 
                 Console.WriteLine(
-$@"*** FS WEB SDK Tools 1.0.3 ***
+$@"*** Objective-UI Build Tools 1.0.4 ***
     > Working Dir: {workDir}
     > SDK Dir: {SDK_SRC_PATH}
 ");
@@ -150,7 +150,7 @@ $@"*** FS WEB SDK Tools 1.0.3 ***
             try
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("*** (re) building the FrontStoreUI lib ***");
+                Console.WriteLine("*** (re) building the Objective-UI lib ***");
                 Console.WriteLine("\n");
 
                 StringBuilder sb = new StringBuilder();
@@ -184,9 +184,9 @@ $@"*** FS WEB SDK Tools 1.0.3 ***
                 foreach (FileInfo tsFile in projDir.GetFiles("*.ts", SearchOption.AllDirectories))
                 {
 
-                    if (File.ReadAllText(tsFile.FullName).Contains("extends FSPage"))
+                    if (File.ReadAllText(tsFile.FullName).Contains("extends Page"))
                     {
-                        string outFile = $"{tsFile.Directory.FullName}\\FrontStoreUI.ts";
+                        string outFile = $"{tsFile.Directory.FullName}\\Objective-UI.ts";
                         File.WriteAllText(outFile, sb.ToString());
                         break;
                     }

@@ -1,4 +1,4 @@
-import { FSWidget } from "./FSWidget"
+import { Widget } from "./Widget"
 import { WebAPI } from "./WebAPI";
 
 export abstract class WidgetBinder
@@ -8,7 +8,7 @@ export abstract class WidgetBinder
     abstract fillPropertyModel(): void;
 
 
-    protected widget: FSWidget;
+    protected widget: Widget;
     public widgetName: string;
     private bindingName: string;
 
@@ -20,7 +20,7 @@ export abstract class WidgetBinder
     public displayProperty: string;
     public valueProperty: string;
 
-    constructor(widget: FSWidget) 
+    constructor(widget: Widget) 
     {
         this.widget = widget;
         this.widgetName = widget.widgetName;

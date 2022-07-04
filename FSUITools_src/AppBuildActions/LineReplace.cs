@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace WebSdkTools.AppBuildActions
+namespace ObjUITools.AppBuildActions
 {
     internal class LineReplace : IAppBuildAction
     {

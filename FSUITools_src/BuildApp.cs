@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WebSdkTools.AppBuildActions;
+using ObjUITools.AppBuildActions;
 
-namespace WebSdkTools
+namespace ObjUITools
 {
     internal class BuildApp
     {

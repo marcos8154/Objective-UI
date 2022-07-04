@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.32228.343
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FSUITools", "FSUITools.csproj", "{707AC91E-3620-4349-A4E4-C1A96B2577AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjUITools", "ObjUITools.csproj", "{707AC91E-3620-4349-A4E4-C1A96B2577AD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

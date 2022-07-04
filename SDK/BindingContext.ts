@@ -1,5 +1,5 @@
-import { FSView } from "./FSView";
-import { FSWidget } from "./FSWidget";
+import { View } from "./UIView";
+import { Widget } from "./Widget";
 import { IBindable } from "./IBindable";
 import { WidgetBinder } from "./WidgetBinder";
 import { WidgetBinderBehavior } from "./WidgetBinderBehavior";
@@ -8,7 +8,7 @@ export class BindingContext<ViewModel>
 {
     private _binders: Array<WidgetBinder> = [];
     private viewModelInstance: ViewModel;
-    constructor(viewModel: ViewModel, view: FSView)
+    constructor(viewModel: ViewModel, view: View)
     {
         this.viewModelInstance = viewModel;
         this.scanViewModel(view);
@@ -55,10 +55,10 @@ export class BindingContext<ViewModel>
         return this;
     }
 
-    private scanViewModel(view: FSView): void
+    private scanViewModel(view: View): void
     {
         var self = this;
-        var widgets: Array<FSWidget> = view.managedWidgets();
+        var widgets: Array<Widget> = view.managedWidgets();
         if (widgets == null || widgets == undefined || widgets.length == 0)
             throw new Error("Illegal declaration: BindingContext cannot be initialized by the View's constructor. Consider instantiating it in onViewDidLoad()");
 
@@ -66,7 +66,7 @@ export class BindingContext<ViewModel>
         {
             for (var w = 0; w < widgets.length; w++)
             {
-                var widget: FSWidget = widgets[w];
+                var widget: Widget = widgets[w];
                 var keyMatch: boolean = self.modelPropertyMatchWithWidget(widget, key);
                 if (keyMatch)
                     this.bindWidget(widget, key);
@@ -74,7 +74,7 @@ export class BindingContext<ViewModel>
         }
     }
 
-    private bindWidget(widget: FSWidget, modelKey: string): WidgetBinder
+    private bindWidget(widget: Widget, modelKey: string): WidgetBinder
     {
         try
         {
@@ -90,7 +90,7 @@ export class BindingContext<ViewModel>
         }
     }
 
-    private modelPropertyMatchWithWidget(widget: FSWidget, modelKey: string): boolean
+    private modelPropertyMatchWithWidget(widget: Widget, modelKey: string): boolean
     {
         var widgetName: string = widget.widgetName;
         if (widgetName.indexOf(modelKey) < 0) return false;

@@ -1,7 +1,84 @@
-1 - "FSUI.exe" requires .NET 5 installed - https://dotnet.microsoft.com/en-us/download/dotnet/5.0
-2 - the work will be more comfortable if you create an environment variable (user) in your OS pointing to "C:\FSUI\".
+******************************************************
+***  Thank you very much for using Objective-UI :) ***
+******************************************************
+***   https://github.com/marcos8154/Objective-UI   ***
+******************************************************
+
+0 - You should move this folder ('Objective-UI') to your "C" drive so that it is C:\Objective-UI\
+
+1 - Install the VSCode/NPM suite:
+    [VSCode] https://code.visualstudio.com/docs/?dv=win
+    [NPM   ] https://nodejs.org/
+
+2 - "OBJ-UI.exe" requires .NET 5 (or highter) installed:
+	[.NET Runtime] https://dotnet.microsoft.com/en-us/download
+
+3 - the work will be more comfortable if you create an environment variable (user) in your OS pointing to "C:\Objective-UI\".
     So you can call it without specifying a long path
-3 - to create a project, use this command inside the desired directory: FSUI.exe new-project 
-    To specify a project template, add -t=NAME_OF_TEMPLATE  
+	
+4 - to create a project, use this command inside the desired directory: obj-ui new-project
     (You can do this from the VSCode terminal)
 	
+============================================================
+- What is the "Objective-UI" project?
+It is a FrontEnd SPA framework written in TypeScript and declarative syntax, 
+capable of consuming any JavaScript library.
+It offers a strong-objectified approach to building web interfaces based on OO paradigms.
+It has a set of standard UI controls, a powerful system view, interface to WebAPI's, 
+interface to storage (local and session), efficient data binding context; ViewModel and UI talking naturally!
+It is ideal for devs coming from the C/C++/Java/JavaScript/C# world because of the 
+similarity of TypeScript syntax with these others, and also for the proximity of OO approaches.
+
+"Objective" because we use objects to get to our goal: the UI!
+
+- Why do we need this CLI?
+Because it is able to automate necessary tasks such as linking and merging SDK source files, 
+invoking other CLIs such as TSC (TypescriptCompiler), tweaking files and etc.
+
+- How to debug?
+After the build process you can put a BreakPoint in your .js files
+============================================================
+
+(!!!) For now OBJ-UI.exe is only compatible with Windows environment  
+	 (although .NET Core is cross-platform, I know. 
+	  But our current problem would be with directory paths. 
+	  In a second moment I promise to refactor this haha)
+
+CLI args:
+
+_>  "obj-ui new-project"
+===> Creates a new project based on a default template INSIDE the current directory 
+	 note that this DOES NOT CREATE a project directory, you must first create it
+------------------------------------------------------------
+
+_>  "obj-ui new-project -t=TEMPLATE_NAME"
+	'-t' will specify a project template to be based on. 
+	the project templates must be in .zip and inside the directory C:\Objective-UI\project-templates\
+	
+------------------------------------------------------------
+
+_>  "obj-ui -build"   						
+===> Generates the output (*.js) files in the distribution folder known in your project:
+	 ('dist', 'wwwroot', 'www', 'publish', 'website', 'webroot', 'distribution', 'product', 'app', 'webapp')
+							  
+-------------------------------------------------------------
+
+_>  "obj-ui -build -sdk"   			   	   
+===> Recompiles the Objective-UI SDK from sources, which should be located in C:\Objective-UI\SDK\
+     And then do the -build step
+								 
+-------------------------------------------------------------
+
+_>  "obj-ui -build -p='YOUR_PROJECT_PATH'"   
+===> '-p' will specify the full path of your project. 
+     Normally this is not necessary, as the CLI recognizes the working path in which it was called
+	 But for whatever reason if need be, there it is :)
+	 
+-------------------------------------------------------------
+
+Main support JS/CSS libraries:
+
+AdminLTE:  		https://adminlte.io/
+Bootstrap: 		https://getbootstrap.com/
+jQuery:    		https://jquery.com/
+Rhaboo:   	 	https://github.com/adrianmay/rhaboo
