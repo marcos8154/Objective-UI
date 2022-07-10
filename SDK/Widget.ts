@@ -5,7 +5,7 @@ import { WidgetMessage } from './WidgetMessage';
 import { ICustomWidgetPresenter } from './ICustomWidgetPresenter';
 import { PageShell } from './PageShell';
 import { INotifiable } from './INotifiable';
-import { View } from './UIView';
+import { UIView } from './UIView';
 import { DefaultExceptionPage } from './DefaultExceptionPage';
 
 export { WidgetContext as WidgetContext, WidgetMessage, WidgetFragment };
@@ -177,7 +177,7 @@ export abstract class Widget implements INotifiable
 
     /**
      * Sends a message from the inherited object towards the WidgetContext,
-     * which then makes it available to the View in the "onWidgetMessage()" function call
+     * which then makes it available to the UIView in the "onWidgetMessage()" function call
      * @param messageId Set a default identifier for this message. This allows the receiver to determine the type of message (your widget may have some)
      * @param messageText A text for your message
      * @param messageAnyObject A custom data object

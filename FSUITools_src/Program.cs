@@ -77,7 +77,7 @@ namespace ObjUITools
                 }
 
                 Console.WriteLine(
-$@"*** Objective-UI Build Tools 1.0.4 ***
+$@"*** Objective-UI Build Tools 1.0.5 ***
     > Working Dir: {workDir}
     > SDK Dir: {SDK_SRC_PATH}
 ");

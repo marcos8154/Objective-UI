@@ -2,6 +2,10 @@ import { Misc } from "./Misc";
 import { Row } from "./Row";
 import { StyleProperty } from "./StyleProperty";
 
+
+/**
+ * Initialization options for div-columns
+ */
 export class ColOptions
 {
     colClass?: string;
@@ -9,6 +13,10 @@ export class ColOptions
     rows?: Row[];
 }
 
+
+/**
+ * Represents a Column-Div with standard Bootstrap classes and a height of 100px
+ */
 export class Col
 {
     id: string;
@@ -16,6 +24,11 @@ export class Col
     colHeight?: string = '100px';
     columnRows?: Row[] = [];
 
+    /**
+     * 
+     * @param id The 'Id' attribute that the resulting div will have
+     * @param options 
+     */
     constructor(id: string, options?: ColOptions)
     {
         this.id = id;

@@ -19,9 +19,11 @@ export class RowOptions
 }
 
 
+/**
+ * Represents a Row Div with standard Bootstrap class options
+ */
 export class Row
 {
-
     id: string;
     rowClass: string = 'row';
     rowWidth: string;
@@ -31,6 +33,13 @@ export class Row
 
     generatedColumnId: string;
 
+    /**
+     * 
+     * @param id A div-container Id to parent this
+     * @param options Row options like class, height and sub-columns; NOTE: if no column is provided, it may be that at least 
+     * one column is generated automatically. To determine this, 
+     * check the static variable `ViewLayout.AUTO_GENERATE_COLUMNS`
+     */
     constructor(id: string, options: RowOptions)
     {
         this.id = id;

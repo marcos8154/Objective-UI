@@ -19,6 +19,31 @@ export class APIResponse
     }
 }
 
+/**
+ * Offers an abstraction for consuming REST APIs with the 
+ * possibility of simulating a local 
+ * API for development purposes;
+ * 
+ * If your FrontEnd is not running alongside the API, 
+ * be careful to call previously (once) 
+ * ```
+ * WebAPI.setURLBase('https://complete-url-of-api.com')
+ * ``` 
+ * 
+ * Example: 
+ * ```
+WebAPI
+.POST('/api/route/xyz') //.GET() / .PUT() / .DELETE()
+.withBody(objectBodyHere) //if .POST() or .PUT()
+.onSuccess(function (res: APIResponse){ 
+    //success handle function
+})
+.onError(function(err: Error){
+    //request-error handle function
+})
+.call(); //call REST api
+ * ```
+ */
 export class WebAPI
 {
     private static urlBase: string;
@@ -33,9 +58,10 @@ export class WebAPI
             return new WebAPI(requestString, httpMethod);
         else
         {
-            if (this.urlBase == '' || this.urlBase == this.name || this.urlBase == undefined)
-                throw new Error(`Calling directly '${requestString}' on API endpoints requires a previously configured base URL. Make sure you have previously invoked WebAPI.setURLBase( 'https://my-api.com' )`);
-            return new WebAPI(`${WebAPI.urlBase}${requestString}`, httpMethod);
+            if (this.urlBase == '' || this.urlBase == undefined)
+                return new WebAPI(`${requestString}`, httpMethod);
+            else
+                return new WebAPI(`${WebAPI.urlBase}${requestString}`, httpMethod);
         }
     }
 
@@ -51,6 +77,7 @@ export class WebAPI
 
     public static POST(requestString: string)
     {
+
         return this.requestTo(requestString, 'POST');
     }
 
@@ -86,14 +113,16 @@ export class WebAPI
             var statusMsg: string;
 
             fetch(this.apiUrl, this.request)
-                .then(function(ret){
+                .then(function (ret)
+                {
                     statusCode = ret.status;
                     statusMsg = ret.statusText;
-
-                    return ret.json()
+                    return ret.text();
                 })
-                .then(function (json)
+                .then(function (text)
                 {
+                    var json = null;
+                    if (text.startsWith("{")) json = JSON.parse(text);
                     var apiResponse = new APIResponse({
                         code: statusCode, msg: statusMsg, content: json
                     });

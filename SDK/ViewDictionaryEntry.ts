@@ -1,6 +1,5 @@
 export class ViewDictionaryEntry 
 {
-
     originalId : string;
     managedId : string;
 

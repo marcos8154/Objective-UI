@@ -1,5 +1,6 @@
 import { APIResponse, WebAPI } from "./WebAPI";
 
+
 export class SimulatedAPIRoute
 {
     private method: string;
@@ -43,15 +44,43 @@ export class SimulatedAPIRoute
     }
 }
 
+/**
+ * Allows you to simulate a REST API locally based on an 
+ * API that may not yet exist, but will respond for the routes
+ * that are defined in the Simulator.
+ * 
+ * You must inherit this class and define it in
+    ```
+    WebAPI.useSimulator(new MyAPISimulatorImpl());
+    ```
+ */
 export abstract class WebAPISimulator
 {
     private simulatedRoutes: Array<SimulatedAPIRoute> = [];
 
     /**
-     * @param httpMethod **for GET/DELETE routes** - functionEndpoint(**params: Array**): any|object   
-     *                   **for POST/PUT routes**   - functionEndpoint(**body: any|object**): any|object
-     * @param resource 
-     * @param endPoint functionEndpoint(params: Array): any|object;
+     * Maps a simulated route to which this 
+     * Simulator should respond when 
+     * ```
+     *WebAPI.call()
+     * ``` 
+     * is invoked
+     * 
+     * @param httpMethod 'GET' / 'POST' / 'PUT' / 'DELETE'
+     * @param resource The resource name or endpoint path that the real API would have
+     * @param endPoint A function (callback) that should respond for the resource endpoint 
+     *
+     * Function definition should follow these standards:
+     * 
+     * **for GET/DELETE routes** - 
+     *  ```
+     * functionEndpointName(params: Array<string>): any|object
+     * ```
+     *                   
+     * **for POST/PUT routes** 
+     * ```
+     * functionEndpointName(body: any|object): any|object
+     * ```
      */
     protected mapRoute(httpMethod: string, resource: string, endPoint: Function): WebAPISimulator
     {
@@ -59,6 +88,12 @@ export abstract class WebAPISimulator
         return this;
     }
 
+    /**
+     * Fires a request originating from the `WebAPI` 
+     * class and redirected to the Simulator,
+     * which will respond by calling 
+     * a "fake-endpoint" function
+     */
     public simulateRequest(
         httpMethod: string,
         resource: string,
@@ -77,7 +112,8 @@ export abstract class WebAPISimulator
                     const path = resource.replace(route.getResource(), '');
                     var params = path.split('/');
                     if (params.length > 0)
-                        if (params[0] == '') params = params.splice(-1, 1);
+                        if (params[0] == '')
+                            params = params.splice(-1, 1);
                     return new APIResponse({
                         code: 200,
                         msg: 'fetched from API Simulator',
@@ -86,11 +122,13 @@ export abstract class WebAPISimulator
                 }
 
                 if (route.getMethod() == 'POST' || route.getMethod() == 'PUT')
+                {
                     return new APIResponse({
                         code: 200,
-                        msg: 'ferched from API Simulator',
+                        msg: 'fetched from API Simulator',
                         content: route.simulateRoute({ body: JSON.parse(body) })
                     })
+                }
                 break;
             }
         }

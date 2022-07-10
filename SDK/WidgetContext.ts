@@ -2,6 +2,16 @@ import { PageShell } from "./PageShell";
 import { WidgetFragment, WidgetMessage, Widget } from "./Widget";
 import { INotifiable } from "./INotifiable";
 
+/**
+ * A WidgetContext is able to manage a 
+ * set of widgets linked in a div
+ * contained in a `ViewLayout`
+ * 
+ * This is automatically managed by the UIView, 
+ * but new WidgetContext's can be dynamically 
+ * created to manage another portion of Widgets 
+ * located in other Divs.
+ */
 export class WidgetContext
 {
 
@@ -68,6 +78,11 @@ export class WidgetContext
         }
     }
 
+    /**
+     * Attaches a Widget to a `WidgetFragment`.
+     * A `WidgetFragment` is the direct controller of ONE 
+     * div and can manage multiple Widgets related to this div
+     */
     addWidget(fragmentName: string, widget: Widget)
     {
         var fragment = this.findFragment(fragmentName);
@@ -122,6 +137,13 @@ export class WidgetContext
         }
     }
 
+    /**
+     * Performs the rendering of the Widgets attached to this Context.
+     * Immediately orders the Fragments managed by this Context to draw 
+     * the Widgets they manage.
+     * @param notifiable 
+     * @param clear 
+     */
     build(notifiable?: INotifiable, clear: boolean = false)
     {
         this.fragmentsLoaded = 0;

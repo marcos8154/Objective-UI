@@ -2,10 +2,12 @@ import { ILayoutPresenter } from './ILayoutPresenter'
 import { ViewLayout } from './ViewLayout';
 import { Row } from "./Row";
 import { PageShell } from './PageShell';
-import { StyleProperty } from './StyleProperty';
 import { Col } from './Col';
 import { Misc } from './Misc';
 
+/**
+ * A standard implementation for `ILayoutPresenter`
+ */
 export class DefaultLayoutPresenter implements ILayoutPresenter
 {
     presenter: DefaultLayoutPresenter;

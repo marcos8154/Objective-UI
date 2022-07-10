@@ -1,4 +1,3 @@
-import { View } from "../UIView";
 import { Widget } from "../Widget";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
 

@@ -1,4 +1,4 @@
-import { View } from "../UIView";
+import { UIView } from "../UIView";
 import { Widget as Widget } from "../Widget";
 import { IBindable } from "../IBindable";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";

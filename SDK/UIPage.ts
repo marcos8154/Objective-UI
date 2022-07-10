@@ -1,10 +1,23 @@
 import { PageShell } from "./PageShell";
-import { View } from "./UIView";
+import { UIView } from "./UIView";
 import { NativeLib } from "./NativeLib";
 import { DefaultExceptionPage } from "./DefaultExceptionPage";
 import { IAppStorageProvider } from "./IAppStorageProvider";
 
-export abstract class Page
+/**
+ * A UIPage implementation is the first 
+ * Objective-UI class that is instantiated once the page loads.
+ * 
+ * This class is responsible for initializing the rest of the 
+ * Objective-UI library and navigating to the first UIView to be displayed.
+ * 
+ * Here it is also possible to enable features such as Splitting, Storage, 
+ * and also import native JavaScript-CSS libraries
+ * 
+ * UIPage will initialize a `PageShell` and act in conjunction with it 
+ * to manipulate the DOM of the page as a general.
+ */
+export abstract class UIPage
 {
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
@@ -34,7 +47,7 @@ export abstract class Page
         this.mainShell.import(new NativeLib({ libName, cssPath, jsPath }));
     }
 
-    public navigateToView(view: View): void
+    public navigateToView(view: UIView): void
     {
         try
         {

@@ -1,5 +1,16 @@
 import { Widget } from "./Widget";
 
+/**
+ * Represents a native JavaScript function virtually controlled by TypeScript
+ * 
+ * Through this class, a JavaScript function will be 
+ * dynamically placed in the DOM of the page, 
+ * executed and then destroyed. 
+ * 
+ * From this, it is possible to invoke functions from 
+ * native JavaScript libraries from the written TypeScrit 
+ * code.
+ */
 export class VirtualFunction
 {
     public functionName: string;
@@ -13,6 +24,13 @@ export class VirtualFunction
         return `function ${this.functionName}(${this.argNamesStr()});`;
     }
 
+    /**
+     * Defines a JavaScript virtual function
+     * @param fnName the function name
+     * @param fnArgNames An array with the names of the function's arguments (the variables that the function takes)
+     * @param fnContent The literal body of the function; NOTE: you must not specify `{ or } ` here. Only the raw body of the function is allowed
+     * @param keepAfterCalled Determines whether the function should remain active on the page after the first call. By default it is false.
+     */
     constructor({ fnName, fnArgNames = [], fnContent, keepAfterCalled = false }:
         {
             fnName: string,
@@ -28,12 +46,22 @@ export class VirtualFunction
         this.functionId = Widget.generateUUID();
     }
 
+    /**
+     * @param fnContent The literal body of the function; NOTE: you must not specify `{ or } ` here. Only the raw body of the function is allowed
+     */
     setContent(fnContent: string): VirtualFunction
     {
         this.functionBodyContent = fnContent;
         return this;
     }
 
+    /**
+     * Calls the JavaScript function. 
+     * Here the function will materialize in the 
+     * DOM as a `<script> function here </script>` tag and the 
+     * function will be inside it
+     * @param argValues An array with the VALUES of the arguments defined in the function. Note that you must pass the array according to the actual parameters of the function.
+     */
     call(...argValues: string[]) : void
     {
         var argNamesStr = this.argNamesStr();

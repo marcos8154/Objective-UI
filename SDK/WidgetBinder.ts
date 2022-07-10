@@ -1,12 +1,22 @@
 import { Widget } from "./Widget"
 import { WebAPI } from "./WebAPI";
 
+/**
+ * It acts as a bridge between the `BindingContext<T>` 
+ * and the respective Widget. 
+ * 
+ * This allows the Widget to incorporate Data Binding 
+ * functionality with model-objects.
+ * 
+ * If you have a custom `Widget` created in your project, 
+ * you will need to provide a `WidgetBinder` implementation 
+ * to provide Data Binding functionality
+ */
 export abstract class WidgetBinder
 {
     abstract getWidgetValue(): any | object;
     abstract refreshUI(): void;
     abstract fillPropertyModel(): void;
-
 
     protected widget: Widget;
     public widgetName: string;

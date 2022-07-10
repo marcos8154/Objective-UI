@@ -1,4 +1,4 @@
-import { Widget, WidgetContext as FSWidgetContext } from './Widget'
+import { Widget, WidgetContext } from './Widget'
 import { INotifiable } from './INotifiable';
 import { PageShell } from './PageShell';
 
@@ -15,7 +15,7 @@ import { PageShell } from './PageShell';
 export class WidgetFragment implements INotifiable
 {
 
-    contextRoot: FSWidgetContext;
+    contextRoot: WidgetContext;
     fragmentId: string;
     containerElement: HTMLDivElement;
     widgets: Widget[];
@@ -26,7 +26,7 @@ export class WidgetFragment implements INotifiable
      * @param appContextRoot The parent WidgetContext
      * @param containerElement An (Element object) HTML element to compose the adjacent Widgets. Usually Div's.
      */
-    constructor(appContextRoot: FSWidgetContext, containerElement: HTMLDivElement)
+    constructor(appContextRoot: WidgetContext, containerElement: HTMLDivElement)
     {
         this.contextRoot = appContextRoot;
         this.fragmentId = containerElement.getAttribute('id');

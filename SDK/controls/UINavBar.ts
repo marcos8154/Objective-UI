@@ -1,4 +1,4 @@
-import { View } from "../UIView";
+import { UIView } from "../UIView";
 import { ViewLayout } from "../ViewLayout";
 import { Widget } from "../Widget";
 import { WidgetMessage } from "../WidgetMessage";

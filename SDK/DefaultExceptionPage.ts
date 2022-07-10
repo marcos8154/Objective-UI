@@ -1,11 +1,16 @@
-import { Page } from "./Page";
+import { UIPage } from "./UIPage";
 import { Widget } from "./Widget";
 
+/**
+ * A class that generates a simplified, 
+ * standard Exception view at the point on 
+ * the page where an error occurred
+ */
 export class DefaultExceptionPage
 {
     constructor(error: Error)
     {
-        if(Page.DISABLE_EXCEPTION_PAGE)
+        if(UIPage.DISABLE_EXCEPTION_PAGE)
             return;
             
         var errorsStr = `${error.stack}`.split('\n');

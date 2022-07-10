@@ -30,7 +30,7 @@ namespace ObjUITools
             foreach (FileInfo file in files)
             {
                 if (!string.IsNullOrEmpty(file.DirectoryName))
-                    if (file.DirectoryName.Contains("frontstoreSDK.libs"))
+                    if (file.DirectoryName.Contains("lib"))
                         continue;
 
                 Stopwatch sw = new Stopwatch();

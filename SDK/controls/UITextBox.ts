@@ -67,13 +67,13 @@ export class Mask
     }
 }
 
-export class FSTextBoxBinder extends WidgetBinder
+export class UITextBoxBinder extends WidgetBinder
 {
-    private textBox: FSTextBox;
-    constructor(textBox: FSTextBox) 
+    private textBox: UITextBox;
+    constructor(textBox: UITextBox) 
     {
         super(textBox);
-        this.textBox = this.widget as FSTextBox;
+        this.textBox = this.widget as UITextBox;
     }
     refreshUI(): void
     {
@@ -92,7 +92,7 @@ export class FSTextBoxBinder extends WidgetBinder
     }
 }
 
-export class FSTextBox extends Widget implements IBindable
+export class UITextBox extends Widget implements IBindable
 {
     protected htmlTemplate(): string
     {
@@ -134,7 +134,7 @@ export class FSTextBox extends Widget implements IBindable
     }
     getBinder(): WidgetBinder
     {
-        return new FSTextBoxBinder(this);
+        return new UITextBoxBinder(this);
     }
 
     applyMask(maskPattern: string): void
@@ -159,7 +159,7 @@ export class FSTextBox extends Widget implements IBindable
         maskFunction.call();
     }
 
-    public setCustomPresenter(renderer: ICustomWidgetPresenter<FSTextBox>): void
+    public setCustomPresenter(renderer: ICustomWidgetPresenter<UITextBox>): void
     {
         renderer.render(this);
     }
