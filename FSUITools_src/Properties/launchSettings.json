@@ -1,8 +1,7 @@
 {
   "profiles": {
     "FSUITools": {
-      "commandName": "Project",
-      "commandLineArgs": "-build -p=\"C:\\Users\\Marcos Vinícius\\Documents\\Visual Studio 2015\\Projects\\FrontStoreFramework\\GSF\""
+      "commandName": "Project"
     }
   }
 }

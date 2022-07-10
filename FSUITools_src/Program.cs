@@ -77,7 +77,7 @@ namespace ObjUITools
                 }
 
                 Console.WriteLine(
-$@"*** Objective-UI Build Tools 1.0.5 ***
+$@"*** Objective-UI Build Tools 1.0.6 ***
     > Working Dir: {workDir}
     > SDK Dir: {SDK_SRC_PATH}
 ");
@@ -168,7 +168,8 @@ $@"*** Objective-UI Build Tools 1.0.5 ***
 
                     foreach (string line in lines)
                     {
-                        if (line.StartsWith("export class") ||
+                        if (line.StartsWith("/**") ||
+                            line.StartsWith("export class") ||
                             line.StartsWith("export abstract class") ||
                             line.StartsWith("export interface"))
                         {
@@ -184,7 +185,7 @@ $@"*** Objective-UI Build Tools 1.0.5 ***
                 foreach (FileInfo tsFile in projDir.GetFiles("*.ts", SearchOption.AllDirectories))
                 {
 
-                    if (File.ReadAllText(tsFile.FullName).Contains("extends Page"))
+                    if (File.ReadAllText(tsFile.FullName).Contains("extends UIPage"))
                     {
                         string outFile = $"{tsFile.Directory.FullName}\\Objective-UI.ts";
                         File.WriteAllText(outFile, sb.ToString());

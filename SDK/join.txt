@@ -1,4 +1,4 @@
-Page.ts
+UIPage.ts
 UIView.ts
 Widget.ts
 WidgetContext.ts
