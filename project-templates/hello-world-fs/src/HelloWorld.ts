@@ -128,7 +128,7 @@ export class HelloWorld extends UIView
     modalShow(ev: Event): void
     {
         const $ = HelloWorld.$;//self-instance shortcut
-        const template = $.inflateTemplateView('<label id="lbHello"> Hello World! by FrontStoreUI </label>');
+        const template = $.inflateTemplateView('<label id="lbHello"> Hello World! by Objective-UI </label>');
         const lbHello = template.elementById('lbHello') as HTMLLabelElement;
 
         var modal = new UIDialog({
