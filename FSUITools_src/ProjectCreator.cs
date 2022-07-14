@@ -11,7 +11,7 @@ namespace ObjUITools
     {
         private readonly string template;
 
-        public ProjectCreator(string template = "hello-world-fs")
+        public ProjectCreator(string template = "hello-world-obj-ui")
         {
             if (string.IsNullOrEmpty(template))
                 template = "hello-world-fs";

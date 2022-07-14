@@ -1,19 +1,23 @@
 "use strict";
-class App extends Page {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.App = void 0;
+const HelloWorld_1 = require("./HelloWorld");
+const Objective_UI_1 = require("./Objective-UI");
+class App extends Objective_UI_1.UIPage {
     constructor(mainDoc) {
         super(mainDoc);
         try {
             //#region essential libs
             this.importLib({
-                libName: 'jquery',
+                libName: 'jquery-3.6.0',
                 jsPath: 'jquery.min.js'
             });
             this.importLib({
-                libName: 'jquery-mask',
+                libName: 'jquery-mask-1.14.16',
                 jsPath: 'jquery.mask.js'
             });
             this.importLib({
-                libName: 'fontawesome-free',
+                libName: 'fontawesome-free-5.15.3',
                 cssPath: 'css/all.min.css'
             });
             this.importLib({
@@ -21,16 +25,12 @@ class App extends Page {
                 cssPath: 'bootstrap.css',
                 jsPath: 'bootstrap.js'
             });
-            this.importLib({
-                libName: 'admin-lte',
-                cssPath: 'adminlte.min.css',
-                jsPath: 'adminlte.min.js'
-            });
             //#endregion 
-            this.navigateToView(new HelloWorld());
+            this.navigateToView(new HelloWorld_1.HelloWorld());
         }
         catch (error) {
-            new DefaultExceptionPage(error);
+            new Objective_UI_1.DefaultExceptionPage(error);
         }
     }
 }
+exports.App = App;

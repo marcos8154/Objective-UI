@@ -11,6 +11,7 @@ namespace ObjUITools
 {
     public class Program
     {
+        public static readonly string TOOLS_VERSION = "0.8.1";
         public static string PROJECT_DIR;
         public static string SDK_SRC_PATH;
 
@@ -27,8 +28,11 @@ namespace ObjUITools
 
                 if (args.Length == 0)
                 {
-                    Console.Write("     No program args.");
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine(File.ReadAllText("READ-ME.txt"));
                     Console.ForegroundColor = ConsoleColor.White;
+                    Console.SetCursorPosition(0, 0);
+                    Console.ReadKey();
                     return;
                 }
 
@@ -77,7 +81,7 @@ namespace ObjUITools
                 }
 
                 Console.WriteLine(
-$@"*** Objective-UI Build Tools 1.0.6 ***
+$@"*** Objective-UI Build Tools {TOOLS_VERSION}***
     > Working Dir: {workDir}
     > SDK Dir: {SDK_SRC_PATH}
 ");
@@ -135,6 +139,7 @@ $@"*** Objective-UI Build Tools 1.0.6 ***
                 Console.WriteLine("\n");
                 Console.WriteLine($"    ***  E  N  D  ***");
 
+                Console.ForegroundColor = ConsoleColor.White;
                 Environment.Exit(0);
             }
             catch (Exception ex)
@@ -182,6 +187,7 @@ $@"*** Objective-UI Build Tools 1.0.6 ***
                 }
 
                 DirectoryInfo projDir = new DirectoryInfo(PROJECT_DIR);
+                bool uiPageFound = false;
                 foreach (FileInfo tsFile in projDir.GetFiles("*.ts", SearchOption.AllDirectories))
                 {
 
@@ -189,8 +195,18 @@ $@"*** Objective-UI Build Tools 1.0.6 ***
                     {
                         string outFile = $"{tsFile.Directory.FullName}\\Objective-UI.ts";
                         File.WriteAllText(outFile, sb.ToString());
+                        uiPageFound = true;
                         break;
                     }
+                }
+                if(!uiPageFound)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"* * * 'UPage' IMPLEMENTATION NOT FOUND! CANNOT REBUILD 'Objective-UI.ts'.  * * *");
+                    Console.WriteLine($"Ensure creating a .ts file containg a 'class AppName extends UIPage' in your src folder for .ts files.");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("BUILD FAIL");
+                    Environment.Exit(0);
                 }
 
                 Console.ForegroundColor = ConsoleColor.White;

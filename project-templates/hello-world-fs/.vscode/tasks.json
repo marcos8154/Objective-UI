@@ -5,7 +5,7 @@
     "tasks": [
         {
         
-            "label": "Objective-UI Build",
+            "label": "Build-WebApp",
             "type": "shell",
             "command": "obj-ui -build"
         }

@@ -20,7 +20,7 @@ export class PageShell
     public static LIB_ROOT = '/lib/'
 
     private baseDocument: Document;
-    private importedLibs: NativeLib[];
+    public importedLibs: NativeLib[];
     private page: UIPage;
 
     private appStorageProvider: IAppStorageProvider = null;

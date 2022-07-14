@@ -1,7 +1,7 @@
 import { HelloWorld } from "./HelloWorld";
-import { DefaultExceptionPage, Page } from "./Objective-UI";
+import { DefaultExceptionPage, UIPage } from "./Objective-UI";
 
-export class App extends Page
+export class App extends UIPage
 {
     constructor(mainDoc: Document)
     {
@@ -10,26 +10,21 @@ export class App extends Page
         {
             //#region essential libs
             this.importLib({
-                libName: 'jquery',
+                libName: 'jquery-3.6.0',
                 jsPath: 'jquery.min.js'
             });
             this.importLib({
-                libName: 'jquery-mask',
+                libName: 'jquery-mask-1.14.16',
                 jsPath: 'jquery.mask.js'
             });
             this.importLib({
-                libName: 'fontawesome-free',
+                libName: 'fontawesome-free-5.15.3',
                 cssPath: 'css/all.min.css'
             });
             this.importLib({
                 libName: 'bootstrap-4.6.1',
                 cssPath: 'bootstrap.css',
                 jsPath: 'bootstrap.js'
-            });
-            this.importLib({
-                libName: 'admin-lte',
-                cssPath: 'adminlte.min.css',
-                jsPath: 'adminlte.min.js'
             });
             //#endregion 
 

@@ -1,5 +1,21 @@
 "use strict";
-class Page {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UISpinner = exports.UISelect = exports.UISelectBinder = exports.UIProgressBar = exports.UINavBar = exports.UIDialog = exports.UIList = exports.UIListBinder = exports.UILabel = exports.UILabelBinder = exports.UIImage = exports.UIImageBinder = exports.UICheckBox = exports.UICheckBoxBinder = exports.UIButton = exports.UIRadioGroup = exports.UIRadioGroupBinder = exports.RadioOption = exports.ModalAction = exports.UIHead = exports.UIHeadBinder = exports.DefaultExceptionPage = exports.VirtualFunction = exports.WidgetMessage = exports.WidgetFragment = exports.ViewLayout = exports.ViewDictionaryEntry = exports.SelectOption = exports.RhabooStorageWrapper = exports.RhabooInstance = exports.AppStorage = exports.Misc = exports.Row = exports.RowOptions = exports.PageShell = exports.NativeLib = exports.DefaultLayoutPresenter = exports.Col = exports.ColOptions = exports.WebAPISimulator = exports.SimulatedAPIRoute = exports.WebAPI = exports.APIResponse = exports.WidgetBinder = exports.WidgetBinderBehavior = exports.BindingContext = exports.WidgetContext = exports.Widget = exports.UIView = exports.UIPage = void 0;
+exports.UIDataGrid = exports.UIDataGridBinder = exports.DataGridColumnDefinition = exports.UITemplateView = exports.ListItem = exports.DataGridItem = exports.UIToast = exports.UITextBox = exports.UITextBoxBinder = exports.Mask = exports.UISwitcher = void 0;
+/**
+ * A UIPage implementation is the first
+ * Objective-UI class that is instantiated once the page loads.
+ *
+ * This class is responsible for initializing the rest of the
+ * Objective-UI library and navigating to the first UIView to be displayed.
+ *
+ * Here it is also possible to enable features such as Splitting, Storage,
+ * and also import native JavaScript-CSS libraries
+ *
+ * UIPage will initialize a `PageShell` and act in conjunction with it
+ * to manipulate the DOM of the page as a general.
+ */
+class UIPage {
     constructor(doc) {
         this.mainShell = new PageShell(doc, this);
     }
@@ -24,12 +40,37 @@ class Page {
         }
     }
 }
-Page.DISABLE_EXCEPTION_PAGE = false;
-class View {
+exports.UIPage = UIPage;
+UIPage.PRODUCT_VERSION = '0.8.1';
+UIPage.DISABLE_EXCEPTION_PAGE = false;
+/**
+ * A UIView represents an interface view set of user controls.
+ * UIView's are loaded and unloaded all the time and they
+ * house a set of Widgets that give meaning to the view in
+ * front of the user.
+ *
+ * We can say in general terms that
+ * "this is a 'screen' of the application"
+ */
+class UIView {
     constructor(customLayoutPresenter) {
         this.customPresenter = customLayoutPresenter;
     }
+    /**
+     * (Optional overwrite) occurs when a Widget sends a message
+     */
     onWidgetMessage(message) { }
+    /**
+     * Request an instance of the Storage implementation
+     * for Session or Local storage by implementing IAppStorageProvider
+     *
+     * see:
+     *
+     * ```
+     * interface IAppStorageProvider
+     * ```
+     * @param schemaName A unique id-name to determine the data scope
+     */
     requestLocalStorage(schemaName) {
         return this.shellPage.requestStorage('local', schemaName);
     }
@@ -56,27 +97,62 @@ class View {
         this.view.composeView();
         this.widgetContext.build(this);
     }
+    /**
+     * Get all Widgets attached and managed in this UIView
+     */
     managedWidgets() {
         if (this.widgetContext == null || this.widgetContext == undefined)
             return [];
         return this.widgetContext.getManagedWidgets();
     }
+    /**
+     * Adds one or more Widgets to a div specified in `ViewLayout`
+     * @param layoutId An 'Id' of div contained in the `ViewLayout` class
+     * @param widgets An array of Widget objects that will be bound to 'layoutId'
+     */
     addWidgets(layoutId, ...widgets) {
         for (var i = 0; i < widgets.length; i++)
             this.widgetContext.addWidget(layoutId, widgets[i]);
     }
+    /**
+     * Remove a Widget managed by this UIView
+     */
     removeWidget(widget) {
         this.viewContext().removeWidget(widget);
     }
+    /**
+     * Finds a Widget managed by this UIView
+     *
+     * @param layoutId An 'Id' div contained in the `ViewLayout`class
+     * @param widgetName The name of a Widget managed by this UIView and previously attached to the ViewLayout through the specified 'layoutId'
+     */
     findWidget(layoutId, widgetName) {
         return this.viewContext().findWidget(layoutId, widgetName);
     }
+    /**
+     * Create an alternative Widget Context that allows controlling
+     * a set of Widgets that are outside the main Div-app or that
+     * are in a different Div than the one used by the original
+     * Context of this UIView
+     * @param managedDivIds The set of 'Id' divs managed by this Context Widget
+     * @param messageProtocol A function that responds to the message triggered by this context indicating its complete loading
+     */
     createWidgetContext(managedDivIds, messageProtocol) {
         if (null == this.shellPage || undefined == this.shellPage)
             throw 'FSView.createWidgetContext(): It is not possible to do this as the View is not yet initialized. If you are making this call inside the constructor(), move it inside the composeView() function.';
         return new WidgetContext(this.shellPage, managedDivIds, messageProtocol);
     }
 }
+exports.UIView = UIView;
+/**
+A Widget is a TS object that represents a piece of HTML. It is able to
+fetch that piece of html into a webdir and bring it to the MainPage.
+of a WidgetContext and can manage several child Widgets.
+
+It is also able to manage the elements marked with "id" attribute within that piece of HTML,
+and then make them available to the inherited class as DOM objects.
+ *
+ */
 class Widget {
     /**
      *
@@ -148,7 +224,7 @@ class Widget {
     }
     /**
      * Sends a message from the inherited object towards the WidgetContext,
-     * which then makes it available to the View in the "onWidgetMessage()" function call
+     * which then makes it available to the UIView in the "onWidgetMessage()" function call
      * @param messageId Set a default identifier for this message. This allows the receiver to determine the type of message (your widget may have some)
      * @param messageText A text for your message
      * @param messageAnyObject A custom data object
@@ -194,11 +270,14 @@ class Widget {
     /**
     Adds an entry in the Id's dictionary.
     The dictionary is used to prevent conflicting element IDs across the page.
+
     Before elements are attached to the page, a unique Id value is generated and (re)set
     to the element.
+
     The dictionary maintains exactly the parity of the auto-generated Id
     with the original one, so that the inherited object can normally access
     the elements present in the HTML resource by the original name.
+
      * @param originalId The Id of the element present in the HTML resource
      * @param generatedId The self-generated Id value
      */
@@ -262,6 +341,17 @@ class Widget {
         return res.split('-')[0];
     }
 }
+exports.Widget = Widget;
+/**
+ * A WidgetContext is able to manage a
+ * set of widgets linked in a div
+ * contained in a `ViewLayout`
+ *
+ * This is automatically managed by the UIView,
+ * but new WidgetContext's can be dynamically
+ * created to manage another portion of Widgets
+ * located in other Divs.
+ */
 class WidgetContext {
     constructor(shellPage, managedElementsIds, messageProtocolFunction) {
         this.contextLoaded = false;
@@ -296,6 +386,11 @@ class WidgetContext {
             this.messageProtocolFunction(new WidgetMessage(widgetName, messageId, messageText, messageAnyObject));
         }
     }
+    /**
+     * Attaches a Widget to a `WidgetFragment`.
+     * A `WidgetFragment` is the direct controller of ONE
+     * div and can manage multiple Widgets related to this div
+     */
     addWidget(fragmentName, widget) {
         var fragment = this.findFragment(fragmentName);
         fragment.attatchWidget(widget);
@@ -336,6 +431,13 @@ class WidgetContext {
                 this.notifiableView.onNotified('FSWidgetContext', []);
         }
     }
+    /**
+     * Performs the rendering of the Widgets attached to this Context.
+     * Immediately orders the Fragments managed by this Context to draw
+     * the Widgets they manage.
+     * @param notifiable
+     * @param clear
+     */
     build(notifiable, clear = false) {
         this.fragmentsLoaded = 0;
         this.notifiableView = notifiable;
@@ -347,12 +449,42 @@ class WidgetContext {
         }
     }
 }
+exports.WidgetContext = WidgetContext;
+/**
+ * An efficient system of data binding and object synchronization (aka 'ViewModel')
+ * with the User Interface
+ *
+ * Voce
+ */
 class BindingContext {
+    /**
+     * This is a concrete class and you should instantiate it normally,
+     * You must provide an instance of the ViewModel and the inherited UIView currently displayed.
+     * But ATTENTION you must do this INSIDE the onViewDidload() function of your UIView inherited class.
+     *
+     * ```
+     *  export class MyView extends UIView {
+     *     private binding: BindingContext<ModelType>;
+     *     ...
+     *     onViewDidload(): void {
+     *        //Here Widgets attached in UIView will be linked with `ModelType`
+     *        this.binding = new BindingContext<ModelType>(new ModelType(), this);
+     *        ...
+     *     }
+     * ```
+     * @param viewModel An instance of the ViewModel object
+     * @param view UIView instance inherits class (the currently displayed UIView)
+     */
     constructor(viewModel, view) {
         this._binders = [];
         this.viewModelInstance = viewModel;
         this.scanViewModel(view);
     }
+    /**
+     * Gets a WidgetBinderBehavior from which the behavior of data bindings will be changed.
+     * @param modelPropertyName The name of the property/key present in the ViewModelType type
+     * @returns `WidgetBinderBehavior`
+     */
     getBindingFor(modelPropertyName) {
         var propBinders = [];
         for (var i = 0; i < this._binders.length; i++) {
@@ -362,17 +494,35 @@ class BindingContext {
         }
         return new WidgetBinderBehavior(propBinders);
     }
+    /**
+     * Causes a UI refresh on all Widgets managed by this Data Binding Context
+     * based on the current values of the properties/keys of the ViewModelType instance \
+     * \
+     * (remember that the ViewModelType instance is managed by this context as well)
+     */
     refreshAll() {
         for (var b = 0; b < this._binders.length; b++) {
             var binder = this._binders[b];
             binder.refreshUI();
         }
     }
+    /**
+     * Get an instance of `ViewModel` based on Widgets values
+     * @returns `ViewModel`
+     */
     getViewModel() {
         for (var i = 0; i < this._binders.length; i++)
             this._binders[i].fillPropertyModel();
         return this.viewModelInstance;
     }
+    /**
+     * Defines an instance of `ViewModel`.\
+     * This causes an immediate UI refresh on all widgets managed by this context. \
+     * \
+     * You can also use this to reset (say 'clear') the Widgets state by passing a `new ViewModel()`
+     * @param viewModelInstance `ViewModel`
+     * @returns
+     */
     setViewModel(viewModelInstance) {
         this.viewModelInstance = viewModelInstance;
         for (var b = 0; b < this._binders.length; b++) {
@@ -382,6 +532,11 @@ class BindingContext {
         this.refreshAll();
         return this;
     }
+    /**
+     * Scans the Widgets managed in a UIView for matches with
+     * properties/keys present in the ViewModel type object
+     * managed by this Context
+     */
     scanViewModel(view) {
         var self = this;
         var widgets = view.managedWidgets();
@@ -390,11 +545,20 @@ class BindingContext {
         for (var key in self.viewModelInstance) {
             for (var w = 0; w < widgets.length; w++) {
                 var widget = widgets[w];
-                var keyMatch = self.modelPropertyMatchWithWidget(widget, key);
+                var keyMatch = self.isModelPropertyMatchWithWidget(widget, key);
                 if (keyMatch)
                     this.bindWidget(widget, key);
             }
         }
+    }
+    isModelPropertyMatchWithWidget(widget, modelKey) {
+        var widgetName = widget.widgetName;
+        if (widgetName.indexOf(modelKey) < 0)
+            return false;
+        var replaced = widgetName.replace(modelKey, '');
+        var propLength = modelKey.length;
+        var replacedLength = replaced.length;
+        return (replacedLength < propLength);
     }
     bindWidget(widget, modelKey) {
         try {
@@ -409,31 +573,61 @@ class BindingContext {
             return null;
         }
     }
-    modelPropertyMatchWithWidget(widget, modelKey) {
-        var widgetName = widget.widgetName;
-        if (widgetName.indexOf(modelKey) < 0)
-            return false;
-        var replaced = widgetName.replace(modelKey, '');
-        var propLength = modelKey.length;
-        var replacedLength = replaced.length;
-        return (replacedLength < propLength);
-    }
 }
+exports.BindingContext = BindingContext;
+/**
+ *  Allows you to define binding behaviors for a
+ * set of `WidgetBinder`
+ * classes that are bound to a property/key of
+ * the object-model being managed by the `BindingContext<T>`
+ */
 class WidgetBinderBehavior {
     constructor(binders) {
         this._binders = binders;
     }
+    /**
+     * When data binding is done based on a list of model objects,
+     * it may be necessary to specify a binding path INSIDE that model
+     * object via its properties/keys.
+     *
+     * This happens for example when binding a
+     * list of `'Contact'` in `UISelect` or `UIList`:
+     * although they are able to load an Array<Contact>,
+     * they won't know that they should use the prop/key 'Id'
+     * like selection value and the 'Name' prop/key as
+     * the display value.
+     * @param displayPropertyName The prop/key on the model object that will be displayed in the control
+     * @param valuePropertyName The prop/key in the model object that will be used as the selected value in the Widget
+     */
     hasPath(displayPropertyName, valuePropertyName) {
         for (var i = 0; i < this._binders.length; i++)
             this._binders[i].hasPath(displayPropertyName, valuePropertyName);
         return this;
     }
+    /**
+     * Set a target when you want the selected Widget
+     * value to be transferred to a given property/key
+     * in the same model-object.
+     * @param targetValuePropertyName  Property/key in the model-class to which the selected Widget-value will be transferred.
+     */
     hasTarget(targetValuePropertyName) {
         for (var i = 0; i < this._binders.length; i++)
             this._binders[i].hasTarget(targetValuePropertyName);
         return this;
     }
 }
+exports.WidgetBinderBehavior = WidgetBinderBehavior;
+/**
+ * It acts as a bridge between the `BindingContext<T>`
+ * and the respective Widget.
+ *
+ * This allows the Widget to incorporate Data Binding
+ * functionality with model-objects.
+ *
+ * If you have a custom `Widget` created in your project,
+ * you will need to provide a `WidgetBinder` implementation
+ * to provide Data Binding functionality
+ */
 class WidgetBinder {
     constructor(widget) {
         this.widget = widget;
@@ -487,6 +681,7 @@ class WidgetBinder {
         this.refreshUI();
     }
 }
+exports.WidgetBinder = WidgetBinder;
 class APIResponse {
     constructor({ code, msg, content }) {
         this.statusCode = code;
@@ -494,6 +689,32 @@ class APIResponse {
         this.content = content;
     }
 }
+exports.APIResponse = APIResponse;
+/**
+ * Offers an abstraction for consuming REST APIs with the
+ * possibility of simulating a local
+ * API for development purposes;
+ *
+ * If your FrontEnd is not running alongside the API,
+ * be careful to call previously (once)
+ * ```
+ * WebAPI.setURLBase('https://complete-url-of-api.com')
+ * ```
+ *
+ * Example:
+ * ```
+WebAPI
+.POST('/api/route/xyz') //.GET() / .PUT() / .DELETE()
+.withBody(objectBodyHere) //if .POST() or .PUT()
+.onSuccess(function (res: APIResponse){
+    //success handle function
+})
+.onError(function(err: Error){
+    //request-error handle function
+})
+.call(); //call REST api
+ * ```
+ */
 class WebAPI {
     constructor(url, method) {
         this.request = {};
@@ -508,9 +729,10 @@ class WebAPI {
         if (requestString.startsWith('http'))
             return new WebAPI(requestString, httpMethod);
         else {
-            if (this.urlBase == '' || this.urlBase == this.name || this.urlBase == undefined)
-                throw new Error(`Calling directly '${requestString}' on API endpoints requires a previously configured base URL. Make sure you have previously invoked WebAPI.setURLBase( 'https://my-api.com' )`);
-            return new WebAPI(`${WebAPI.urlBase}${requestString}`, httpMethod);
+            if (this.urlBase == '' || this.urlBase == undefined)
+                return new WebAPI(`${requestString}`, httpMethod);
+            else
+                return new WebAPI(`${WebAPI.urlBase}${requestString}`, httpMethod);
         }
     }
     static useSimulator(simulator) {
@@ -536,9 +758,12 @@ class WebAPI {
                 .then(function (ret) {
                 statusCode = ret.status;
                 statusMsg = ret.statusText;
-                return ret.json();
+                return ret.text();
             })
-                .then(function (json) {
+                .then(function (text) {
+                var json = null;
+                if (text.startsWith("{"))
+                    json = JSON.parse(text);
                 var apiResponse = new APIResponse({
                     code: statusCode, msg: statusMsg, content: json
                 });
@@ -578,6 +803,7 @@ class WebAPI {
         return this;
     }
 }
+exports.WebAPI = WebAPI;
 class SimulatedAPIRoute {
     constructor(resource, method, endPoint) {
         this.method = method;
@@ -601,20 +827,55 @@ class SimulatedAPIRoute {
         return `[${this.method}] ${this.resource}`;
     }
 }
+exports.SimulatedAPIRoute = SimulatedAPIRoute;
+/**
+ * Allows you to simulate a REST API locally based on an
+ * API that may not yet exist, but will respond for the routes
+ * that are defined in the Simulator.
+ *
+ * You must inherit this class and define it in
+    ```
+    WebAPI.useSimulator(new MyAPISimulatorImpl());
+    ```
+ */
 class WebAPISimulator {
     constructor() {
         this.simulatedRoutes = [];
     }
     /**
-     * @param httpMethod **for GET/DELETE routes** - functionEndpoint(**params: Array**): any|object
-     *                   **for POST/PUT routes**   - functionEndpoint(**body: any|object**): any|object
-     * @param resource
-     * @param endPoint functionEndpoint(params: Array): any|object;
+     * Maps a simulated route to which this
+     * Simulator should respond when
+     * ```
+     *WebAPI.call()
+     * ```
+     * is invoked
+     *
+     * @param httpMethod 'GET' / 'POST' / 'PUT' / 'DELETE'
+     * @param resource The resource name or endpoint path that the real API would have
+     * @param endPoint A function (callback) that should respond for the resource endpoint
+     *
+     * Function definition should follow these standards:
+     *
+     * **for GET/DELETE routes** -
+     *  ```
+     * functionEndpointName(params: Array<string>): any|object
+     * ```
+     *
+     * **for POST/PUT routes**
+     * ```
+     * functionEndpointName(body: any|object): any|object
+     * ```
      */
     mapRoute(httpMethod, resource, endPoint) {
         this.simulatedRoutes.push(new SimulatedAPIRoute(resource, httpMethod, endPoint));
         return this;
     }
+    /**
+     * Fires a request originating from the `WebAPI`
+     * class and redirected to the Simulator,
+     * which will respond by calling
+     * a "fake-endpoint" function
+     */
     simulateRequest(httpMethod, resource, body) {
         for (var i = 0; i < this.simulatedRoutes.length; i++) {
             const route = this.simulatedRoutes[i];
@@ -633,20 +894,34 @@ class WebAPISimulator {
                         content: route.simulateRoute({ params })
                     });
                 }
-                if (route.getMethod() == 'POST' || route.getMethod() == 'PUT')
+                if (route.getMethod() == 'POST' || route.getMethod() == 'PUT') {
                     return new APIResponse({
                         code: 200,
-                        msg: 'ferched from API Simulator',
+                        msg: 'fetched from API Simulator',
                         content: route.simulateRoute({ body: JSON.parse(body) })
                     });
+                }
                 break;
             }
         }
     }
 }
+exports.WebAPISimulator = WebAPISimulator;
+/**
+ * Initialization options for div-columns
+ */
 class ColOptions {
 }
+exports.ColOptions = ColOptions;
+/**
+ * Represents a Column-Div with standard Bootstrap classes and a height of 100px
+ */
 class Col {
+    /**
+     *
+     * @param id The 'Id' attribute that the resulting div will have
+     * @param options
+     */
     constructor(id, options) {
         this.colClass = 'col-lg-12 col-md-12 col-sm-12 col-sm-12';
         this.colHeight = '100px';
@@ -662,6 +937,10 @@ class Col {
         }
     }
 }
+exports.Col = Col;
+/**
+ * A standard implementation for `ILayoutPresenter`
+ */
 class DefaultLayoutPresenter {
     constructor() {
         this.presenter = this;
@@ -727,7 +1006,24 @@ class DefaultLayoutPresenter {
         return rowDiv;
     }
 }
+exports.DefaultLayoutPresenter = DefaultLayoutPresenter;
+/**
+ * Used to do library imports (reference CSS and JavaScript) in a single function.
+ *
+ * A few JavaScript libraries may not work properly
+ * due to the way your code initializes them.
+ * At this time, you should resort to
+ * `<script />` import directly into
+ * the .HTML page.
+ */
 class NativeLib {
+    /**
+     * Library to be imported.\
+     * NOTE!!!: the root-path considered here is `'/lib/'` and this is determined by the static variable `PageShell.LIB_ROOT`
+     * @param libName The library folder itself
+     * @param cssPath The name (or subpath) of the library's .css file. If not, ignore this parameter.
+     * @param jsPath The name (or subpath) of the library's .js file. If not, ignore this parameter.
+     */
     constructor({ libName, cssPath = '', jsPath = '' }) {
         this.libName = libName;
         this.cssPath = cssPath;
@@ -745,6 +1041,14 @@ class NativeLib {
         return this.libName;
     }
 }
+exports.NativeLib = NativeLib;
+/**
+ * PageShell is a class that works at the lowest level (next to the page)
+ * and performs some tasks in the DOM interface such as
+ * creating/finding/removing elements,
+ * directly importing native JS-CSS libraries
+ * and controlling access to resources such as SplitView, Storage and others.
+ */
 class PageShell {
     constructor(mainDocument, fsPage) {
         this.appStorageProvider = null;
@@ -753,12 +1057,35 @@ class PageShell {
         this.importedLibs = [];
         this.page = fsPage;
     }
+    /**
+     * Called from the `UIPage` implementation,
+     * enables the Storage feature,
+     * indicating a implementation of the `IAppStorageProvider` interface
+     * @param provider
+     */
     setStorageProvider(provider) {
         this.appStorageProvider = provider;
     }
+    /**
+     * Called from the UIView or other high consumer-classes, requests an instance of `AppStorage`
+     * which must be resolved by the implementation of `IAppStorageProvider`
+     * (usually the same one that implements `UIPage`)
+     * @param type `'local'` to LocalStorage or `'session'` to  SessionStorage
+     * @param schemaName A unique name to demarcate a data context
+     * @returns `AppStorage` instance
+     */
     requestStorage(type, schemaName) {
         return this.appStorageProvider.onStorageRequested(type, schemaName);
     }
+    /**
+     * Enables the SplitView feature and allows two
+     * UIViews to be loaded simultaneously side-by-side on the page.
+     *
+     * You must have marked this `<div id="app/split" />` previously in your HTML file.
+     *
+     * @param appContainerId Id of the page's main app container div. The div that will display most UIView's in your app
+     * @param splitContainerId Split container div id. The secondary UIView will be loaded in this Div
+     */
     enableSplitting(appContainerId, splitContainerId) {
         this.appContainer = this.elementById(appContainerId);
         this.splitContainer = this.elementById(splitContainerId);
@@ -767,10 +1094,17 @@ class PageShell {
         this.splitContainer.style.width = '0 px';
         this.splitContainer.hidden = true;
     }
+    /**
+     * Determines if SplitView is currently active
+     */
     isViewSplitted() {
         return this.currentViewSplitted;
     }
-    shrinkSplitView(ownerSplitView) {
+    /**
+     * Sets the currently Splitted UIView to a reduced size
+     * This will only work if `PageShell.isViewSplitted()` is `true`.
+     */
+    shrinkSplitView() {
         if (this.currentViewSplitted == false)
             return;
         var self = this;
@@ -785,7 +1119,10 @@ class PageShell {
         this.currentViewSplitted = true;
         self.splitContainer.style.borderLeft = '3px solid gray';
     }
-    expandSplitView(ownerSplitView) {
+    /**
+     * Sets the currently Splitted UIView to a side-by-side size (50%)
+     */
+    expandSplitView() {
         if (this.currentViewSplitted == false)
             return;
         var self = this;
@@ -800,6 +1137,11 @@ class PageShell {
         this.currentViewSplitted = true;
         self.splitContainer.style.borderLeft = '3px solid gray';
     }
+    /**
+     * Initializes a new UIView alongside the currently displayed UIView via SplitView features
+     * @param ownerSplitView UIView currently displayed
+     * @param splittedCallingView  New UIView that will be displayed next to the current one
+     */
     requestSplitView(ownerSplitView, splittedCallingView) {
         if (this.currentViewSplitted)
             return;
@@ -815,6 +1157,9 @@ class PageShell {
         this.navigateToView(splittedCallingView);
         splittedCallingView.onConnectViews(ownerSplitView);
     }
+    /**
+     * Fully collapse the SplitView Div and destroy the currently used UIView with Split
+     */
     closeSplitView() {
         if (this.currentViewSplitted == false)
             return;
@@ -830,15 +1175,29 @@ class PageShell {
         });
         this.currentViewSplitted = false;
     }
+    /**
+     * Creates (say "instance") a new HTMLElement object that represents an original HTML tag with its properties and attributes
+     * @param tagName The exact name of the desired HTML5 tag
+     * @param innerText (Optional) an initial text inserted as tag content (if the html element supports it)
+     * @returns
+     */
     createElement(tagName, innerText) {
         var element = this.baseDocument.createElement(tagName);
         if (innerText != null)
             element.innerText = innerText;
         return element;
     }
+    /**
+     * Renders and brings to the front a view generated by a UIView object
+     * @param view
+     */
     navigateToView(view) {
         this.page.navigateToView(view);
     }
+    /**
+     * Get the `<body>` of the page
+     * @returns
+     */
     getPageBody() {
         return this.elementsByTagName('body')[0];
     }
@@ -862,6 +1221,11 @@ class PageShell {
                 return this.importedLibs[i];
         return null;
     }
+    /**
+     * Import a native JS-CSS library into the page,
+     * specifying the name and paths to the
+     * .js and .css content files
+     */
     import(lib) {
         var existing = this.getImportedLib(lib.libName);
         if (existing !== null)
@@ -881,6 +1245,7 @@ class PageShell {
         this.importedLibs.push(lib);
     }
 }
+exports.PageShell = PageShell;
 /**defaults: '/lib/' */
 PageShell.LIB_ROOT = '/lib/';
 class RowOptions {
@@ -889,7 +1254,18 @@ class RowOptions {
         this.rowClass = 'row';
     }
 }
+exports.RowOptions = RowOptions;
+/**
+ * Represents a Row Div with standard Bootstrap class options
+ */
 class Row {
+    /**
+     *
+     * @param id A div-container Id to parent this
+     * @param options Row options like class, height and sub-columns; NOTE: if no column is provided, it may be that at least
+     * one column is generated automatically. To determine this,
+     * check the static variable `ViewLayout.AUTO_GENERATE_COLUMNS`
+     */
     constructor(id, options) {
         this.rowClass = 'row';
         this.rowColumns = [];
@@ -918,6 +1294,7 @@ class Row {
         }
     }
 }
+exports.Row = Row;
 class Misc {
     static isNull(value) {
         return (value == null || value == undefined);
@@ -926,23 +1303,34 @@ class Misc {
         return (value == null || value == undefined || value == '');
     }
 }
+exports.Misc = Misc;
+/**
+ * A common abstraction for local storage features,
+ * which can be persistent (aka 'LocalStorage')
+ * or temporary (aka 'SessionStorage')
+ * */
 class AppStorage {
     /**
+     * To provide a concrete instance of this class,
+     * you must first implement `IAppStorageProvider`
+     * from your inherited `UIPage` class.
      *
      * @param type 'local' or 'session'
-     * @param schemaName
+     * @param schemaName A unique name to demarcate a data context
      */
     constructor(type, schemaName) {
         this.type = type;
         this.schemaName = schemaName;
     }
 }
+exports.AppStorage = AppStorage;
 class RhabooInstance {
     constructor() {
         this.name = null;
         this.instance = null;
     }
 }
+exports.RhabooInstance = RhabooInstance;
 class RhabooStorageWrapper extends AppStorage {
     /**
      *  REQUIRED `<script src="lib/rhaboo/rhaboo.js"></script>`
@@ -990,6 +1378,7 @@ class RhabooStorageWrapper extends AppStorage {
         return this.rhaboo.instance[key];
     }
 }
+exports.RhabooStorageWrapper = RhabooStorageWrapper;
 RhabooStorageWrapper.INSTANCES = [];
 class SelectOption {
     constructor(opValue, opText) {
@@ -997,6 +1386,7 @@ class SelectOption {
         this.text = opText;
     }
 }
+exports.SelectOption = SelectOption;
 class ViewDictionaryEntry {
     constructor(originalId, managedId) {
         this.originalId = originalId;
@@ -1009,7 +1399,42 @@ class ViewDictionaryEntry {
         return this.managedId;
     }
 }
+exports.ViewDictionaryEntry = ViewDictionaryEntry;
+/**
+ * ViewLayout is a class that logically contains a demarcation
+ * of divs that will be used by the UIView inherited class,
+ * when this View is rendered. \
+ * \
+ * It is possible to build the layout in the form of an object:
+ * ```
+new ViewLayout('app', [
+    new Row('row-X', { rowClass: 'class-x', rowHeidth: '100px',
+        columns: [
+            new Col('col-Y-left', { colClass: 'class-y-l',  colHeight: '80px' }),
+            new Col('col-Y-right', { colClass: 'class-y-r', colHeight: '20px'  })
+        ]
+    }),
+])
+ * ```
+ * attributes are optional but can take on unwanted default values.
+ *
+ * Or directly by a raw-html string:
+ *
+ * ```
+new ViewLayout('app').fromHTML(`
+    <div class="row-x" style="height:100px">
+        <div id="col-Y-left"  class="col-Y-left"  style="height:80px"> </div>
+        <div id="col-Y-right" class="col-Y-right" style="height:20px"> </div>
+    </div>
+`);
+ * ```
+ */
 class ViewLayout {
+    /**
+     *
+     * @param containerDivId Provide the 'Id' of the Div that will contain this layout (and consequently the Widgets elements)
+     * @param rows Provide root rows for this layout. Ignore this parameter if you want to provide the layout from raw-html content (via `ViewLayout().fromHTML()`)
+     */
     constructor(containerDivId, rows) {
         this.fromString = false;
         this.layoutPresenter = new DefaultLayoutPresenter();
@@ -1085,7 +1510,18 @@ class ViewLayout {
         return result;
     }
 }
+exports.ViewLayout = ViewLayout;
 ViewLayout.AUTO_GENERATE_COLUMNS = false;
+/**
+ * The WidgetFragment has the ability to "draw" Widget objects
+ * into a LayoutId (html div) of the page. It is under the control
+ * of a WidgetContext and can manage several child Widgets.
+ *
+ * It is also capable of attaching and detaching Widgets,
+ * brokering message requests sent by child-Widgets
+ * and submitting them to its own-WidgetContext.
+ *
+ */
 class WidgetFragment {
     /**
      *
@@ -1205,6 +1641,7 @@ class WidgetFragment {
         this.contextRoot.contextShell().appendChildToElement(this.containerElement, elementChild);
     }
 }
+exports.WidgetFragment = WidgetFragment;
 class WidgetMessage {
     constructor(widgetName, messageId, messageText, messageAnyObject) {
         this.widgetName = widgetName;
@@ -1213,7 +1650,26 @@ class WidgetMessage {
         this.messageAnyObject = messageAnyObject;
     }
 }
+exports.WidgetMessage = WidgetMessage;
+/**
+ * Represents a native JavaScript function virtually controlled by TypeScript
+ *
+ * Through this class, a JavaScript function will be
+ * dynamically placed in the DOM of the page,
+ * executed and then destroyed.
+ *
+ * From this, it is possible to invoke functions from
+ * native JavaScript libraries from the written TypeScrit
+ * code.
+ */
 class VirtualFunction {
+    /**
+     * Defines a JavaScript virtual function
+     * @param fnName the function name
+     * @param fnArgNames An array with the names of the function's arguments (the variables that the function takes)
+     * @param fnContent The literal body of the function; NOTE: you must not specify `{ or } ` here. Only the raw body of the function is allowed
+     * @param keepAfterCalled Determines whether the function should remain active on the page after the first call. By default it is false.
+     */
     constructor({ fnName, fnArgNames = [], fnContent, keepAfterCalled = false }) {
         this.functionName = fnName;
         this.keep = keepAfterCalled;
@@ -1224,10 +1680,20 @@ class VirtualFunction {
     toString() {
         return `function ${this.functionName}(${this.argNamesStr()});`;
     }
+    /**
+     * @param fnContent The literal body of the function; NOTE: you must not specify `{ or } ` here. Only the raw body of the function is allowed
+     */
     setContent(fnContent) {
         this.functionBodyContent = fnContent;
         return this;
     }
+    /**
+     * Calls the JavaScript function.
+     * Here the function will materialize in the
+     * DOM as a `<script> function here </script>` tag and the
+     * function will be inside it
+     * @param argValues An array with the VALUES of the arguments defined in the function. Note that you must pass the array according to the actual parameters of the function.
+     */
     call(...argValues) {
         var argNamesStr = this.argNamesStr();
         var argValuesStr = this.argValuesStr(...argValues);
@@ -1261,12 +1727,18 @@ class VirtualFunction {
         return argNamesStr;
     }
 }
+exports.VirtualFunction = VirtualFunction;
+/**
+ * A class that generates a simplified,
+ * standard Exception view at the point on
+ * the page where an error occurred
+ */
 class DefaultExceptionPage {
     constructor(error) {
-        if (Page.DISABLE_EXCEPTION_PAGE)
+        if (UIPage.DISABLE_EXCEPTION_PAGE)
             return;
         var errorsStr = `${error.stack}`.split('\n');
-        var title = error.message;
+        var title = `${error}`;
         var paneId = Widget.generateUUID();
         var rawHtml = `<div id="exceptionPane_${paneId}">`;
         rawHtml += `<img style="padding-left:30px; padding-top: 80px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAHYAAAB2AH6XKZyAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAABFZJREFUeJztm0GLFEcUx/+vpzurQhaVCKJB/QSehJwjgrCzB4egm4PsIcJOEslNkNw8GQQ9Rp0h5GhcJQ4kuKeQfAEvCehRHNwNaxDUJbqZme56Ocz2Tk93VXXPdndZ7PaD3enueq/q/V6/elU9vQtUUkkllVSyc4VUDVfX/FlitFjgEBgIf1hEjll2zGM6Sj0xfh08/FDZAZvnK4KpefUT92ERAXBUDZbCA4zDDvPtIuC1AbAUPmz/uPQAWAy/2WYkAFbCmwrAdocH9DXAWng2OgVshDc2BWyFNxEAq+HfzxSwB95YDbAW3uwU2L7wQOoUsBTezBSwF95IDbAa3kwGyJ20At5kALYzPLCVnaAN8CYywGb4IpMg+xSwCd5EBuwEeCDLFLAR3lQGbHd4AHCVLebg/2OgVRN8p+d7j6+fprfFIupFGQBD8MsUiPp3p6b+Kh4tm6gzwMCdF8yz194jPJBlGYwcFznnGWhdO/nBnyUwTSTaDCiz4NUE34kO9+1v/iwLbjE23khhpJsshKxpi10XtAKm5vXP5O8S1ctgifBgwHO8J2PjlQE//HUYpH6XOPHTYBHwzMCVT+nf2HDFw4fXwMp3iRM9DRYFP3IsNp4KJOx4S/B6yfw0GPpQCLzKuYiuAH4PhHuMAvcohFhKh+elAP4RDoJjzPhD2q9Esu0DDMMzACHcL27UqQsAC4/4zL5Vf5GZG3J46rx54c21mzQAgEu/rF+AX3uaBg9kqQFlwGuCEAK6YqTVPkGDVwfdOQZ15PDuJjwAuMFGa4ZpoA+ADi4HvNSvWGoz9W8tPGIvbG6foMGbv905cDQISfiFFns+nO/z14Ay4SXOjac2A6CZvav9zjdLPBXqtJs0eNZzzxJwlwU9kMFPH/AXIWgm2fmEATD+PB+FH93h+q7A/2mhNcqE++coeL3qza/9434uhWduZIUHit4HQK6vrNyJMVliw429h5KZUAQ8UOQ+AHL9fPAbp4Lquwf9n6NBCCUPPFDUPkChr4SXOZdiI4TT6z2HiJu92gcB5p60r/A0dw2In+eEV/qjsGFBD+JzPpT75yjoBt55AHfHxolyaCTfPgDYGrwiA+Q21JEVvHhhXHvpzUNQZ6zL3DUAhuAht9EtddMfJQtjl92zoGEmZIEHtroPAPLBy7yL2RDzQ/1SR/Wp9eQSufbSm2fmzH9HPPk+AMgPr7o7ERsfwVfpSx03pvf7i9EgtJs0gCMuSvuVyGT7AMAIfFxFu9RRMgjSfhWS+qVoKfCaIIQ2DtwfL99bv+DXQOT0b2q3t8SND/f3O5fvrX/t10AIaj+ANONERP+dYEnwUr+iNkOFU4Fb6xKAxOof62BYUqjuU60LAWSFB7LUgNC5IuFVNZAlbSnn0mqf1kdEdDVgJTQuA/7Kr7xnbDxBKyXCP5doAtD+xwg1wVgu5c4z8I4Hx8cdpSZAyykgo9PM8LTMcL6UaFdSSSWVVLLj5X+IDiuFkg1oQQAAAABJRU5ErkJggg==" />`;
@@ -1290,6 +1762,7 @@ class DefaultExceptionPage {
         document.body.prepend(c);
     }
 }
+exports.DefaultExceptionPage = DefaultExceptionPage;
 class UIHeadBinder extends WidgetBinder {
     constructor(head) {
         super(head);
@@ -1304,6 +1777,7 @@ class UIHeadBinder extends WidgetBinder {
     }
     fillPropertyModel() { }
 }
+exports.UIHeadBinder = UIHeadBinder;
 class UIHead extends Widget {
     constructor({ name, headType, text }) {
         super(name);
@@ -1358,6 +1832,7 @@ class UIHead extends Widget {
         this.headElement.hidden = (visible == false);
     }
 }
+exports.UIHead = UIHead;
 class ModalAction {
     constructor(buttonText, dataDismiss, buttonClick, ...buttonClasses) {
         this.text = buttonText;
@@ -1377,6 +1852,7 @@ class ModalAction {
             };
     }
 }
+exports.ModalAction = ModalAction;
 class RadioOption {
     constructor(text, value, fieldSetId, shell) {
         var template = new UITemplateView(`<div id="radioOptionContainer" style="margin-right: 10px" class="custom-control custom-radio">
@@ -1405,6 +1881,7 @@ class RadioOption {
         this.radioInput.disabled = (isEnabled == false);
     }
 }
+exports.RadioOption = RadioOption;
 class UIRadioGroupBinder extends WidgetBinder {
     constructor(radioGroup) {
         super(radioGroup);
@@ -1422,6 +1899,7 @@ class UIRadioGroupBinder extends WidgetBinder {
         this.setModelPropertyValue(value);
     }
 }
+exports.UIRadioGroupBinder = UIRadioGroupBinder;
 class UIRadioGroup extends Widget {
     /**
     *
@@ -1457,6 +1935,7 @@ class UIRadioGroup extends Widget {
 <div id="fsRadioGroup">
   <label id="groupTitle" class="font-weight-normal" style="margin-left: 3px"> </label>
   <fieldset class="d-flex" id="fieldSet">
+
   </fieldset>
 </div>`;
     }
@@ -1534,6 +2013,7 @@ class UIRadioGroup extends Widget {
         this.groupContainer.hidden = (visible == false);
     }
 }
+exports.UIRadioGroup = UIRadioGroup;
 class UIButton extends Widget {
     constructor({ name, text, imageSrc, imageWidth, btnClass = 'btn-light' }) {
         super(name);
@@ -1602,6 +2082,7 @@ class UIButton extends Widget {
         renderer.render(this);
     }
 }
+exports.UIButton = UIButton;
 class UICheckBoxBinder extends WidgetBinder {
     constructor(checkBox) {
         super(checkBox);
@@ -1620,6 +2101,7 @@ class UICheckBoxBinder extends WidgetBinder {
         return checked;
     }
 }
+exports.UICheckBoxBinder = UICheckBoxBinder;
 class UICheckBox extends Widget {
     constructor({ name, text }) {
         super(name);
@@ -1689,6 +2171,7 @@ class UICheckBox extends Widget {
         return this.checkElement.checked;
     }
 }
+exports.UICheckBox = UICheckBox;
 class UIImageBinder extends WidgetBinder {
     constructor(image) {
         super(image);
@@ -1703,6 +2186,7 @@ class UIImageBinder extends WidgetBinder {
     }
     fillPropertyModel() { }
 }
+exports.UIImageBinder = UIImageBinder;
 class UIImage extends Widget {
     constructor({ name, src, cssClass, alt }) {
         super(name);
@@ -1758,6 +2242,7 @@ class UIImage extends Widget {
         this.image.hidden = (visible == false);
     }
 }
+exports.UIImage = UIImage;
 class UILabelBinder extends WidgetBinder {
     constructor(label) {
         super(label);
@@ -1776,6 +2261,7 @@ class UILabelBinder extends WidgetBinder {
         return text;
     }
 }
+exports.UILabelBinder = UILabelBinder;
 class UILabel extends Widget {
     constructor({ name, text }) {
         super(name);
@@ -1827,6 +2313,7 @@ class UILabel extends Widget {
         this.label.hidden = (visible == false);
     }
 }
+exports.UILabel = UILabel;
 class UIListBinder extends WidgetBinder {
     constructor(listView) {
         super(listView);
@@ -1844,6 +2331,7 @@ class UIListBinder extends WidgetBinder {
     }
     fillPropertyModel() { }
 }
+exports.UIListBinder = UIListBinder;
 class UIList extends Widget {
     /**
      *
@@ -1977,6 +2465,7 @@ class UIList extends Widget {
         this.divContainer.hidden = (visible == false);
     }
 }
+exports.UIList = UIList;
 class UIDialog extends Widget {
     constructor({ shell, name, title, contentTemplate, actions }) {
         super(name);
@@ -2009,6 +2498,7 @@ class UIDialog extends Widget {
             <div id="modalBody" class="modal-body">
                 
             </div>
+
             <div id="modalFooter" class="modal-footer">
         
             </div>
@@ -2081,6 +2571,7 @@ class UIDialog extends Widget {
         throw new Error("Method not implemented.");
     }
 }
+exports.UIDialog = UIDialog;
 class UINavBar extends Widget {
     constructor(name) {
         super(name);
@@ -2097,7 +2588,9 @@ class UINavBar extends Widget {
        
      
     </ul>
+
    <a id="brandText" class="navbar-brand">My First App</a>
+
     <!-- Right navbar links -->
     <ul id="navRightLinks" class="navbar-nav ml-auto">
     </ul>
@@ -2143,6 +2636,7 @@ class UINavBar extends Widget {
         renderer.render(this);
     }
 }
+exports.UINavBar = UINavBar;
 class UIProgressBar extends Widget {
     onWidgetDidLoad() {
         throw new Error("Method not implemented.");
@@ -2175,6 +2669,7 @@ class UIProgressBar extends Widget {
         throw new Error("Method not implemented.");
     }
 }
+exports.UIProgressBar = UIProgressBar;
 class UISelectBinder extends WidgetBinder {
     constructor(select) {
         super(select);
@@ -2192,6 +2687,7 @@ class UISelectBinder extends WidgetBinder {
     }
     fillPropertyModel() { }
 }
+exports.UISelectBinder = UISelectBinder;
 class UISelect extends Widget {
     constructor({ name }) {
         super(name);
@@ -2313,6 +2809,7 @@ class UISelect extends Widget {
         this.select.disabled = (enabled == false);
     }
 }
+exports.UISelect = UISelect;
 class UISpinner extends Widget {
     onWidgetDidLoad() {
         throw new Error("Method not implemented.");
@@ -2345,6 +2842,7 @@ class UISpinner extends Widget {
         throw new Error("Method not implemented.");
     }
 }
+exports.UISpinner = UISpinner;
 class UISwitcher extends Widget {
     onWidgetDidLoad() {
         throw new Error("Method not implemented.");
@@ -2377,6 +2875,7 @@ class UISwitcher extends Widget {
         throw new Error("Method not implemented.");
     }
 }
+exports.UISwitcher = UISwitcher;
 class Mask {
     static array() {
         return [
@@ -2396,6 +2895,7 @@ class Mask {
         ];
     }
 }
+exports.Mask = Mask;
 /** 00/00/0000 */
 Mask.DATE = '00/00/0000';
 /**00:00:00 */
@@ -2422,7 +2922,7 @@ Mask.MONEY2 = '#.##0,00';
 Mask.IP_ADDRESS = '099.099.099.099';
 /**##0,00% */
 Mask.PERCENT = '##0,00%';
-class FSTextBoxBinder extends WidgetBinder {
+class UITextBoxBinder extends WidgetBinder {
     constructor(textBox) {
         super(textBox);
         this.textBox = this.widget;
@@ -2440,7 +2940,8 @@ class FSTextBoxBinder extends WidgetBinder {
         return text;
     }
 }
-class FSTextBox extends Widget {
+exports.UITextBoxBinder = UITextBoxBinder;
+class UITextBox extends Widget {
     constructor({ name, title = '', placeHolder = '', text = '' }) {
         super(name);
         this.initialTitle = null;
@@ -2464,7 +2965,7 @@ class FSTextBox extends Widget {
         this.txInput.disabled = (enabled == false);
     }
     getBinder() {
-        return new FSTextBoxBinder(this);
+        return new UITextBoxBinder(this);
     }
     applyMask(maskPattern) {
         //making jQuery call
@@ -2494,6 +2995,9 @@ class FSTextBox extends Widget {
         this.lbTitle.innerText = this.initialTitle;
         this.txInput.placeholder = this.initialPlaceHolder;
         this.txInput.value = this.initialText;
+    }
+    removeLabel() {
+        this.lbTitle.remove();
     }
     setPlaceholder(text) {
         this.txInput.placeholder = text;
@@ -2531,6 +3035,7 @@ class FSTextBox extends Widget {
         this.divContainer.hidden = (visible == false);
     }
 }
+exports.UITextBox = UITextBox;
 class UIToast extends Widget {
     onWidgetDidLoad() {
         throw new Error("Method not implemented.");
@@ -2563,6 +3068,7 @@ class UIToast extends Widget {
         throw new Error("Method not implemented.");
     }
 }
+exports.UIToast = UIToast;
 class DataGridItem {
     constructor(name, model, pageShell) {
         this.selected = false;
@@ -2605,6 +3111,7 @@ class DataGridItem {
         return tr;
     }
 }
+exports.DataGridItem = DataGridItem;
 class ListItem {
     constructor(name, text, value, imageSrc = null, badgeText = null) {
         this.value = value;
@@ -2672,6 +3179,7 @@ class ListItem {
         return self.anchorElement;
     }
 }
+exports.ListItem = ListItem;
 class UITemplateView {
     constructor(htmlContent, shell) {
         this.shellPage = shell;
@@ -2711,8 +3219,10 @@ class UITemplateView {
         this.viewDictionary.push(entry);
     }
 }
+exports.UITemplateView = UITemplateView;
 class DataGridColumnDefinition {
 }
+exports.DataGridColumnDefinition = DataGridColumnDefinition;
 class UIDataGridBinder extends WidgetBinder {
     constructor(dataGrid) {
         super(dataGrid);
@@ -2727,6 +3237,7 @@ class UIDataGridBinder extends WidgetBinder {
     }
     fillPropertyModel() { }
 }
+exports.UIDataGridBinder = UIDataGridBinder;
 class UIDataGrid extends Widget {
     constructor({ name, autoGenCols = false, itemTemplateProvider = null }) {
         super(name);
@@ -2835,9 +3346,9 @@ class UIDataGrid extends Widget {
     htmlTemplate() {
         return `
 <table id="fsDataGrid" class="table table-hover table-bordered table-sm">
-  <thead>
+  <thead id="gridHeader">
   </thead>
-  <tbody>
+  <tbody id="gridBody" style="overflow-y:scrol; height: 100px">
   </tbody>
 </table>        
 `;
@@ -2845,6 +3356,8 @@ class UIDataGrid extends Widget {
     onWidgetDidLoad() {
         this.table = this.elementById('fsDataGrid');
         this.table.style.background = 'white';
+        this.tableHeader = this.elementById('gridHeader');
+        this.tableBody = this.elementById('gridBody');
     }
     setCustomPresenter(presenter) {
         presenter.render(this);
@@ -2871,3 +3384,4 @@ class UIDataGrid extends Widget {
         throw new Error("Method not implemented.");
     }
 }
+exports.UIDataGrid = UIDataGrid;

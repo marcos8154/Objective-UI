@@ -5,12 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "pwa-msedge",
+            "type": "msedge",
             "request": "launch",
             "name": "Open index.html",
             "webRoot": "${workspaceFolder}/dist/",
             "url": "http://localhost:5501/index.html",
-            "preLaunchTask": "Objective-UI Build"
+            "preLaunchTask": "Build-WebApp"
         }
     ]
 }
