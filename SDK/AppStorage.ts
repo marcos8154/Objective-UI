@@ -1,6 +1,6 @@
 
 /**
- * A common abstraction for local storage resources, 
+ * A common abstraction for local storage features, 
  * which can be persistent (aka 'LocalStorage') 
  * or temporary (aka 'SessionStorage')
  * */

@@ -174,6 +174,11 @@ export class UITextBox extends Widget implements IBindable
         this.txInput.placeholder = this.initialPlaceHolder;
         this.txInput.value = this.initialText;
     }
+
+    public removeLabel()
+    {
+       this.lbTitle.remove();
+    }
     public setPlaceholder(text: string): void
     {
         this.txInput.placeholder = text;

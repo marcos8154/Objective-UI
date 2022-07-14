@@ -39,7 +39,7 @@ new ViewLayout('app').fromHTML(`
  */
 export class ViewLayout
 {
-    public static AUTO_GENERATE_COLUMNS = true;
+    public static AUTO_GENERATE_COLUMNS = false;
 
     
     private layoutDOM: Document;
@@ -58,13 +58,6 @@ export class ViewLayout
      */
     constructor(containerDivId: string, rows?: Row[])
     {
-        new ViewLayout('app')
-            .fromHTML(`
-            <div class="row-x" style="height:100px">
-                <div class="col-Y-left"  style="height:80px"> </div>
-                <div class="col-Y-right" style="height:20px"> </div>
-            </div>
-            `);
         this.layoutRows = rows;
         this.containerDivName = containerDivId;
     }

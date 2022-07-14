@@ -40,6 +40,8 @@ export class UIDataGrid extends Widget implements IBindable
 {
     public autoGenerateColumns: boolean;
     public table: HTMLTableElement;
+    public tableHeader: HTMLTableSectionElement;
+    public tableBody: HTMLTableSectionElement;
     public selectedBackColor: string = '#007BFF';
     public unselectedBackColor: string = '#FFFFFF';
 
@@ -192,9 +194,9 @@ export class UIDataGrid extends Widget implements IBindable
     {
         return `
 <table id="fsDataGrid" class="table table-hover table-bordered table-sm">
-  <thead>
+  <thead id="gridHeader">
   </thead>
-  <tbody>
+  <tbody id="gridBody" style="overflow-y:scrol; height: 100px">
   </tbody>
 </table>        
 `;
@@ -204,6 +206,8 @@ export class UIDataGrid extends Widget implements IBindable
     {
         this.table = this.elementById('fsDataGrid');
         this.table.style.background = 'white';
+        this.tableHeader = this.elementById('gridHeader');
+        this.tableBody = this.elementById('gridBody');
     }
 
     public setCustomPresenter(presenter: ICustomWidgetPresenter<Widget>): void
