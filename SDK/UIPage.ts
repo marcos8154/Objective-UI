@@ -19,7 +19,7 @@ import { IAppStorageProvider } from "./IAppStorageProvider";
  */
 export abstract class UIPage
 {
-    public static readonly PRODUCT_VERSION: string = '0.8.1'
+    public static readonly PRODUCT_VERSION: string = '0.8.9'
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
 
