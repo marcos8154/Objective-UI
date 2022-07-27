@@ -13,7 +13,7 @@ namespace ObjUITools
 {
     public class Program
     {
-        public static readonly string TOOLS_VERSION = "0.8.1";
+        public static readonly string TOOLS_VERSION = "0.8.9";
         public static string PROJECT_DIR;
         public static string SDK_SRC_PATH;
 
