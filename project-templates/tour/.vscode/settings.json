@@ -1,0 +1,30 @@
+{
+    //Set the port for the 'LiveServer' extension
+    //see: https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer
+    "liveServer.settings.port": 5501, 
+
+    /**
+        You can define an output folder name for the transpiled .js files.
+        But we recommend the following names due to auto detection done by 'obj-ui.exe'
+        /dist
+        /wwwroot
+        /www
+        /publish
+        /website
+        /webroot
+        /distribution
+        /product
+        /app
+        /webapp
+    */
+    "liveServer.settings.root": "./dist/", //
+
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true
+    }
+}

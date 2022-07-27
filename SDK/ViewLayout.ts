@@ -86,7 +86,7 @@ export class ViewLayout
             var parser = new DOMParser();
             var dom: Document = parser.parseFromString(this.rawHtml, 'text/html');
             this.layoutDOM = dom;
-
+            this.containerDivObj.innerHTML = '';
             var objDom = this.layoutDOM.children[0].children[1];
 
             for (var i = 0; i < objDom.childNodes.length; i++)

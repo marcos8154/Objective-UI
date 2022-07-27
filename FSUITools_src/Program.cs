@@ -6,6 +6,8 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Threading;
 using System.Text;
+using System.Configuration;
+using static System.Environment;
 
 namespace ObjUITools
 {
@@ -15,6 +17,19 @@ namespace ObjUITools
         public static string PROJECT_DIR;
         public static string SDK_SRC_PATH;
 
+
+        /// <summary>
+        /// Current OS path separator char 
+        /// if Windows: '\\'
+        /// if Linux/UNIX: '/'
+        /// </summary>
+        public static readonly char SPR = Path.DirectorySeparatorChar;
+
+        public static string Key(string appConfKey)
+        {
+            return ConfigurationManager.AppSettings[appConfKey];
+        }
+
         public static void Main(string[] args)
         {
             try
@@ -22,17 +37,28 @@ namespace ObjUITools
                 Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Cyan;
 
-                SDK_SRC_PATH = @"C:\Objective-UI\SDK\";
+                SDK_SRC_PATH = Key("SDK_PATH");
+
+                if (SPR.Equals('\\'))
+                    Console.WriteLine("*** Running on Windows Environment ***");
+                if(SPR.Equals('/'))
+                    Console.WriteLine("*** Running on Linux/UNIX Environment ***");
 
                 string workDir = Directory.GetCurrentDirectory();
 
                 if (args.Length == 0)
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine(File.ReadAllText("READ-ME.txt"));
-                    Console.ForegroundColor = ConsoleColor.White;
-                    Console.SetCursorPosition(0, 0);
-                    Console.ReadKey();
+                    string readmePath = Key("READ_ME");
+                    if (File.Exists(readmePath))
+                    {
+                        string readMe = File.ReadAllText(readmePath);
+
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine(readMe);
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.SetCursorPosition(0, 0);
+                        Console.ReadKey();
+                    }
                     return;
                 }
 
@@ -88,28 +114,14 @@ $@"*** Objective-UI Build Tools {TOOLS_VERSION}***
 
                 if (buildSdk) BuildSDk();
 
-                string nodePath = string.Empty;
-                string[] various = Environment.GetEnvironmentVariable("Path").Split(';');
-                for (int l = 0; l < various.Length; l++)
-                    if (various[l].Contains("npm"))
-                    {
-                        nodePath = various[l];
-                        break;
-                    }
+                string nodePath = Key("NPM_PATH");
 
                 if (Directory.Exists(nodePath) == false)
                 {
                     Console.ForegroundColor = ConsoleColor.Magenta;
                     Console.WriteLine($"\n\n NPM not installed on path: '{nodePath}'");
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.Write(@"You must enter the NPM path in your system's ""Path"" (user) environment variable. Normally, on Windows systems it is in ");
-
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.Write("'C:\\Users\\[USER_NAME]\\AppData\\Roaming\\npm' ");
-
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.Write("- Add the correct path in the Path variable and restart your IDE.");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.Write(@"You must enter the NPM path in 'App.config' file");
                     return;
                 }
 
@@ -160,14 +172,14 @@ $@"*** Objective-UI Build Tools {TOOLS_VERSION}***
 
                 StringBuilder sb = new StringBuilder();
 
-                string[] joinFiles = File.ReadLines($"{SDK_SRC_PATH}\\join.txt")
+                string[] joinFiles = File.ReadLines($"{SDK_SRC_PATH}{SPR}join.txt")
                     .ToArray();
 
                 DirectoryInfo di = new DirectoryInfo(SDK_SRC_PATH);
                 foreach (string fName in joinFiles)
                 {
                     Console.WriteLine($"    > merging {fName}...");
-                    string fullName = $"{SDK_SRC_PATH}\\{fName}";
+                    string fullName = $"{SDK_SRC_PATH}{SPR}{fName}";
                     string[] lines = File.ReadAllLines(fullName);
                     bool cutting = false;
 
@@ -193,7 +205,7 @@ $@"*** Objective-UI Build Tools {TOOLS_VERSION}***
 
                     if (File.ReadAllText(tsFile.FullName).Contains("extends UIPage"))
                     {
-                        string outFile = $"{tsFile.Directory.FullName}\\Objective-UI.ts";
+                        string outFile = $"{tsFile.Directory.FullName}{SPR}Objective-UI.ts";
                         File.WriteAllText(outFile, sb.ToString());
                         uiPageFound = true;
                         break;
@@ -224,23 +236,8 @@ $@"*** Objective-UI Build Tools {TOOLS_VERSION}***
             Console.WriteLine("Building app");
             Console.ForegroundColor = ConsoleColor.Green;
             DirectoryInfo projDir = new DirectoryInfo(PROJECT_DIR);
-            FileInfo shellPageTemplate = null;
-
-
             Console.ForegroundColor = ConsoleColor.White;
-
-            string[] distFolders = new string[] {
-                "dist",
-                "wwwroot",
-                "www",
-                "publish",
-                "website",
-                "webroot",
-                "distribution",
-                "product",
-                "app",
-                "webapp"
-            };
+            string[] distFolders = Key("VALID_DIST_PROJECT_FOLDERS").Split(';');
 
             DirectoryInfo? distDir = projDir.GetDirectories()
                 .FirstOrDefault(d => distFolders.Contains(d.Name));
@@ -254,7 +251,7 @@ $@"*** Objective-UI Build Tools {TOOLS_VERSION}***
                 Console.WriteLine($"Distribution folder found as '{distDir.Name}' ");
 
             BuildApp build = new BuildApp(distDir);
-            build.Build(shellPageTemplate);
+            build.Build();
 
         }
     }

@@ -1,0 +1,19 @@
+{
+    "compilerOptions":
+    {
+        "module": "commonjs",
+        "target": "es6",
+        "allowJs": false,
+
+        "strict": true,
+        "strictNullChecks": false,
+        "strictPropertyInitialization": false,
+        "importHelpers": true,
+        "sourceMap": false,
+        "forceConsistentCasingInFileNames": true,
+      
+        "noImplicitAny": true,
+        "outDir": "./dist/",
+        "preserveConstEnums": true
+    }
+}

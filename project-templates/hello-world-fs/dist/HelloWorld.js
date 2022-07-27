@@ -1,26 +1,23 @@
-"use strict";
+﻿"use strict";
 /**
  * These imports mostly come from the "Objective-UI.ts" library,
  * which contains all the default widgets and mechanism for
  * basic screen controls.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.HelloWorld = void 0;
-const Objective_UI_1 = require("./Objective-UI");
 /**
  * An inheritance UIView class is able to represent a view and its controls.
  * Controls are represented in derived UIWidgets,
  * which are managed by the derived UIView
  */
-class HelloWorld extends Objective_UI_1.UIView {
+class HelloWorld extends UIView {
     //#endregion
     constructor() {
         super();
         //#region  Widgets used in this view */
-        this.img = new Objective_UI_1.UIImage({ name: 'img', src: "/img/demo-img.png" });
-        this.hello = new Objective_UI_1.UIHead({ name: 'helloH1', headType: 'h1', text: 'Hello World! Its working' });
-        this.sub = new Objective_UI_1.UIHead({ name: 'subTt', headType: 'h5', text: `Objective-UI ${Objective_UI_1.UIPage.PRODUCT_VERSION}` });
-        this.btnModal = new Objective_UI_1.UIButton({ name: 'btnModal', btnClass: 'btn-success', text: 'Click to see it' });
+        this.img = new UIImage({ name: 'img', src: "/img/demo-img.png" });
+        this.hello = new UIHead({ name: 'helloH1', headType: 'h1', text: 'Hello World! Its working' });
+        this.sub = new UIHead({ name: 'subTt', headType: 'h5', text: `Objective-UI ${UIPage.PRODUCT_VERSION}` });
+        this.btnModal = new UIButton({ name: 'btnModal', btnClass: 'btn-success', text: 'Click to see it' });
         HelloWorld.$ = this;
         // Widget's events must be implemented in the derived UIView constructor
         this.btnModal.onClick = this.modalShow;
@@ -40,17 +37,17 @@ class HelloWorld extends Objective_UI_1.UIView {
     buildLayout() {
         const defClass = 'row d-flex flex-row justify-content-center';
         // You can build the layout with representative objects (Row and Column)
-        return new Objective_UI_1.ViewLayout('app', [
-            new Objective_UI_1.Row('rowImg', {
+        return new ViewLayout('app', [
+            new Row('rowImg', {
                 rowClass: defClass
             }),
-            new Objective_UI_1.Row('rowHello', {
+            new Row('rowHello', {
                 rowClass: defClass,
             }),
-            new Objective_UI_1.Row('rowSub', {
+            new Row('rowSub', {
                 rowClass: defClass,
                 columns: [
-                    new Objective_UI_1.Col('colSub', { colClass: 'col-3' })
+                    new Col('colSub', { colClass: 'col-3' })
                 ]
             })
         ]);
@@ -102,21 +99,20 @@ class HelloWorld extends Objective_UI_1.UIView {
     }
     modalShow(ev) {
         const $ = HelloWorld.$; //self-instance shortcut
-        const template = $.inflateTemplateView('<label id="lbHello"> Hello World! by FrontStoreUI </label>');
+        const template = $.inflateTemplateView('<label id="lbHello"> Hello World! by Objective-UI </label>');
         const lbHello = template.elementById('lbHello');
-        var modal = new Objective_UI_1.UIDialog({
+        var modal = new UIDialog({
             title: 'Its works!',
             shell: $.shellPage,
             name: 'hello-world-modal',
             contentTemplate: template,
             actions: [
-                new Objective_UI_1.ModalAction('Click to more surprise...', false, function (m) {
+                new ModalAction('Click to more surprise...', false, function (m) {
                     lbHello.textContent = 'Changed!';
                 }, 'btn', 'btn-primary'),
-                new Objective_UI_1.ModalAction('Close', true, null, 'btn', 'btn-dark')
+                new ModalAction('Close', true, null, 'btn', 'btn-dark')
             ]
         });
         modal.show();
     }
 }
-exports.HelloWorld = HelloWorld;

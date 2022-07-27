@@ -9,6 +9,7 @@ import { ListItem } from "./ListItem";
 export class UIListBinder extends WidgetBinder
 {
     private listView: UIList;
+
     constructor(listView: UIList)
     {
         super(listView);
@@ -43,6 +44,13 @@ export class UIList extends Widget implements IBindable
 
     private templateProvider: IListItemTemplateProvider;
 
+    public customBehaviorColors = false;
+    public unSelectedBackColor: string = null;
+    public unSelectedForeColor: string = null;
+    public selectedBackColor: string = null;
+    public selectedForeColor: string = null;
+
+
     /**
      * 
      * @param itemClicked Function to handle onClick item event. 
@@ -62,6 +70,27 @@ export class UIList extends Widget implements IBindable
         this.itemClickedCallback = itemClicked;
     }
 
+    public setTemplateProvider(itemTemplateProvider: IListItemTemplateProvider)
+    {
+        this.templateProvider = itemTemplateProvider;
+    }
+
+    /**
+     * Changes the color selection behavior for each UIList item. 
+     * 
+     * NOTE: not every implementation of 'IListItemTemplate'
+     * will be able to obey this
+     */
+    public changeColors(selectedBack: string, selectedFore: string,
+        unSelectedBack: string, unSelectedFore: string)
+    {
+        this.customBehaviorColors = true;
+        this.selectedBackColor = selectedBack;
+        this.selectedForeColor = selectedFore;
+        this.unSelectedBackColor = unSelectedBack;
+        this.unSelectedForeColor = unSelectedFore;
+    }
+
     public itemTemplateProvider(): IListItemTemplateProvider
     {
         return this.templateProvider;
@@ -74,7 +103,23 @@ export class UIList extends Widget implements IBindable
 
     public fromList(viewModels: Array<any>, valueProperty?: string, displayProperty?: string): void
     {
-        if (viewModels == null || viewModels == undefined) return;
+        if (viewModels == null || viewModels == undefined || viewModels.length == 0) 
+        {
+            try
+            {
+                var templateProvider = this.itemTemplateProvider();
+                if (templateProvider != null)
+                {
+                    var customItem = templateProvider.getListItemTemplate(this, null);
+                    if (customItem != null && customItem != undefined)
+                        this.addItem(customItem);
+                }
+            } catch (err: any | object | Error)
+            {
+                console.error(err);
+            }
+            return;
+        };
         this.divContainer.innerHTML = '';
         for (var i = 0; i < viewModels.length; i++)
         {
@@ -85,7 +130,7 @@ export class UIList extends Widget implements IBindable
             if (this.itemTemplateProvider() == null)
             {
                 var defaultItemTemplate = new ListItem(
-                    `${i+1}`,
+                    `${i + 1}`,
                     text,
                     value);
 

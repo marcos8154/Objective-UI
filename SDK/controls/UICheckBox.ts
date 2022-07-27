@@ -36,14 +36,19 @@ export class UICheckBox extends Widget implements IBindable
     public checkLabel: HTMLLabelElement;
     public onCheckedChange: Function;
 
-
+    private initialChecked: boolean;
     private labelText: string;
-    constructor({name, text }:
-        { name: string; text: string; })
+    constructor({ name, text, checked = false }:
+        {
+            name: string;
+            text: string;
+            checked?: boolean
+        })
     {
         super(name);
 
         this.labelText = text;
+        this.initialChecked = checked;
     }
     getBinder(): WidgetBinder
     {
@@ -69,14 +74,15 @@ export class UICheckBox extends Widget implements IBindable
         self.checkLabel = self.elementById('checkLabel');
         self.checkLabel.htmlFor = self.checkElement.id;
         self.checkLabel.textContent = self.labelText;
+        self.checkElement.checked = self.initialChecked;
 
-        self.checkElement.onchange = function(ev)
+        self.checkElement.onchange = function (ev)
         {
-            if(self.onCheckedChange != null) self.onCheckedChange({checked: self.checkElement.checked, event: ev});
+            if (self.onCheckedChange != null) self.onCheckedChange({ checked: self.checkElement.checked, event: ev });
         };
     }
 
-    public setText(text:string): void
+    public setText(text: string): void
     {
         this.labelText = text;
         this.checkLabel.textContent = this.labelText;
@@ -106,11 +112,11 @@ export class UICheckBox extends Widget implements IBindable
     {
         this.checkElement.style.setProperty(propertyName, propertyValue);
     }
-    public setPosition(position: string, 
+    public setPosition(position: string,
         marginLeft: string,
-        marginTop: string, 
-        marginRight: string, 
-        marginBottom: string, 
+        marginTop: string,
+        marginRight: string,
+        marginBottom: string,
         transform?: string): void
     {
         this.divContainer.style.position = position;
@@ -123,9 +129,9 @@ export class UICheckBox extends Widget implements IBindable
 
     public setVisible(visible: boolean): void
     {
-       this.divContainer.hidden = (visible == false);
+        this.divContainer.hidden = (visible == false);
     }
-    
+
     public setChecked(isChecked: boolean): void
     {
         this.checkElement.checked = isChecked;

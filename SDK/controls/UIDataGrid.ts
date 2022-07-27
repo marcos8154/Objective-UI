@@ -232,7 +232,7 @@ export class UIDataGrid extends Widget implements IBindable
     }
     public applyCSS(propertyName: string, propertyValue: string): void
     {
-        throw new Error("Method not implemented.");
+        this.table.style.setProperty(propertyName, propertyValue);
     }
     public setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void
     {

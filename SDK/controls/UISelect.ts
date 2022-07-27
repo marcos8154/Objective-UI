@@ -45,11 +45,16 @@ export class UISelect extends Widget implements IBindable
     private title: HTMLLabelElement = null;
     private select: HTMLSelectElement = null;
     public onSelectionChanged: Function = null;
+    private initialTitle: string = null;
 
-    constructor({ name }:
-        { name: string; })
+    constructor({ name, title }:
+        {
+            name: string,
+            title: string
+        })
     {
         super(name);
+        this.initialTitle = title;
     }
     getBinder(): WidgetBinder
     {
@@ -69,6 +74,7 @@ export class UISelect extends Widget implements IBindable
             if (self.onSelectionChanged != null)
                 self.onSelectionChanged(ev);
         };
+        this.title.textContent = this.initialTitle;
 
     }
     public setSelectedOption(optionValue: any): void
@@ -98,7 +104,7 @@ export class UISelect extends Widget implements IBindable
         valueProperty?: string,
         displayProperty?: string): void
     {
-        if(models == null || models == undefined) return;
+        if (models == null || models == undefined) return;
         try
         {
             var optionsFromModels: Array<SelectOption> = [];

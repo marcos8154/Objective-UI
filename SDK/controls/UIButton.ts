@@ -1,5 +1,6 @@
 import { Widget } from "../Widget";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
+import { Misc } from "../Misc";
 
 export class UIButton extends Widget
 {
@@ -45,11 +46,16 @@ export class UIButton extends Widget
     {
         var self = this;
         this.buttonElement = this.elementById('fsButton');
-        this.buttonElement.classList.add(this.btnClass);
         this.imageElement = this.elementById('fsButtonImage');
-
         this.setText(this.text);
-        
+
+        if (Misc.isNullOrEmpty(this.btnClass) == false)
+        {
+            var btnClasses: Array<string> = this.btnClass.split(' ');
+            for (var i = 0; i < btnClasses.length; i++)
+                this.buttonElement.classList.add(btnClasses[i].trim());
+        }
+
         if (self.onClick != null)
         {
             this.buttonElement.onclick = function (ev)

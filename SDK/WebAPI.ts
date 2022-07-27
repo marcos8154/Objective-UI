@@ -1,4 +1,16 @@
+import { Misc } from "./Misc";
 import { WebAPISimulator } from "./WebAPISimulator";
+
+export class Bearer
+{
+    public static get(token: string): Headers
+    {
+        return new Headers({
+            'content-type': 'application/json',
+            'authorization': `Bearer ${token}`
+        });
+    }
+}
 
 export class APIResponse
 {
@@ -94,6 +106,7 @@ export class WebAPI
     private request: RequestInit;
     private apiUrl: string;
     private fnOnSuccess: Function;
+    private fnDataResultTo: Function;
     private fnOnError: Function;
     private static simulator: WebAPISimulator;
 
@@ -111,25 +124,41 @@ export class WebAPI
         {
             var statusCode: number;
             var statusMsg: string;
+            var self = this;
 
-            fetch(this.apiUrl, this.request)
-                .then(function (ret)
+            fetch(self.apiUrl, self.request)
+                .then(function (ret: Response)
                 {
                     statusCode = ret.status;
                     statusMsg = ret.statusText;
                     return ret.text();
                 })
-                .then(function (text)
+                .then(function (text: string)
                 {
-                    var json = null;
-                    if (text.startsWith("{")) json = JSON.parse(text);
+                    var json: any | object = null;
+                    if (text.startsWith("{") || text.startsWith("["))
+                        json = JSON.parse(text);
+
                     var apiResponse = new APIResponse({
                         code: statusCode, msg: statusMsg, content: json
                     });
+
                     return apiResponse;
                 })
-                .then(response => (this.fnOnSuccess == null ? {} : this.fnOnSuccess(response)))
-                .catch(err => (this.fnOnError == null ? {} : this.fnOnError(err)));
+                .then(function (res: APIResponse)
+                {
+                    if (self.fnOnSuccess != null)
+                        self.fnOnSuccess(res);
+                    if (self.fnDataResultTo != null)
+                    {
+                        if (res.statusCode == 200)
+                        {
+                            var data = res.content;
+                            self.fnDataResultTo(data);
+                        }
+                    }
+                })
+                .catch(err => (self.fnOnError == null ? {} : self.fnOnError(err)));
         }
         else
         {
@@ -140,12 +169,28 @@ export class WebAPI
                     this.apiUrl.replace(WebAPI.urlBase, ''),
                     this.request.body);
 
-                this.fnOnSuccess(result);
+                if (Misc.isNull(this.fnOnSuccess) == false)
+                    this.fnOnSuccess(result);
+
+                if (Misc.isNullOrEmpty(this.fnDataResultTo) == false)
+                {
+                    if (result.statusCode == 200)
+                    {
+                        var data = result.content;
+                        this.fnDataResultTo(data);
+                    }
+                }
             } catch (error)
             {
                 this.fnOnError(error);
             }
         }
+    }
+
+    public dataResultTo(callBack: Function): WebAPI
+    {
+        this.fnDataResultTo = callBack;
+        return this;
     }
 
     public onSuccess(callBack: Function): WebAPI

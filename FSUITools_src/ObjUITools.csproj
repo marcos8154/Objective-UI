@@ -23,9 +23,19 @@
     <Compile Include="AppBuildActions\RemoveLine.cs" />
     <Compile Include="AppBuildJsFile.cs" />
     <Compile Include="BuildApp.cs" />
-    <Compile Include="FSApplication.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProjectCreator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="App.config" />
+    <Content Include="READ-ME.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
   </ItemGroup>
 
 </Project>

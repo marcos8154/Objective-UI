@@ -111,14 +111,20 @@ export class UITextBox extends Widget implements IBindable
     private initialTitle: string = null;
     private initialPlaceHolder: string = null;
     private initialText: string = null;
+    private initialType: string = null;
+    private initialMaxlength: number = null;
+    private initialMask: string = null; 
 
-    private lbTitle: HTMLLabelElement = null;
-    private txInput: HTMLInputElement = null;
-    private divContainer: HTMLDivElement = null;
+    public lbTitle: HTMLLabelElement = null;
+    public txInput: HTMLInputElement = null;
+    public divContainer: HTMLDivElement = null;
 
-    constructor({ name, title = '', placeHolder = '', text = '' }:
+    constructor({ name, type = 'text', title = '', maxlength = 100, placeHolder = '', text = '', mask = '' }:
         {
             name: string;
+            type?: string;
+            mask?: string,
+            maxlength?: number,
             title?: string;
             placeHolder?: string;
             text?: string;
@@ -126,11 +132,12 @@ export class UITextBox extends Widget implements IBindable
     {
         super(name);
 
-
-
+        this.initialType = (Misc.isNullOrEmpty(type) ? 'text' : type);
         this.initialTitle = (Misc.isNullOrEmpty(title) ? '' : title);
         this.initialPlaceHolder = (Misc.isNullOrEmpty(placeHolder) ? '' : placeHolder);
         this.initialText = (Misc.isNullOrEmpty(text) ? '' : text);
+        this.initialMaxlength = (Misc.isNullOrEmpty(maxlength) ? 100 : maxlength);
+        this.initialMask = (Misc.isNull(mask) ? '' : mask);
     }
     getBinder(): WidgetBinder
     {
@@ -139,6 +146,7 @@ export class UITextBox extends Widget implements IBindable
 
     applyMask(maskPattern: string): void
     {
+        if (Misc.isNullOrEmpty(maskPattern)) return;
         //making jQuery call
         var jQueryCall = `$('#${this.txInput.id}').mask('${maskPattern}'`;
         var a = Mask.array();
@@ -151,6 +159,7 @@ export class UITextBox extends Widget implements IBindable
             jQueryCall += ', {reverse: true});';
         else
             jQueryCall += ');';
+        jQueryCall = `try { ${jQueryCall} } catch { }`;
 
         var maskFunction = new VirtualFunction({
             fnName: 'enableMask',
@@ -164,20 +173,33 @@ export class UITextBox extends Widget implements IBindable
         renderer.render(this);
     }
 
+    public setInputType(inputType: string): void
+    {
+        this.txInput.type = inputType;
+    }
+
     onWidgetDidLoad(): void
     {
         this.lbTitle = this.elementById('entryTitle');
         this.txInput = this.elementById('entryInput');
         this.divContainer = this.elementById('textEntry');
-
         this.lbTitle.innerText = this.initialTitle;
         this.txInput.placeholder = this.initialPlaceHolder;
         this.txInput.value = this.initialText;
+
+        this.setMaxLength(this.initialMaxlength);
+        this.setInputType(this.initialType);
+        this.applyMask(this.initialMask);
+    }
+
+    public setMaxLength(maxlength: number): void
+    {
+        this.txInput.maxLength = maxlength;
     }
 
     public removeLabel()
     {
-       this.lbTitle.remove();
+        this.lbTitle.remove();
     }
     public setPlaceholder(text: string): void
     {

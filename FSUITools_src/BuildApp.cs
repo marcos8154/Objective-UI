@@ -82,23 +82,25 @@ namespace ObjUITools
             }
         }
 
-        public void Build(FileInfo shellPageTemplate)
+        public void Build()
         {
             StringBuilder importResults = new StringBuilder();
             foreach (AppBuildJsFile jsFile in appFiles)
                 importResults.AppendLine(jsFile.BuildFile());
 
-            if (shellPageTemplate != null)
-            {
-                if (shellPageTemplate.Exists)
-                {
-                    string templateStr = File.ReadAllText(shellPageTemplate.FullName);
-                    templateStr = templateStr.Replace("@imports", importResults.ToString());
+            DirectoryInfo di = new DirectoryInfo(Program.PROJECT_DIR);
+            FileInfo indexHtml = di.GetFiles("*.html", SearchOption.AllDirectories)
+                .FirstOrDefault(f => f.Name.ToLower().Equals("index.html"));
 
-                    string templateFile = Path.Combine(distDir.FullName, "index.html");
-                    File.WriteAllText(templateFile, templateStr);
-                }
+            if(indexHtml != null)
+            {
+                string templateStr = File.ReadAllText(indexHtml.FullName);
+                templateStr = templateStr.Replace("@app", importResults.ToString());
+
+                string templateFile = Path.Combine(distDir.FullName, "index.html");
+                File.WriteAllText(templateFile, templateStr);
             }
+
         }
     }
 }

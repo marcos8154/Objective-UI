@@ -1,9 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.App = void 0;
-const HelloWorld_1 = require("./HelloWorld");
-const Objective_UI_1 = require("./Objective-UI");
-class App extends Objective_UI_1.UIPage {
+﻿"use strict";
+class App extends UIPage {
     constructor(mainDoc) {
         super(mainDoc);
         try {
@@ -26,11 +22,10 @@ class App extends Objective_UI_1.UIPage {
                 jsPath: 'bootstrap.js'
             });
             //#endregion 
-            this.navigateToView(new HelloWorld_1.HelloWorld());
+            this.navigateToView(new HelloWorld());
         }
         catch (error) {
-            new Objective_UI_1.DefaultExceptionPage(error);
+            new DefaultExceptionPage(error);
         }
     }
 }
-exports.App = App;

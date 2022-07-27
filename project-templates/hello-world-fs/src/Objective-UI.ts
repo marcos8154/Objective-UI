@@ -1038,6 +1038,17 @@ export abstract class WidgetBinder
         this.refreshUI();
     }
 }
+export class Bearer
+{
+    public static get(token: string): Headers
+    {
+        return new Headers({
+            'content-type': 'application/json',
+            'authorization': `Bearer ${token}`
+        });
+    }
+}
+
 export class APIResponse
 {
     public statusCode: number;
@@ -1132,6 +1143,7 @@ export class WebAPI
     private request: RequestInit;
     private apiUrl: string;
     private fnOnSuccess: Function;
+    private fnDataResultTo: Function;
     private fnOnError: Function;
     private static simulator: WebAPISimulator;
 
@@ -1149,25 +1161,41 @@ export class WebAPI
         {
             var statusCode: number;
             var statusMsg: string;
+            var self = this;
 
-            fetch(this.apiUrl, this.request)
-                .then(function (ret)
+            fetch(self.apiUrl, self.request)
+                .then(function (ret: Response)
                 {
                     statusCode = ret.status;
                     statusMsg = ret.statusText;
                     return ret.text();
                 })
-                .then(function (text)
+                .then(function (text: string)
                 {
-                    var json = null;
-                    if (text.startsWith("{")) json = JSON.parse(text);
+                    var json: any | object = null;
+                    if (text.startsWith("{") || text.startsWith("["))
+                        json = JSON.parse(text);
+
                     var apiResponse = new APIResponse({
                         code: statusCode, msg: statusMsg, content: json
                     });
+
                     return apiResponse;
                 })
-                .then(response => (this.fnOnSuccess == null ? {} : this.fnOnSuccess(response)))
-                .catch(err => (this.fnOnError == null ? {} : this.fnOnError(err)));
+                .then(function (res: APIResponse)
+                {
+                    if (self.fnOnSuccess != null)
+                        self.fnOnSuccess(res);
+                    if(self.fnDataResultTo != null)
+                    {
+                        if(res.statusCode == 200)
+                        {
+                            var data = res.content;
+                            self.fnDataResultTo(data);
+                        }
+                    }
+                })
+                .catch(err => (self.fnOnError == null ? {} : self.fnOnError(err)));
         }
         else
         {
@@ -1184,6 +1212,12 @@ export class WebAPI
                 this.fnOnError(error);
             }
         }
+    }
+
+    public dataResultTo(callBack: Function): WebAPI
+    {
+        this.fnDataResultTo = callBack;
+        return this;
     }
 
     public onSuccess(callBack: Function): WebAPI
@@ -2139,10 +2173,10 @@ export class ViewDictionaryEntry
  * It is possible to build the layout in the form of an object:
  * ```
 new ViewLayout('app', [
-    new Row('row-X', { rowClass: 'class-x', rowHeidth: '100px', 
+    new Row('row-X', { rowClass: 'row', rowHeidth: '100px', 
         columns: [
-            new Col('col-Y-left', { colClass: 'class-y-l',  colHeight: '80px' }),
-            new Col('col-Y-right', { colClass: 'class-y-r', colHeight: '20px'  })
+            new Col('col-Y-left', { colClass: 'col-8',  colHeight: '80px' }),
+            new Col('col-Y-right', { colClass: 'col-4', colHeight: '20px' )
         ]
     }),
 ])
@@ -2154,8 +2188,8 @@ new ViewLayout('app', [
  * ```
 new ViewLayout('app').fromHTML(`
     <div class="row-x" style="height:100px">
-        <div id="col-Y-left"  class="col-Y-left"  style="height:80px"> </div>
-        <div id="col-Y-right" class="col-Y-right" style="height:20px"> </div>
+        <div id="col-Y-left"  class="col-8"  style="height:80px"> </div>
+        <div id="col-Y-right" class="col-4" style="height:20px"> </div>
     </div>
 `);
  * ```
@@ -2212,7 +2246,7 @@ export class ViewLayout
             var parser = new DOMParser();
             var dom: Document = parser.parseFromString(this.rawHtml, 'text/html');
             this.layoutDOM = dom;
-
+            this.containerDivObj.innerHTML = '';
             var objDom = this.layoutDOM.children[0].children[1];
 
             for (var i = 0; i < objDom.childNodes.length; i++)
@@ -3472,6 +3506,7 @@ export class UILabel extends Widget implements IBindable
 export class UIListBinder extends WidgetBinder
 {
     private listView: UIList;
+
     constructor(listView: UIList)
     {
         super(listView);
@@ -3506,6 +3541,13 @@ export class UIList extends Widget implements IBindable
 
     private templateProvider: IListItemTemplateProvider;
 
+    public customBehaviorColors = false;
+    public unSelectedBackColor: string = null;
+    public unSelectedForeColor: string = null;
+    public selectedBackColor: string = null;
+    public selectedForeColor: string = null;
+
+
     /**
      * 
      * @param itemClicked Function to handle onClick item event. 
@@ -3525,6 +3567,27 @@ export class UIList extends Widget implements IBindable
         this.itemClickedCallback = itemClicked;
     }
 
+    public setTemplateProvider(itemTemplateProvider: IListItemTemplateProvider)
+    {
+        this.templateProvider = itemTemplateProvider;
+    }
+
+    /**
+     * Changes the color selection behavior for each UIList item. 
+     * 
+     * NOTE: not every implementation of 'IListItemTemplate'
+     * will be able to obey this
+     */
+    public changeColors(selectedBack: string, selectedFore: string,
+        unSelectedBack: string, unSelectedFore: string)
+    {
+        this.customBehaviorColors = true;
+        this.selectedBackColor = selectedBack;
+        this.selectedForeColor = selectedFore;
+        this.unSelectedBackColor = unSelectedBack;
+        this.unSelectedForeColor = unSelectedFore;
+    }
+
     public itemTemplateProvider(): IListItemTemplateProvider
     {
         return this.templateProvider;
@@ -3537,7 +3600,23 @@ export class UIList extends Widget implements IBindable
 
     public fromList(viewModels: Array<any>, valueProperty?: string, displayProperty?: string): void
     {
-        if (viewModels == null || viewModels == undefined) return;
+        if (viewModels == null || viewModels == undefined || viewModels.length == 0) 
+        {
+            try
+            {
+                var templateProvider = this.itemTemplateProvider();
+                if (templateProvider != null)
+                {
+                    var customItem = templateProvider.getListItemTemplate(this, null);
+                    if (customItem != null && customItem != undefined)
+                        this.addItem(customItem);
+                }
+            } catch (err: any | object | Error)
+            {
+                console.error(err);
+            }
+            return;
+        };
         this.divContainer.innerHTML = '';
         for (var i = 0; i < viewModels.length; i++)
         {
@@ -3548,7 +3627,7 @@ export class UIList extends Widget implements IBindable
             if (this.itemTemplateProvider() == null)
             {
                 var defaultItemTemplate = new ListItem(
-                    `${i+1}`,
+                    `${i + 1}`,
                     text,
                     value);
 
@@ -4019,11 +4098,16 @@ export class UISelect extends Widget implements IBindable
     private title: HTMLLabelElement = null;
     private select: HTMLSelectElement = null;
     public onSelectionChanged: Function = null;
+    private initialTitle: string = null;
 
-    constructor({ name }:
-        { name: string; })
+    constructor({ name, title }:
+        {
+            name: string,
+            title: string
+        })
     {
         super(name);
+        this.initialTitle = title;
     }
     getBinder(): WidgetBinder
     {
@@ -4043,6 +4127,7 @@ export class UISelect extends Widget implements IBindable
             if (self.onSelectionChanged != null)
                 self.onSelectionChanged(ev);
         };
+        this.title.textContent = this.initialTitle;
 
     }
     public setSelectedOption(optionValue: any): void
@@ -4072,7 +4157,7 @@ export class UISelect extends Widget implements IBindable
         valueProperty?: string,
         displayProperty?: string): void
     {
-        if(models == null || models == undefined) return;
+        if (models == null || models == undefined) return;
         try
         {
             var optionsFromModels: Array<SelectOption> = [];
@@ -4174,47 +4259,76 @@ export class UISelect extends Widget implements IBindable
 }
 export class UISpinner extends Widget
 {
+    private colorCls: string;
+    private initialVisible: boolean;
+
+    public containerDiv: HTMLDivElement = null;
+    public spanSpinner: HTMLSpanElement = null;
+
+    constructor({ name, colorClass, visible = true }:
+        {
+            name: string,
+            colorClass: string,
+            visible: boolean
+        })
+    {
+        super(name);
+        this.colorCls = colorClass;
+        this.initialVisible = visible;
+    }
+
     protected onWidgetDidLoad(): void
     {
-        throw new Error("Method not implemented.");
+        this.containerDiv = this.elementById('container');
+        this.spanSpinner = this.elementById('spnSpinner');
+
+        this.setVisible(this.initialVisible);
     }
     protected htmlTemplate(): string
     {
-        throw new Error("Method not implemented.");
+        var colorClass = this.colorCls;
+        if (colorClass == 'primary') colorClass = 'text-primary';
+        if (colorClass == '') colorClass = 'text-primary';
+
+        return `
+<div id="container" class="spinner-border ${colorClass}" role="status">
+    <span id="spnSpinner" class="sr-only"/>
+</div>
+        `
     }
     public setCustomPresenter(renderer: ICustomWidgetPresenter<Widget>): void
     {
-        throw new Error("Method not implemented.");
+        renderer.render(this);
     }
     public value(): string
     {
-        throw new Error("Method not implemented.");
+        return null;
     }
     public setEnabled(enabled: boolean): void
     {
-        throw new Error("Method not implemented.");
+
     }
     public addCSSClass(className: string): void
     {
-        throw new Error("Method not implemented.");
+
     }
     public removeCSSClass(className: string): void
     {
-        throw new Error("Method not implemented.");
+
     }
     public applyCSS(propertyName: string, propertyValue: string): void
     {
-        throw new Error("Method not implemented.");
+        
     }
     public setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void
     {
-        throw new Error("Method not implemented.");
+        
     }
     public setVisible(visible: boolean): void
     {
-        throw new Error("Method not implemented.");
+        this.containerDiv.hidden = (visible == false);
     }
-    
+
 }
 export class UISwitcher extends Widget
 {
@@ -4365,14 +4479,18 @@ export class UITextBox extends Widget implements IBindable
     private initialTitle: string = null;
     private initialPlaceHolder: string = null;
     private initialText: string = null;
+    private initialType: string = null;
+    private initialMaxlength: number = null;
 
-    private lbTitle: HTMLLabelElement = null;
-    private txInput: HTMLInputElement = null;
-    private divContainer: HTMLDivElement = null;
+    public lbTitle: HTMLLabelElement = null;
+    public txInput: HTMLInputElement = null;
+    public divContainer: HTMLDivElement = null;
 
-    constructor({ name, title = '', placeHolder = '', text = '' }:
+    constructor({ name, type = 'text', title = '', maxlength = 100, placeHolder = '', text = '' }:
         {
             name: string;
+            type?: string;
+            maxlength: number,
             title?: string;
             placeHolder?: string;
             text?: string;
@@ -4380,11 +4498,11 @@ export class UITextBox extends Widget implements IBindable
     {
         super(name);
 
-
-
+        this.initialType = (Misc.isNullOrEmpty(type) ? 'text' : type);
         this.initialTitle = (Misc.isNullOrEmpty(title) ? '' : title);
         this.initialPlaceHolder = (Misc.isNullOrEmpty(placeHolder) ? '' : placeHolder);
         this.initialText = (Misc.isNullOrEmpty(text) ? '' : text);
+        this.initialMaxlength = (Misc.isNullOrEmpty(maxlength) ? 100 : maxlength);
     }
     getBinder(): WidgetBinder
     {
@@ -4418,20 +4536,32 @@ export class UITextBox extends Widget implements IBindable
         renderer.render(this);
     }
 
+    public setInputType(inputType: string): void
+    {
+        this.txInput.type = inputType;
+    }
+
     onWidgetDidLoad(): void
     {
         this.lbTitle = this.elementById('entryTitle');
         this.txInput = this.elementById('entryInput');
         this.divContainer = this.elementById('textEntry');
-
         this.lbTitle.innerText = this.initialTitle;
         this.txInput.placeholder = this.initialPlaceHolder;
         this.txInput.value = this.initialText;
+        
+        this.setMaxLength(this.initialMaxlength);
+        this.setInputType(this.initialType);
+    }
+
+    public setMaxLength(maxlength: number): void
+    {
+        this.txInput.maxLength = maxlength;
     }
 
     public removeLabel()
     {
-       this.lbTitle.remove();
+        this.lbTitle.remove();
     }
     public setPlaceholder(text: string): void
     {
@@ -4633,19 +4763,24 @@ export interface IListItemTemplate
 }
 export class ListItem implements IListItemTemplate
 {
-    public value: any|object;
+    public value: any | object;
     public itemName: string;
     public itemText: string;
     public itemImageSource: string;
     public itemBadgeText: string;
     private ownerList: UIList;
-    private anchorElement: HTMLAnchorElement;
+    public anchorElement: HTMLAnchorElement;
+    public imgElement: HTMLImageElement;
+    public divElement: HTMLDivElement;
+    public badgeElement: HTMLSpanElement;
 
-    
-    constructor(name: string, 
-        text: string, 
-        value?: any|object,
-        imageSrc: string = null, 
+
+    private selected: boolean = false;
+
+    constructor(name: string,
+        text: string,
+        value?: any | object,
+        imageSrc: string = null,
         badgeText: string = null)
     {
         this.value = value;
@@ -4655,6 +4790,31 @@ export class ListItem implements IListItemTemplate
         this.itemBadgeText = badgeText;
     }
 
+    public setImg(src: string): void
+    {
+        if (Misc.isNullOrEmpty(src))
+        {
+            this.imgElement.hidden = true;
+            this.imgElement.width = 0;
+        }
+        else
+        {
+            if (this.imgElement.hidden == true) this.imgElement.hidden = false;
+            if (this.imgElement.width == 0) this.imgElement.width = 30;
+            this.imgElement.src = src;
+        }
+    }
+
+    public setText(text: string): void
+    {
+        this.divElement.textContent = text;
+    }
+
+    public setBadgeText(badgeText: string): void
+    {
+        this.badgeElement.textContent = badgeText;
+    }
+
     public setOwnerList(listView: UIList)
     {
         this.ownerList = listView;
@@ -4662,39 +4822,54 @@ export class ListItem implements IListItemTemplate
 
     public isSelected(): boolean
     {
-        return this.anchorElement.classList.contains('active');
+        return this.selected;
     }
 
     public select(): void
     {
-        this.anchorElement.classList.add('active');
+        this.selected = true;
+
+        if (this.ownerList.customBehaviorColors)
+        {
+            this.anchorElement.style.color = this.ownerList.selectedForeColor;
+            this.anchorElement.style.backgroundColor = this.ownerList.selectedBackColor;
+        }
+        else
+            this.anchorElement.classList.add('active');
     }
 
     public unSelect(): void
     {
-        this.anchorElement.classList.remove('active');
+        this.selected = false;
+        if (this.ownerList.customBehaviorColors)
+        {
+            this.anchorElement.style.color = this.ownerList.unSelectedForeColor;
+            this.anchorElement.style.backgroundColor = this.ownerList.unSelectedBackColor;
+        }
+        else
+            this.anchorElement.classList.remove('active');
     }
 
-    public itemTemplate() : HTMLAnchorElement
+    public itemTemplate(): HTMLAnchorElement
     {
         var self = this;
-        if(self.anchorElement != null)
-          return self.anchorElement;
- 
+        if (self.anchorElement != null)
+            return self.anchorElement;
+
         var pageShell = self.ownerList.getPageShell();
 
         self.anchorElement = pageShell.createElement('a');
         self.anchorElement.style.padding = '0px';
         self.anchorElement.classList.add('list-group-item', 'align-items-center', 'list-group-item-action');
         self.anchorElement.id = this.itemName;
-        self.anchorElement.onclick = function(ev)
+        self.anchorElement.onclick = function (ev)
         {
             self.ownerList.onItemClicked(self, ev);
         };
 
         var rowDiv = pageShell.createElement('div');
         rowDiv.style.background = 'transparent';
-        rowDiv.style.height = '35px';
+        rowDiv.style.height = '40px';
         rowDiv.style.marginTop = '10px'
         rowDiv.classList.add('row');
 
@@ -4702,11 +4877,12 @@ export class ListItem implements IListItemTemplate
         col10Div.style.paddingLeft = '25px';
         col10Div.classList.add('col-10');
 
-        if(this.itemImageSource != null)
+        var img: HTMLImageElement = null;
+        if (this.itemImageSource != null)
         {
-            var img = pageShell.createElement('img');
+            img = pageShell.createElement('img');
             img.src = this.itemImageSource;
-            img.style.marginRight = '5px';
+            img.style.marginRight = '10px';
             img.width = 30;
             img.height = 30;
 
@@ -4717,7 +4893,8 @@ export class ListItem implements IListItemTemplate
 
         rowDiv.append(col10Div);
 
-        if(this.itemBadgeText != null)
+        var badgeSpan: HTMLSpanElement = null;
+        if (this.itemBadgeText != null)
         {
             var col2Div = pageShell.createElement('div');
             col2Div.style.display = 'flex'
@@ -4725,17 +4902,22 @@ export class ListItem implements IListItemTemplate
             col2Div.style.alignSelf = 'center'
 
             col2Div.classList.add('col-2');
-            var span = pageShell.createElement('span');
+            badgeSpan = pageShell.createElement('span');
 
-            span.classList.add('badge', 'badge-success', 'badge-pill');
-            span.textContent = this.itemBadgeText;
-            span.style.marginRight = '10px'
-            
-            col2Div.append(span);
+            badgeSpan.classList.add('badge', 'badge-success', 'badge-pill');
+            badgeSpan.textContent = this.itemBadgeText;
+            badgeSpan.style.marginRight = '10px'
+
+            col2Div.append(badgeSpan);
             rowDiv.append(col2Div);
         }
 
         self.anchorElement.append(rowDiv);
+        self.badgeElement = badgeSpan;
+        self.imgElement = img;
+        self.divElement = rowDiv;
+
+        this.unSelect();
         return self.anchorElement;
     }
 }

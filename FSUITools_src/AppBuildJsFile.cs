@@ -38,7 +38,7 @@ namespace ObjUITools
 
 
             FileInfo info = new FileInfo(jsFile.FullName);
-            string importName = $"    <script src=\"/{info.Directory.Name}/{info.Name}\"></script>";
+            string importName = $"    <script src=\"/{info.Name}\"></script>";
 
             if (fileActions.Count == 0) return importName;
             string[] lines = File.ReadAllLines(jsFile.FullName);
@@ -80,15 +80,7 @@ namespace ObjUITools
             });
             
             string jsContent = sb.ToString();
-            UTF8Encoding utf8 = new UTF8Encoding();
-            var preamble = utf8.GetPreamble();
-            var data = utf8.GetBytes(jsContent);
-
-            Encoding e = Encoding.Default;
-            var enc = ReadFileAndGetEncoding(data, ref e);
-
-            string str = utf8.GetString(data);
-
+     
             byte[] def = Encoding.Default.GetBytes(jsContent);
             string utf8enc = Encoding.UTF8.GetString(def);
             File.Delete(jsFile.FullName);

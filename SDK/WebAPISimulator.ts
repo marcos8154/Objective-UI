@@ -97,7 +97,7 @@ export abstract class WebAPISimulator
     public simulateRequest(
         httpMethod: string,
         resource: string,
-        body: any | object): any | object
+        body: any | object): APIResponse
     {
         for (var i = 0; i < this.simulatedRoutes.length; i++)
         {
