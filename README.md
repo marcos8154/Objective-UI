@@ -89,7 +89,16 @@ export class HelloWorld extends UIView
 ![](https://raw.githubusercontent.com/marcos8154/Objective-UI/main/UIView_2.png)
 
 ```Typescript
- //Declare required Widgets in View
+/**
+ * An inheritance UIView class is able to represent a view and its controls. 
+ * Controls are represented in derived UIWidgets, 
+ * which are managed by the derived UIView
+ */
+export class HelloWorld extends UIView
+{
+    private static $: HelloWorld;
+
+    //Declare required Widgets in View
     private label = new UILabel({ name: 'lbl1', text: 'My first UIView' })
     private textBox = new UITextBox({ name: 'txtInput', title: 'Input value here' })
     private btnShow = new UIButton({ name: 'btnShow', text: 'Show typed value!' })
@@ -107,7 +116,7 @@ export class HelloWorld extends UIView
         }
     }
 
-    ///Provide a Layout for the View
+    //Provide a Layout for the View
     buildLayout(): ViewLayout
     {
         return new ViewLayout('app', [
@@ -135,6 +144,8 @@ export class HelloWorld extends UIView
          * ahead with our View's logic.
          */
     }
+}
+
 ```
 
 The example above will result in this display:
