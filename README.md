@@ -80,7 +80,7 @@ The library **has some conventional and basic widgets.** You can at any time tra
 
 Creating a "screen" in our app just involves providing an inheritance for the UIView superclass.
 
-UIView is the class that will abstract the presentation of the interface, which contains a set of Widgets arranged in a Layout dedicated to the View
+UIView is the class that will abstract the presentation of the UI, which contains a set of Widgets arranged in a Layout dedicated to the View
 
 ```Typescript
 export class HelloWorld extends UIView
