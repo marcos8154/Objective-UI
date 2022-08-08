@@ -83,7 +83,7 @@ Creating a "screen" in our app just involves providing an inheritance for the UI
 UIView is the class that will abstract the presentation of the UI, which contains a set of Widgets arranged in a Layout dedicated to the View
 
 ```Typescript
-export class HelloWorld extends UIView
+export class ViewExample extends UIView
 ```
 
 ![](https://raw.githubusercontent.com/marcos8154/Objective-UI/main/UIView_2.png)
@@ -94,9 +94,9 @@ export class HelloWorld extends UIView
  * Controls are represented in derived UIWidgets, 
  * which are managed by the derived UIView
  */
-export class HelloWorld extends UIView
+export class ViewExample extends UIView
 {
-    private static $: HelloWorld;
+    private static $: ViewExample;
 
     //Declare required Widgets in View
     private label = new UILabel({ name: 'lbl1', text: 'My first UIView' })
