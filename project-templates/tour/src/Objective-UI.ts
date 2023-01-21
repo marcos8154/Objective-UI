@@ -13,7 +13,7 @@
  */
 export abstract class UIPage
 {
-    public static readonly PRODUCT_VERSION: string = '0.8.1'
+    public static readonly PRODUCT_VERSION: string = '0.8.9'
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
 
@@ -1370,9 +1370,9 @@ export abstract class WebAPISimulator
                 {
                     const path = resource.replace(route.getResource(), '');
                     var params = path.split('/');
-                    if (params.length > 0)
+                 /*   if (params.length > 0)
                         if (params[0] == '')
-                            params = params.splice(-1, 1);
+                            params = params.splice(-1, 1); */
                     return new APIResponse({
                         code: 200,
                         msg: 'fetched from API Simulator',
@@ -1606,8 +1606,8 @@ export class NativeLib
      * @param cssPath The name (or subpath) of the library's .css file. If not, ignore this parameter.
      * @param jsPath The name (or subpath) of the library's .js file. If not, ignore this parameter.
      */
-    constructor({ libName, cssPath = '', jsPath = '' }: {
-        libName: string;
+    constructor({ libName = '', cssPath = '', jsPath = '' }: {
+        libName?: string;
         cssPath?: string;
         jsPath?: string;
     })
@@ -1881,9 +1881,12 @@ export class PageShell
      */
     public import(lib: NativeLib): void
     {
-        var existing = this.getImportedLib(lib.libName);
-        if (existing !== null)
-            return;
+        if (lib.libName != '')
+        {
+            var existing = this.getImportedLib(lib.libName);
+            if (existing !== null)
+                return;
+        }
 
         if (lib.hasCss)
         {
@@ -1899,6 +1902,7 @@ export class PageShell
         {
             var jsImport: HTMLScriptElement = document.createElement('script');
             jsImport.src = lib.getJsFullPath();
+            jsImport.type = 'text/javascript'
 
             document.body.appendChild(jsImport);
         }
@@ -3452,27 +3456,28 @@ export class UILabelBinder extends WidgetBinder
 
 export class UILabel extends Widget implements IBindable
 {
-    public label: HTMLLabelElement;
     private lblText: string;
-    constructor({name, text}:
-        {name: string, text: string})
+
+    constructor({ name, text }: { name: string, text: string })
     {
         super(name);
         this.lblText = text;
     }
-    getBinder(): WidgetBinder
-    {
-        return new UILabelBinder(this);
-    }
+
+    public label: HTMLLabelElement;
     protected htmlTemplate(): string
     {
-        return `<label id="fsLabel" class="label"> Default label </label>`;
+        return `<label id="uiLabel" class="label"> Default label </label>`;
     }
 
     protected onWidgetDidLoad(): void
     {
-        this.label = this.elementById('fsLabel');
+        this.label = this.elementById('uiLabel');
         this.label.textContent = this.lblText;
+    }
+    public setText(text: string): void
+    {
+        this.label.textContent = text;
     }
 
     public getText(): string
@@ -3480,9 +3485,11 @@ export class UILabel extends Widget implements IBindable
         return this.value();
     }
 
-    public setText(text: string): void
+
+
+    getBinder(): WidgetBinder
     {
-        this.label.textContent = text;
+        return new UILabelBinder(this);
     }
 
     public setCustomPresenter(renderer: ICustomWidgetPresenter<Widget>): void
@@ -3621,6 +3628,7 @@ export class UIList extends Widget implements IBindable
 
     public fromList(viewModels: Array<any>, valueProperty?: string, displayProperty?: string): void
     {
+        this.divContainer.innerHTML = '';
         if (viewModels == null || viewModels == undefined || viewModels.length == 0) 
         {
             try
@@ -3638,7 +3646,7 @@ export class UIList extends Widget implements IBindable
             }
             return;
         };
-        this.divContainer.innerHTML = '';
+
         for (var i = 0; i < viewModels.length; i++)
         {
             var viewModel: any | object = viewModels[i];
@@ -3682,6 +3690,13 @@ export class UIList extends Widget implements IBindable
         item.setOwnerList(this);
         this.items.push(item);
         var view: HTMLAnchorElement = item.itemTemplate();
+
+        var self = this;
+        view.onclick = function (ev)
+        {
+            self.onItemClicked(item, ev);
+        };
+
         this.divContainer.append(view);
         return this;
     }
@@ -4889,11 +4904,7 @@ export class ListItem implements IListItemTemplate
         self.anchorElement.style.padding = '0px';
         self.anchorElement.classList.add('list-group-item', 'align-items-center', 'list-group-item-action');
         self.anchorElement.id = this.itemName;
-        self.anchorElement.onclick = function (ev)
-        {
-            self.ownerList.onItemClicked(self, ev);
-        };
-
+    
         var rowDiv = pageShell.createElement('div');
         rowDiv.style.background = 'transparent';
         rowDiv.style.height = '40px';

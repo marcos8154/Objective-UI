@@ -1,31 +1,34 @@
-import { UIView } from "../UIView";
 import { Widget as Widget } from "../Widget";
 import { IBindable } from "../IBindable";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
 import { PageShell } from "../PageShell";
-import { ViewLayout } from "../ViewLayout";
 import { WidgetBinder } from "../WidgetBinder";
-import { UIDataGridBinder } from "./UIDataGrid";
-import { UIListBinder } from "./UIList";
 import { UITemplateView } from "./UITemplateView";
+import { Misc } from "../Misc";
 
 export class RadioOption
 {
     public optionContainer: HTMLDivElement;
     public radioInput: HTMLInputElement;
     public radioLabel: HTMLLabelElement;
+    private ownerGroup: UIRadioGroup;
 
     constructor(text: string,
-        value: string, fieldSetId: string, shell: PageShell)
+        value: string,
+        fieldSetId: string,
+        shell: PageShell,
+        ownerGroup: UIRadioGroup)
     {
         var template: UITemplateView = new UITemplateView(
-            `<div id="radioOptionContainer" style="margin-right: 10px" class="custom-control custom-radio">
+            `
+<div id="radioOptionContainer" style="margin-right: 10px" class="custom-control custom-radio">
     <input id="radioInput" type="radio" name="fieldset" class="custom-control-input">
     <label id="radioLabel" class="custom-control-label font-weight-normal" for=""> Radio Option </label>
 </div>
 `,
             shell);
 
+        this.ownerGroup = ownerGroup;
         this.optionContainer = template.elementById('radioOptionContainer');
         this.radioInput = template.elementById('radioInput');
         this.radioLabel = template.elementById('radioLabel');
@@ -34,6 +37,12 @@ export class RadioOption
         this.radioInput.value = value;
         this.radioInput.name = fieldSetId;
         this.radioLabel.htmlFor = this.radioInput.id;
+
+        var self = this;
+        this.radioInput.onclick = function (ev: Event)
+        {
+            ownerGroup.optionChanged(self);
+        }
     }
 
     isChecked(): boolean
@@ -48,6 +57,8 @@ export class RadioOption
 
     setChecked(isChecked: boolean): void
     {
+        if (isChecked)
+            this.ownerGroup.optionChanged(this);
         this.radioInput.checked = isChecked;
     }
 
@@ -95,18 +106,20 @@ export class UIRadioGroup extends Widget implements IBindable
     private orientation: string;
 
     private initialOptions: Array<any> = [];
+    private onChangeFn: Function;
 
     /**
     * 
     * @param direction Flex direction: 'column' / 'row'
     * @param options array { t:'Option Text', v: 'option_value' }
     */
-    constructor({ name, title = '', orientation = 'vertical', options = [] }:
+    constructor({ name, title = '', orientation = 'vertical', options = [], onChange = null }:
         {
             name: string,
             title?: string,
             orientation?: string,
-            options?: Array<any>
+            options?: Array<any>,
+            onChange?: Function
         })
     {
         super(name);
@@ -114,10 +127,22 @@ export class UIRadioGroup extends Widget implements IBindable
         this.title = title;
         this.orientation = orientation;
         this.initialOptions = options;
+        this.onChangeFn = onChange;
     }
     getBinder(): WidgetBinder
     {
         return new UIRadioGroupBinder(this);
+    }
+
+    public optionChanged(currentOp: RadioOption)
+    {
+        if (Misc.isNull(this.onChangeFn) == false)
+            this.onChangeFn(currentOp, this);
+    }
+
+    public setOnChangedEvent(fn: Function)
+    {
+        this.onChangeFn = fn;
     }
 
     protected onWidgetDidLoad(): void
@@ -169,7 +194,8 @@ export class UIRadioGroup extends Widget implements IBindable
             text,
             value,
             this.fieldSet.id,
-            this.getPageShell()
+            this.getPageShell(),
+            this
         );
         this.options.push(newOpt);
         this.fieldSet.appendChild(newOpt.optionContainer);

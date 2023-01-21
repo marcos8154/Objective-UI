@@ -83,6 +83,11 @@ export class UIDataGrid extends Widget implements IBindable
         }
     }
 
+    public setTemplateProvider(provider: IDataGridItemTemplateProvider)
+    {
+        this.templateProvider = provider;
+    }
+
     public addColumn(columnHeader: string, modelKey: string): void
     {
         var shell = this.getPageShell();

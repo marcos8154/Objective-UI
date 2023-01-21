@@ -1,4 +1,6 @@
 ﻿"use strict";
+//Object.defineProperty(exports, "__esModule", { value: true });
+//exports.Tour = void 0;
 class Tour extends UIView {
     constructor() {
         super();
@@ -31,3 +33,4 @@ class Tour extends UIView {
         this.shellPage.navigateToView(new DemoWidgets());
     }
 }
+//exports.Tour = Tour;

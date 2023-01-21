@@ -41,9 +41,10 @@ export class UISelect extends Widget implements IBindable
 </div>`
     }
 
-    private divContainer: HTMLDivElement = null;
-    private title: HTMLLabelElement = null;
-    private select: HTMLSelectElement = null;
+    public divContainer: HTMLDivElement = null;
+    public title: HTMLLabelElement = null;
+    public select: HTMLSelectElement = null;
+    
     public onSelectionChanged: Function = null;
     private initialTitle: string = null;
 
@@ -100,6 +101,10 @@ export class UISelect extends Widget implements IBindable
         }
     }
 
+    private itemsSource: Array<any> = [];
+    valueProperty?: string;
+    displayProperty?: string;
+
     public fromList(models: Array<any>,
         valueProperty?: string,
         displayProperty?: string): void
@@ -107,6 +112,9 @@ export class UISelect extends Widget implements IBindable
         if (models == null || models == undefined) return;
         try
         {
+            this.valueProperty = valueProperty;
+            this.displayProperty = displayProperty;
+            this.itemsSource = models;
             var optionsFromModels: Array<SelectOption> = [];
             for (var i = 0; i < models.length; i++)
             {
@@ -166,6 +174,23 @@ export class UISelect extends Widget implements IBindable
         {
             this.processError(error);
         }
+    }
+
+    /**
+     * Gets the selected object-value item
+     * Its works only when uses 'fromList(...)' UISelect function
+     * @returns T
+     */
+    public getSelectedItem<T extends any|object>(): T
+    {
+        var val = this.value(); //key value of object-item
+        for(var i = 0; i < this.itemsSource.length; i++)
+        {
+            var itemObj = this.itemsSource[i];
+            if(itemObj[this.valueProperty] == val)
+                return itemObj as unknown as T;
+        }
+        return null;
     }
 
     public value(): string

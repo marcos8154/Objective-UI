@@ -254,9 +254,12 @@ export class PageShell
      */
     public import(lib: NativeLib): void
     {
-        var existing = this.getImportedLib(lib.libName);
-        if (existing !== null)
-            return;
+        if (lib.libName != '')
+        {
+            var existing = this.getImportedLib(lib.libName);
+            if (existing !== null)
+                return;
+        }
 
         if (lib.hasCss)
         {
@@ -272,6 +275,7 @@ export class PageShell
         {
             var jsImport: HTMLScriptElement = document.createElement('script');
             jsImport.src = lib.getJsFullPath();
+            jsImport.type = 'text/javascript'
 
             document.body.appendChild(jsImport);
         }

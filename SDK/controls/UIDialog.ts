@@ -1,11 +1,12 @@
 import { Widget } from "../Widget";
 import { WidgetContext } from "../WidgetContext";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
-import { INotifiable } from "../INotifiable";
 import { VirtualFunction } from "../VirtualFunction";
 import { PageShell } from "../PageShell";
 import { UITemplateView } from "./UITemplateView";
 import { ModalAction } from "./ModalAction";
+import { INotifiable } from "../INotifiable";
+import { Misc } from "../Misc";
 
 export class UIDialog extends Widget implements INotifiable
 {
@@ -26,36 +27,56 @@ export class UIDialog extends Widget implements INotifiable
 
     private modalContext: WidgetContext;
 
-    constructor({ shell, name, title, contentTemplate, actions }:
-        {
-            shell: PageShell,
-            name: string;
-            title: string;
-            contentTemplate: UITemplateView;
-            actions: ModalAction[];
-        })
+    constructor(shell: PageShell)
     {
-        super(name);
+        super('UIDialog');
 
         this.shell = shell;
-        this.titleText = title;
-        this.contentTemplate = contentTemplate;
-        this.modalActions = actions;
 
+        // obtem o body da pagina
         var body: Element = shell.getPageBody();
+
+        // verifica se existe a div que vai conter o modal
         var modalDivContainer: Element = shell.elementById('modalContainer');
         if (modalDivContainer == null)
         {
+            // nao existe, então deve ser criada uma div-container 
+            // para controlar o modal
             modalDivContainer = shell.createElement('div');
             modalDivContainer.id = 'modalContainer';
             body.appendChild(modalDivContainer);
         }
 
+        // é criado um WidgetContext para gerenciar a div
+        // container do modal
         this.modalContext = new WidgetContext(
             shell,
             [modalDivContainer.id],
             null);
+    }
 
+    public action(action: ModalAction): UIDialog
+    {
+        this.modalActions.push(action);
+        return this;
+    }
+
+    public setTitle(dialogTitle: string): UIDialog
+    {
+        this.titleText = dialogTitle;
+        return this;
+    }
+
+    public setText(dialogText: string): UIDialog
+    {
+        this.contentTemplate = new UITemplateView(dialogText, this.shell);
+        return this;
+    }
+
+    public useTemplate(templateView: UITemplateView): UIDialog
+    {
+        this.contentTemplate = templateView;
+        return this;
     }
 
     protected htmlTemplate(): string
@@ -92,8 +113,9 @@ export class UIDialog extends Widget implements INotifiable
         self.footerContainer = self.elementById('modalFooter');
         self.titleElement.textContent = self.titleText;
         self.modalContainer = self.elementById('fsModalView');
-        self.bodyContainer.appendChild(self.contentTemplate.content());
 
+        if (!Misc.isNullOrEmpty(self.contentTemplate))
+            self.bodyContainer.appendChild(self.contentTemplate.content());
 
         for (var i = 0; i < self.modalActions.length; i++)
         {
@@ -131,11 +153,19 @@ export class UIDialog extends Widget implements INotifiable
         self.showFunction.call();
     }
 
-    public show(): void
+    private onComplete: Function = null;
+    public show(onComplete?: Function): void
     {
+        this.onComplete = onComplete;
         this.modalContext.addWidget('modalContainer', this);
         this.modalContext.build(this, false);
         UIDialog.$ = this;
+    }
+
+    onNotified(sender: any, args: Array<any>): void
+    {
+        if (Misc.isNull(this.onComplete) == false)
+            this.onComplete(this);
     }
 
     public setCustomPresenter(renderer: ICustomWidgetPresenter<Widget>): void

@@ -1,4 +1,6 @@
 ﻿"use strict";
+//Object.defineProperty(exports, "__esModule", { value: true });
+//exports.MyAPISimulator = void 0;
 class MyAPISimulator extends WebAPISimulator {
     constructor() {
         super();
@@ -60,4 +62,5 @@ class MyAPISimulator extends WebAPISimulator {
         return result;
     }
 }
+//exports.MyAPISimulator = MyAPISimulator;
 MyAPISimulator.contacts = [];

@@ -6,6 +6,8 @@ import { PageShell as PageShell } from './PageShell';
 import { INotifiable } from './INotifiable';
 import { UITemplateView } from './controls/UITemplateView';
 import { AppStorage } from './AppStorage';
+import { UIDialog } from './controls/UIDialog';
+import { ModalAction } from './controls/ModalAction';
 
 /**
  * A UIView represents an interface view set of user controls.
@@ -109,27 +111,46 @@ onViewDidLoad(): void
      * ```
      * @param schemaName A unique id-name to determine the data scope
      */
-    protected requestLocalStorage(schemaName: string): AppStorage
+    public requestLocalStorage(schemaName: string): AppStorage
     {
         return this.shellPage.requestStorage('local', schemaName);
     }
 
-    protected requestSessionStorage(schemaName: string): AppStorage
+    public requestSessionStorage(schemaName: string): AppStorage
     {
         return this.shellPage.requestStorage('session', schemaName);
     }
 
-    protected viewContext(): WidgetContext
+    public viewContext(): WidgetContext
     {
         return this.widgetContext;
     }
 
-    protected inflateTemplateView(rawHtml: string) : UITemplateView
+    public inflateTemplateView(rawHtml: string): UITemplateView
     {
         return new UITemplateView(rawHtml, this.shellPage);
     }
 
-    onNotified(sender: any, args: any[]): void
+    public showDialog(title: string, text: string): void
+    {
+        var diag = new UIDialog(this.shellPage)
+            .setTitle(title)
+            .setText(text)
+            .action(new ModalAction({
+                buttonText: 'Ok',
+                dataDismiss: true
+            }))
+        diag.show();
+    }
+
+    public createDialog(title: string): UIDialog
+    {
+        var diag = new UIDialog(this.shellPage)
+            .setTitle(title);
+        return diag;
+    }
+
+    public onNotified(sender: any, args: any[]): void
     {
         if (sender == 'FSWidgetContext')
             this.onViewDidLoad();
@@ -157,7 +178,7 @@ onViewDidLoad(): void
     /**
      * Get all Widgets attached and managed in this UIView
      */
-    public managedWidgets():Array<Widget>
+    public managedWidgets(): Array<Widget>
     {
         if (this.widgetContext == null || this.widgetContext == undefined)
             return [];

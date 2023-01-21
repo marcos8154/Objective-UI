@@ -13,13 +13,15 @@
  */
 export abstract class UIPage
 {
-    public static readonly PRODUCT_VERSION: string = '0.8.9'
+    public static readonly PRODUCT_VERSION: string = '1.0.3'
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
 
     constructor(doc: Document)
     {
         this.mainShell = new PageShell(doc, this);
+
+        console.info(`* * * Objective-UI v${UIPage.PRODUCT_VERSION} * * *`);
     }
 
     protected setStorageProvider(provider: IAppStorageProvider): void
@@ -156,27 +158,46 @@ onViewDidLoad(): void
      * ```
      * @param schemaName A unique id-name to determine the data scope
      */
-    protected requestLocalStorage(schemaName: string): AppStorage
+    public requestLocalStorage(schemaName: string): AppStorage
     {
         return this.shellPage.requestStorage('local', schemaName);
     }
 
-    protected requestSessionStorage(schemaName: string): AppStorage
+    public requestSessionStorage(schemaName: string): AppStorage
     {
         return this.shellPage.requestStorage('session', schemaName);
     }
 
-    protected viewContext(): WidgetContext
+    public viewContext(): WidgetContext
     {
         return this.widgetContext;
     }
 
-    protected inflateTemplateView(rawHtml: string) : UITemplateView
+    public inflateTemplateView(rawHtml: string): UITemplateView
     {
         return new UITemplateView(rawHtml, this.shellPage);
     }
 
-    onNotified(sender: any, args: any[]): void
+    public showDialog(title: string, text: string): void
+    {
+        var diag = new UIDialog(this.shellPage)
+            .setTitle(title)
+            .setText(text)
+            .action(new ModalAction({
+                buttonText: 'Ok',
+                dataDismiss: true
+            }))
+        diag.show();
+    }
+
+    public createDialog(title: string): UIDialog
+    {
+        var diag = new UIDialog(this.shellPage)
+            .setTitle(title);
+        return diag;
+    }
+
+    public onNotified(sender: any, args: any[]): void
     {
         if (sender == 'FSWidgetContext')
             this.onViewDidLoad();
@@ -204,7 +225,7 @@ onViewDidLoad(): void
     /**
      * Get all Widgets attached and managed in this UIView
      */
-    public managedWidgets():Array<Widget>
+    public managedWidgets(): Array<Widget>
     {
         if (this.widgetContext == null || this.widgetContext == undefined)
             return [];
@@ -628,6 +649,15 @@ export class WidgetContext
 
     findWidget(fragmentName: string, widgetName: string)
     {
+        var fragment: WidgetFragment = this.findFragment(fragmentName);
+        var widget: Widget = fragment.findWidget(widgetName);
+        return widget;
+    }
+
+    get(path: string)
+    {
+        const fragmentName: string = path.split('/')[0];
+        const widgetName: string = path.split('/')[1];
         var fragment: WidgetFragment = this.findFragment(fragmentName);
         var widget: Widget = fragment.findWidget(widgetName);
         return widget;
@@ -2785,16 +2815,26 @@ export class UIHead extends Widget implements IBindable
 export class ModalAction
 {
     public text: string;
-    public classes: string[];
+    public classes: string[] = [];
     public onClick?: Function;
     public dismis: boolean;
 
-    constructor(buttonText: string, dataDismiss: boolean, buttonClick?: Function, ...buttonClasses: string[])
+    constructor({ buttonText, dataDismiss = false, buttonClasses = 'btn btn-light', buttonClick = null }:
+        {
+            buttonText: string;
+            dataDismiss?: boolean;
+            buttonClick?: Function;
+            buttonClasses?: string;
+        })
     {
         this.text = buttonText;
-        this.classes = buttonClasses;
+
         this.onClick = buttonClick;
         this.dismis = dataDismiss;
+
+        const classesStr = buttonClasses.split(' ');
+        for (var c = 0; c < classesStr.length; c++)
+            this.classes.push(classesStr[c]);
 
         if (this.text == null)
             this.text = 'Modal action';
@@ -2817,18 +2857,24 @@ export class RadioOption
     public optionContainer: HTMLDivElement;
     public radioInput: HTMLInputElement;
     public radioLabel: HTMLLabelElement;
+    private ownerGroup: UIRadioGroup;
 
     constructor(text: string,
-        value: string, fieldSetId: string, shell: PageShell)
+        value: string,
+        fieldSetId: string,
+        shell: PageShell,
+        ownerGroup: UIRadioGroup)
     {
         var template: UITemplateView = new UITemplateView(
-            `<div id="radioOptionContainer" style="margin-right: 10px" class="custom-control custom-radio">
+            `
+<div id="radioOptionContainer" style="margin-right: 10px" class="custom-control custom-radio">
     <input id="radioInput" type="radio" name="fieldset" class="custom-control-input">
     <label id="radioLabel" class="custom-control-label font-weight-normal" for=""> Radio Option </label>
 </div>
 `,
             shell);
 
+        this.ownerGroup = ownerGroup;
         this.optionContainer = template.elementById('radioOptionContainer');
         this.radioInput = template.elementById('radioInput');
         this.radioLabel = template.elementById('radioLabel');
@@ -2837,6 +2883,12 @@ export class RadioOption
         this.radioInput.value = value;
         this.radioInput.name = fieldSetId;
         this.radioLabel.htmlFor = this.radioInput.id;
+
+        var self = this;
+        this.radioInput.onclick = function (ev: Event)
+        {
+            ownerGroup.optionChanged(self);
+        }
     }
 
     isChecked(): boolean
@@ -2851,6 +2903,8 @@ export class RadioOption
 
     setChecked(isChecked: boolean): void
     {
+        if (isChecked)
+            this.ownerGroup.optionChanged(this);
         this.radioInput.checked = isChecked;
     }
 
@@ -2898,18 +2952,20 @@ export class UIRadioGroup extends Widget implements IBindable
     private orientation: string;
 
     private initialOptions: Array<any> = [];
+    private onChangeFn: Function;
 
     /**
     * 
     * @param direction Flex direction: 'column' / 'row'
     * @param options array { t:'Option Text', v: 'option_value' }
     */
-    constructor({ name, title = '', orientation = 'vertical', options = [] }:
+    constructor({ name, title = '', orientation = 'vertical', options = [], onChange = null }:
         {
             name: string,
             title?: string,
             orientation?: string,
-            options?: Array<any>
+            options?: Array<any>,
+            onChange?: Function
         })
     {
         super(name);
@@ -2917,10 +2973,22 @@ export class UIRadioGroup extends Widget implements IBindable
         this.title = title;
         this.orientation = orientation;
         this.initialOptions = options;
+        this.onChangeFn = onChange;
     }
     getBinder(): WidgetBinder
     {
         return new UIRadioGroupBinder(this);
+    }
+
+    public optionChanged(currentOp: RadioOption)
+    {
+        if (Misc.isNull(this.onChangeFn) == false)
+            this.onChangeFn(currentOp, this);
+    }
+
+    public setOnChangedEvent(fn: Function)
+    {
+        this.onChangeFn = fn;
     }
 
     protected onWidgetDidLoad(): void
@@ -2972,7 +3040,8 @@ export class UIRadioGroup extends Widget implements IBindable
             text,
             value,
             this.fieldSet.id,
-            this.getPageShell()
+            this.getPageShell(),
+            this
         );
         this.options.push(newOpt);
         this.fieldSet.appendChild(newOpt.optionContainer);
@@ -3814,36 +3883,56 @@ export class UIDialog extends Widget implements INotifiable
 
     private modalContext: WidgetContext;
 
-    constructor({ shell, name, title, contentTemplate, actions }:
-        {
-            shell: PageShell,
-            name: string;
-            title: string;
-            contentTemplate: UITemplateView;
-            actions: ModalAction[];
-        })
+    constructor(shell: PageShell)
     {
-        super(name);
+        super('UIDialog');
 
         this.shell = shell;
-        this.titleText = title;
-        this.contentTemplate = contentTemplate;
-        this.modalActions = actions;
 
+        // obtem o body da pagina
         var body: Element = shell.getPageBody();
+
+        // verifica se existe a div que vai conter o modal
         var modalDivContainer: Element = shell.elementById('modalContainer');
         if (modalDivContainer == null)
         {
+            // nao existe, então deve ser criada uma div-container 
+            // para controlar o modal
             modalDivContainer = shell.createElement('div');
             modalDivContainer.id = 'modalContainer';
             body.appendChild(modalDivContainer);
         }
 
+        // é criado um WidgetContext para gerenciar a div
+        // container do modal
         this.modalContext = new WidgetContext(
             shell,
             [modalDivContainer.id],
             null);
+    }
 
+    public action(action: ModalAction): UIDialog
+    {
+        this.modalActions.push(action);
+        return this;
+    }
+
+    public setTitle(dialogTitle: string): UIDialog
+    {
+        this.titleText = dialogTitle;
+        return this;
+    }
+
+    public setText(dialogText: string): UIDialog
+    {
+        this.contentTemplate = new UITemplateView(dialogText, this.shell);
+        return this;
+    }
+
+    public useTemplate(templateView: UITemplateView): UIDialog
+    {
+        this.contentTemplate = templateView;
+        return this;
     }
 
     protected htmlTemplate(): string
@@ -3880,8 +3969,9 @@ export class UIDialog extends Widget implements INotifiable
         self.footerContainer = self.elementById('modalFooter');
         self.titleElement.textContent = self.titleText;
         self.modalContainer = self.elementById('fsModalView');
-        self.bodyContainer.appendChild(self.contentTemplate.content());
 
+        if (!Misc.isNullOrEmpty(self.contentTemplate))
+            self.bodyContainer.appendChild(self.contentTemplate.content());
 
         for (var i = 0; i < self.modalActions.length; i++)
         {
@@ -3919,11 +4009,19 @@ export class UIDialog extends Widget implements INotifiable
         self.showFunction.call();
     }
 
-    public show(): void
+    private onComplete: Function = null;
+    public show(onComplete?: Function): void
     {
+        this.onComplete = onComplete;
         this.modalContext.addWidget('modalContainer', this);
         this.modalContext.build(this, false);
         UIDialog.$ = this;
+    }
+
+    onNotified(sender: any, args: Array<any>): void
+    {
+        if (Misc.isNull(this.onComplete) == false)
+            this.onComplete(this);
     }
 
     public setCustomPresenter(renderer: ICustomWidgetPresenter<Widget>): void
@@ -4130,9 +4228,10 @@ export class UISelect extends Widget implements IBindable
 </div>`
     }
 
-    private divContainer: HTMLDivElement = null;
-    private title: HTMLLabelElement = null;
-    private select: HTMLSelectElement = null;
+    public divContainer: HTMLDivElement = null;
+    public title: HTMLLabelElement = null;
+    public select: HTMLSelectElement = null;
+    
     public onSelectionChanged: Function = null;
     private initialTitle: string = null;
 
@@ -4189,6 +4288,10 @@ export class UISelect extends Widget implements IBindable
         }
     }
 
+    private itemsSource: Array<any> = [];
+    valueProperty?: string;
+    displayProperty?: string;
+
     public fromList(models: Array<any>,
         valueProperty?: string,
         displayProperty?: string): void
@@ -4196,6 +4299,9 @@ export class UISelect extends Widget implements IBindable
         if (models == null || models == undefined) return;
         try
         {
+            this.valueProperty = valueProperty;
+            this.displayProperty = displayProperty;
+            this.itemsSource = models;
             var optionsFromModels: Array<SelectOption> = [];
             for (var i = 0; i < models.length; i++)
             {
@@ -4255,6 +4361,23 @@ export class UISelect extends Widget implements IBindable
         {
             this.processError(error);
         }
+    }
+
+    /**
+     * Gets the selected object-value item
+     * Its works only when uses 'fromList(...)' UISelect function
+     * @returns T
+     */
+    public getSelectedItem<T extends any|object>(): T
+    {
+        var val = this.value(); //key value of object-item
+        for(var i = 0; i < this.itemsSource.length; i++)
+        {
+            var itemObj = this.itemsSource[i];
+            if(itemObj[this.valueProperty] == val)
+                return itemObj as unknown as T;
+        }
+        return null;
     }
 
     public value(): string
@@ -4501,7 +4624,7 @@ export class UITextBox extends Widget implements IBindable
     protected htmlTemplate(): string
     {
         return `
-<div id="textEntry" class="form-group">
+<div id="divContainer" class="form-group">
     <label id="entryTitle" style="margin: 0px; padding: 0px; font-weight:normal !important;" for="inputEntry"> Entry Title </label>
     <input id="entryInput" class="form-control form-control-sm"  placeholder="Entry placeholder">
 </div>`
@@ -4586,7 +4709,8 @@ export class UITextBox extends Widget implements IBindable
     {
         this.lbTitle = this.elementById('entryTitle');
         this.txInput = this.elementById('entryInput');
-        this.divContainer = this.elementById('textEntry');
+        this.divContainer = this.elementById('divContainer');
+        
         this.lbTitle.innerText = this.initialTitle;
         this.txInput.placeholder = this.initialPlaceHolder;
         this.txInput.value = this.initialText;
@@ -4594,6 +4718,165 @@ export class UITextBox extends Widget implements IBindable
         this.setMaxLength(this.initialMaxlength);
         this.setInputType(this.initialType);
         this.applyMask(this.initialMask);
+    }
+
+    public setMaxLength(maxlength: number): void
+    {
+        this.txInput.maxLength = maxlength;
+    }
+
+    public removeLabel()
+    {
+        this.lbTitle.remove();
+    }
+    public setPlaceholder(text: string): void
+    {
+        this.txInput.placeholder = text;
+    }
+
+    public getText(): string
+    {
+        return this.value();
+    }
+
+    public setText(newText: string): void
+    {
+        this.txInput.value = (Misc.isNullOrEmpty(newText) ? '' : newText);
+    }
+
+    public setTitle(newTitle: string): void
+    {
+        this.lbTitle.textContent = newTitle;
+    }
+
+    public value(): string
+    {
+        return this.txInput.value;
+    }
+
+    public addCSSClass(className: string): void 
+    {
+        this.txInput.classList.add(className);
+    }
+
+    public removeCSSClass(className: string): void
+    {
+        this.txInput.classList.remove(className);
+    }
+
+    public applyCSS(propertyName: string, propertyValue: string): void 
+    {
+        this.txInput.style.setProperty(propertyName, propertyValue);
+    }
+
+    public setPosition(position: string,
+        marginLeft: string,
+        marginTop: string,
+        marginRight: string,
+        marginBottom: string,
+        transform?: string): void 
+    {
+        this.divContainer.style.position = position;
+        this.divContainer.style.left = marginLeft;
+        this.divContainer.style.top = marginTop;
+        this.divContainer.style.right = marginRight;
+        this.divContainer.style.bottom = marginBottom;
+        this.divContainer.style.transform = transform;
+    }
+
+    public setVisible(visible: boolean): void 
+    {
+        this.divContainer.hidden = (visible == false);
+    }
+
+}
+export class UITextAreaBinder extends WidgetBinder
+{
+    private textBox: UITextArea;
+    constructor(textBox: UITextArea) 
+    {
+        super(textBox);
+        this.textBox = this.widget as UITextArea;
+    }
+    refreshUI(): void
+    {
+        var value = this.getModelPropertyValue();
+        this.textBox.setText(`${value}`);
+    }
+    fillPropertyModel(): void
+    {
+        var text: string = this.textBox.getText();
+        this.setModelPropertyValue(text);
+    }
+    getWidgetValue()
+    {
+        var text: string = this.textBox.getText();
+        return text;
+    }
+}
+
+export class UITextArea extends Widget implements IBindable
+{
+    protected htmlTemplate(): string
+    {
+        return `
+<div id="divContainer" class="form-group">
+    <label id="entryTitle" style="margin: 0px; padding: 0px; font-weight:normal !important;" for="inputEntry"> Entry Title </label>
+    <textarea id="entryInput" class="form-control form-control-sm"> </textarea>
+</div>`
+    }
+    public setEnabled(enabled: boolean): void
+    {
+        this.txInput.disabled = (enabled == false);
+    }
+
+
+    private initialTitle: string = null;
+    private initialText: string = null;
+    private initialMaxlength: number = null;
+    private initialHeight: string = null;
+
+    public lbTitle: HTMLLabelElement = null;
+    public txInput: HTMLTextAreaElement = null;
+    public divContainer: HTMLDivElement = null;
+
+    constructor({ name, title = '', height = '100px', maxlength = 255, text = ''}:
+        {
+            name: string
+            title?: string
+            height?: string
+            maxlength?: number
+            text?: string
+        })
+    {
+        super(name);
+
+        this.initialHeight = (Misc.isNull(height) ? '100px' : height);
+        this.initialTitle = (Misc.isNullOrEmpty(title) ? '' : title);
+        this.initialText = (Misc.isNullOrEmpty(text) ? '' : text);
+        this.initialMaxlength = (Misc.isNullOrEmpty(maxlength) ? 100 : maxlength);
+    }
+    getBinder(): WidgetBinder
+    {
+        return new UITextAreaBinder(this);
+    }
+
+    public setCustomPresenter(renderer: ICustomWidgetPresenter<UITextArea>): void
+    {
+        renderer.render(this);
+    }
+
+    onWidgetDidLoad(): void
+    {
+        this.lbTitle = this.elementById<HTMLLabelElement>('entryTitle');
+        this.txInput = this.elementById<HTMLTextAreaElement>('entryInput');
+        this.divContainer = this.elementById<HTMLDivElement>('divContainer');
+
+        this.lbTitle.innerText = this.initialTitle;
+        this.txInput.value = this.initialText;
+        this.txInput.style.height = this.initialHeight;
+
+        this.setMaxLength(this.initialMaxlength);
     }
 
     public setMaxLength(maxlength: number): void
@@ -5006,6 +5289,8 @@ export class UITemplateView
             if (entry.getOriginalId() == elementId)
             {
                 var elementResult: any = this.templateDOM.getElementById(entry.getManagedId());
+                if(Misc.isNull(elementResult))
+                    elementResult = document.getElementById(entry.getManagedId())
                 return elementResult;
             }
         }
@@ -5093,6 +5378,11 @@ export class UIDataGrid extends Widget implements IBindable
             var def: DataGridColumnDefinition = colDefs[i];
             this.addColumn(def.h, def.k);
         }
+    }
+
+    public setTemplateProvider(provider: IDataGridItemTemplateProvider)
+    {
+        this.templateProvider = provider;
     }
 
     public addColumn(columnHeader: string, modelKey: string): void
@@ -5255,4 +5545,128 @@ export class UIDataGrid extends Widget implements IBindable
         throw new Error("Method not implemented.");
     }
 
+}
+export class DivContent
+{
+    id: string = '';
+    w: Widget[]
+
+    constructor(id: string, ...w: Widget[])
+    {
+        this.id = id;
+        this.w = w;
+    }
+}
+export interface IYordLayout
+{
+    getLayout(): ViewLayout;
+}
+export class YordManagedView extends UIView
+{
+    private yordView: YordView;
+    private yordCtx: YordViewContext;
+
+    constructor(view: YordView, context: YordViewContext)
+    {
+        super();
+        view.managedView = this;
+        this.yordView = view;
+        this.yordCtx = context;
+    }
+
+    buildLayout(): ViewLayout
+    {
+        return this.yordView.viewLayout.getLayout();
+    }
+
+    composeView(): void
+    {
+        for (var c = 0; c < this.yordView.viewComposing.length; c++)
+        {
+            var composingInfo = this.yordView.viewComposing[c];
+            var widgets: Widget[] = composingInfo.w;
+            this.addWidgets(composingInfo.id, ...widgets);
+        }
+    }
+
+    onViewDidLoad(): void
+    {
+        this.yordView.onLoad(this.viewContext(), this.yordCtx);
+    }
+}
+export abstract class YordView
+{
+    public readonly viewName: string;
+    public viewLayout: IYordLayout;
+    public viewWidgets: Widget[];
+    public viewComposing: DivContent[];
+    public managedView: YordManagedView;
+
+    constructor(viewName: string)
+    {
+        this.viewName = viewName;
+    }
+    
+    public useLayout(layout: IYordLayout): YordView
+    {
+        this.viewLayout = layout;
+        return this;
+    }
+
+    public declareAndCompose(...composing: DivContent[]): YordView
+    {
+        this.viewComposing = composing;
+        return this;
+    }
+
+    public abstract onInit(): void;
+    public abstract onLoad(wc: WidgetContext, mvc: YordViewContext): void;
+
+}
+export class YordViewContext
+{
+    private managedViews: YordView[] = [];
+    private pageShell: PageShell;
+
+    constructor(shell: PageShell)
+    {
+        this.pageShell = shell;
+    }
+
+    public addView(view: YordView): YordViewContext
+    {
+        this.managedViews.push(view);
+        return this;
+    }
+
+    public goTo(viewName: string): void
+    {
+        for (var v = 0; v < this.managedViews.length; v++)
+        {
+            var view: YordView = this.managedViews[v];
+            if (view.viewName == viewName)
+            {
+                view.onInit();
+
+                var managedView: YordManagedView = new YordManagedView(view, this);
+                this.pageShell.navigateToView(managedView);
+                break;
+            }
+        }
+    }
+}
+export class HtmlLayout implements IYordLayout
+{
+    private htmlString: string = '';
+    private containerDivId: string = '';
+    constructor(containerDivId: string, rawHtmlString: string) {
+        this.htmlString = rawHtmlString;
+        this.containerDivId = containerDivId;
+    }
+
+    getLayout(): ViewLayout
+    {
+        return new ViewLayout(this.containerDivId)
+            .fromHTML(this.htmlString);
+    }
 }

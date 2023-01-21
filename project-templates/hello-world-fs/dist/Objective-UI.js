@@ -1,4 +1,7 @@
 ﻿"use strict";
+//Object.defineProperty(exports, "__esModule", { value: true });
+//exports.UISelect = //exports.UISelectBinder = //exports.UIProgressBar = //exports.UINavBar = //exports.UIDialog = //exports.UIList = //exports.UIListBinder = //exports.UILabel = //exports.UILabelBinder = //exports.UIImage = //exports.UIImageBinder = //exports.UICheckBox = //exports.UICheckBoxBinder = //exports.UIButton = //exports.UIRadioGroup = //exports.UIRadioGroupBinder = //exports.RadioOption = //exports.ModalAction = //exports.UIHead = //exports.UIHeadBinder = //exports.DefaultExceptionPage = //exports.VirtualFunction = //exports.WidgetMessage = //exports.WidgetFragment = //exports.ViewLayout = //exports.ViewDictionaryEntry = //exports.SelectOption = //exports.RhabooStorageWrapper = //exports.RhabooInstance = //exports.AppStorage = //exports.Misc = //exports.Row = //exports.RowOptions = //exports.PageShell = //exports.NativeLib = //exports.DefaultLayoutPresenter = //exports.Col = //exports.ColOptions = //exports.WebAPISimulator = //exports.SimulatedAPIRoute = //exports.WebAPI = //exports.APIResponse = //exports.Bearer = //exports.WidgetBinder = //exports.WidgetBinderBehavior = //exports.BindingContext = //exports.WidgetContext = //exports.Widget = //exports.UIView = //exports.UIPage = void 0;
+//exports.UIDataGrid = //exports.UIDataGridBinder = //exports.DataGridColumnDefinition = //exports.UITemplateView = //exports.ListItem = //exports.DataGridItem = //exports.UIToast = //exports.UITextBox = //exports.UITextBoxBinder = //exports.Mask = //exports.UISwitcher = //exports.UISpinner = void 0;
 /**
  * A UIPage implementation is the first
  * Objective-UI class that is instantiated once the page loads.
@@ -37,7 +40,8 @@ class UIPage {
         }
     }
 }
-UIPage.PRODUCT_VERSION = '0.8.1';
+//exports.UIPage = UIPage;
+UIPage.PRODUCT_VERSION = '0.8.9';
 UIPage.DISABLE_EXCEPTION_PAGE = false;
 /**
  * A UIView represents an interface view set of user controls.
@@ -139,6 +143,7 @@ class UIView {
         return new WidgetContext(this.shellPage, managedDivIds, messageProtocol);
     }
 }
+//exports.UIView = UIView;
 /**
 A Widget is a TS object that represents a piece of HTML. It is able to
 fetch that piece of html into a webdir and bring it to the MainPage.
@@ -332,6 +337,7 @@ class Widget {
         return res.split('-')[0];
     }
 }
+//exports.Widget = Widget;
 /**
  * A WidgetContext is able to manage a
  * set of widgets linked in a div
@@ -439,6 +445,7 @@ class WidgetContext {
         }
     }
 }
+//exports.WidgetContext = WidgetContext;
 /**
  * An efficient system of data binding and object synchronization (aka 'ViewModel')
  * with the User Interface
@@ -563,6 +570,7 @@ class BindingContext {
         }
     }
 }
+//exports.BindingContext = BindingContext;
 /**
  *  Allows you to define binding behaviors for a
  * set of `WidgetBinder`
@@ -604,6 +612,7 @@ class WidgetBinderBehavior {
         return this;
     }
 }
+//exports.WidgetBinderBehavior = WidgetBinderBehavior;
 /**
  * It acts as a bridge between the `BindingContext<T>`
  * and the respective Widget.
@@ -668,6 +677,7 @@ class WidgetBinder {
         this.refreshUI();
     }
 }
+//exports.WidgetBinder = WidgetBinder;
 class Bearer {
     static get(token) {
         return new Headers({
@@ -676,6 +686,7 @@ class Bearer {
         });
     }
 }
+//exports.Bearer = Bearer;
 class APIResponse {
     constructor({ code, msg, content }) {
         this.statusCode = code;
@@ -683,6 +694,7 @@ class APIResponse {
         this.content = content;
     }
 }
+//exports.APIResponse = APIResponse;
 /**
  * Offers an abstraction for consuming REST APIs with the
  * possibility of simulating a local
@@ -778,7 +790,14 @@ class WebAPI {
         else {
             try {
                 var result = WebAPI.simulator.simulateRequest(this.request.method, this.apiUrl.replace(WebAPI.urlBase, ''), this.request.body);
-                this.fnOnSuccess(result);
+                if (Misc.isNull(this.fnOnSuccess) == false)
+                    this.fnOnSuccess(result);
+                if (Misc.isNullOrEmpty(this.fnDataResultTo) == false) {
+                    if (result.statusCode == 200) {
+                        var data = result.content;
+                        this.fnDataResultTo(data);
+                    }
+                }
             }
             catch (error) {
                 this.fnOnError(error);
@@ -810,6 +829,7 @@ class WebAPI {
         return this;
     }
 }
+//exports.WebAPI = WebAPI;
 class SimulatedAPIRoute {
     constructor(resource, method, endPoint) {
         this.method = method;
@@ -833,6 +853,7 @@ class SimulatedAPIRoute {
         return `[${this.method}] ${this.resource}`;
     }
 }
+//exports.SimulatedAPIRoute = SimulatedAPIRoute;
 /**
  * Allows you to simulate a REST API locally based on an
  * API that may not yet exist, but will respond for the routes
@@ -890,9 +911,9 @@ class WebAPISimulator {
                 if (route.getMethod() == 'GET' || route.getMethod() == 'DELETE') {
                     const path = resource.replace(route.getResource(), '');
                     var params = path.split('/');
-                    if (params.length > 0)
-                        if (params[0] == '')
-                            params = params.splice(-1, 1);
+                    /*   if (params.length > 0)
+                           if (params[0] == '')
+                               params = params.splice(-1, 1); */
                     return new APIResponse({
                         code: 200,
                         msg: 'fetched from API Simulator',
@@ -911,11 +932,13 @@ class WebAPISimulator {
         }
     }
 }
+//exports.WebAPISimulator = WebAPISimulator;
 /**
  * Initialization options for div-columns
  */
 class ColOptions {
 }
+//exports.ColOptions = ColOptions;
 /**
  * Represents a Column-Div with standard Bootstrap classes and a height of 100px
  */
@@ -940,6 +963,7 @@ class Col {
         }
     }
 }
+//exports.Col = Col;
 /**
  * A standard implementation for `ILayoutPresenter`
  */
@@ -1008,6 +1032,7 @@ class DefaultLayoutPresenter {
         return rowDiv;
     }
 }
+//exports.DefaultLayoutPresenter = DefaultLayoutPresenter;
 /**
  * Used to do library imports (reference CSS and JavaScript) in a single function.
  *
@@ -1025,7 +1050,7 @@ class NativeLib {
      * @param cssPath The name (or subpath) of the library's .css file. If not, ignore this parameter.
      * @param jsPath The name (or subpath) of the library's .js file. If not, ignore this parameter.
      */
-    constructor({ libName, cssPath = '', jsPath = '' }) {
+    constructor({ libName = '', cssPath = '', jsPath = '' }) {
         this.libName = libName;
         this.cssPath = cssPath;
         this.jsPath = jsPath;
@@ -1042,6 +1067,7 @@ class NativeLib {
         return this.libName;
     }
 }
+//exports.NativeLib = NativeLib;
 /**
  * PageShell is a class that works at the lowest level (next to the page)
  * and performs some tasks in the DOM interface such as
@@ -1227,9 +1253,11 @@ class PageShell {
      * .js and .css content files
      */
     import(lib) {
-        var existing = this.getImportedLib(lib.libName);
-        if (existing !== null)
-            return;
+        if (lib.libName != '') {
+            var existing = this.getImportedLib(lib.libName);
+            if (existing !== null)
+                return;
+        }
         if (lib.hasCss) {
             var link = document.createElement('link');
             link.rel = 'stylesheet';
@@ -1240,11 +1268,13 @@ class PageShell {
         if (lib.hasJs) {
             var jsImport = document.createElement('script');
             jsImport.src = lib.getJsFullPath();
+            jsImport.type = 'text/javascript';
             document.body.appendChild(jsImport);
         }
         this.importedLibs.push(lib);
     }
 }
+//exports.PageShell = PageShell;
 /**defaults: '/lib/' */
 PageShell.LIB_ROOT = '/lib/';
 class RowOptions {
@@ -1253,6 +1283,7 @@ class RowOptions {
         this.rowClass = 'row';
     }
 }
+//exports.RowOptions = RowOptions;
 /**
  * Represents a Row Div with standard Bootstrap class options
  */
@@ -1292,6 +1323,7 @@ class Row {
         }
     }
 }
+//exports.Row = Row;
 class Misc {
     static isNull(value) {
         return (value == null || value == undefined);
@@ -1300,6 +1332,7 @@ class Misc {
         return (value == null || value == undefined || value == '');
     }
 }
+//exports.Misc = Misc;
 /**
  * A common abstraction for local storage features,
  * which can be persistent (aka 'LocalStorage')
@@ -1319,12 +1352,14 @@ class AppStorage {
         this.schemaName = schemaName;
     }
 }
+//exports.AppStorage = AppStorage;
 class RhabooInstance {
     constructor() {
         this.name = null;
         this.instance = null;
     }
 }
+//exports.RhabooInstance = RhabooInstance;
 class RhabooStorageWrapper extends AppStorage {
     /**
      *  REQUIRED `<script src="lib/rhaboo/rhaboo.js"></script>`
@@ -1372,6 +1407,7 @@ class RhabooStorageWrapper extends AppStorage {
         return this.rhaboo.instance[key];
     }
 }
+//exports.RhabooStorageWrapper = RhabooStorageWrapper;
 RhabooStorageWrapper.INSTANCES = [];
 class SelectOption {
     constructor(opValue, opText) {
@@ -1379,6 +1415,7 @@ class SelectOption {
         this.text = opText;
     }
 }
+//exports.SelectOption = SelectOption;
 class ViewDictionaryEntry {
     constructor(originalId, managedId) {
         this.originalId = originalId;
@@ -1391,6 +1428,7 @@ class ViewDictionaryEntry {
         return this.managedId;
     }
 }
+//exports.ViewDictionaryEntry = ViewDictionaryEntry;
 /**
  * ViewLayout is a class that logically contains a demarcation
  * of divs that will be used by the UIView inherited class,
@@ -1502,6 +1540,7 @@ class ViewLayout {
         return result;
     }
 }
+//exports.ViewLayout = ViewLayout;
 ViewLayout.AUTO_GENERATE_COLUMNS = false;
 /**
  * The WidgetFragment has the ability to "draw" Widget objects
@@ -1632,6 +1671,7 @@ class WidgetFragment {
         this.contextRoot.contextShell().appendChildToElement(this.containerElement, elementChild);
     }
 }
+//exports.WidgetFragment = WidgetFragment;
 class WidgetMessage {
     constructor(widgetName, messageId, messageText, messageAnyObject) {
         this.widgetName = widgetName;
@@ -1640,6 +1680,7 @@ class WidgetMessage {
         this.messageAnyObject = messageAnyObject;
     }
 }
+//exports.WidgetMessage = WidgetMessage;
 /**
  * Represents a native JavaScript function virtually controlled by TypeScript
  *
@@ -1716,6 +1757,7 @@ class VirtualFunction {
         return argNamesStr;
     }
 }
+//exports.VirtualFunction = VirtualFunction;
 /**
  * A class that generates a simplified,
  * standard Exception view at the point on
@@ -1750,6 +1792,7 @@ class DefaultExceptionPage {
         document.body.prepend(c);
     }
 }
+//exports.DefaultExceptionPage = DefaultExceptionPage;
 class UIHeadBinder extends WidgetBinder {
     constructor(head) {
         super(head);
@@ -1764,6 +1807,7 @@ class UIHeadBinder extends WidgetBinder {
     }
     fillPropertyModel() { }
 }
+//exports.UIHeadBinder = UIHeadBinder;
 class UIHead extends Widget {
     constructor({ name, headType, text }) {
         super(name);
@@ -1818,6 +1862,7 @@ class UIHead extends Widget {
         this.headElement.hidden = (visible == false);
     }
 }
+//exports.UIHead = UIHead;
 class ModalAction {
     constructor(buttonText, dataDismiss, buttonClick, ...buttonClasses) {
         this.text = buttonText;
@@ -1837,6 +1882,7 @@ class ModalAction {
             };
     }
 }
+//exports.ModalAction = ModalAction;
 class RadioOption {
     constructor(text, value, fieldSetId, shell) {
         var template = new UITemplateView(`<div id="radioOptionContainer" style="margin-right: 10px" class="custom-control custom-radio">
@@ -1865,6 +1911,7 @@ class RadioOption {
         this.radioInput.disabled = (isEnabled == false);
     }
 }
+//exports.RadioOption = RadioOption;
 class UIRadioGroupBinder extends WidgetBinder {
     constructor(radioGroup) {
         super(radioGroup);
@@ -1882,6 +1929,7 @@ class UIRadioGroupBinder extends WidgetBinder {
         this.setModelPropertyValue(value);
     }
 }
+//exports.UIRadioGroupBinder = UIRadioGroupBinder;
 class UIRadioGroup extends Widget {
     /**
     *
@@ -1994,6 +2042,7 @@ class UIRadioGroup extends Widget {
         this.groupContainer.hidden = (visible == false);
     }
 }
+//exports.UIRadioGroup = UIRadioGroup;
 class UIButton extends Widget {
     constructor({ name, text, imageSrc, imageWidth, btnClass = 'btn-light' }) {
         super(name);
@@ -2015,9 +2064,13 @@ class UIButton extends Widget {
     onWidgetDidLoad() {
         var self = this;
         this.buttonElement = this.elementById('fsButton');
-        this.buttonElement.classList.add(this.btnClass);
         this.imageElement = this.elementById('fsButtonImage');
         this.setText(this.text);
+        if (Misc.isNullOrEmpty(this.btnClass) == false) {
+            var btnClasses = this.btnClass.split(' ');
+            for (var i = 0; i < btnClasses.length; i++)
+                this.buttonElement.classList.add(btnClasses[i].trim());
+        }
         if (self.onClick != null) {
             this.buttonElement.onclick = function (ev) {
                 self.onClick(ev);
@@ -2062,6 +2115,7 @@ class UIButton extends Widget {
         renderer.render(this);
     }
 }
+//exports.UIButton = UIButton;
 class UICheckBoxBinder extends WidgetBinder {
     constructor(checkBox) {
         super(checkBox);
@@ -2080,10 +2134,12 @@ class UICheckBoxBinder extends WidgetBinder {
         return checked;
     }
 }
+//exports.UICheckBoxBinder = UICheckBoxBinder;
 class UICheckBox extends Widget {
-    constructor({ name, text }) {
+    constructor({ name, text, checked = false }) {
         super(name);
         this.labelText = text;
+        this.initialChecked = checked;
     }
     getBinder() {
         return new UICheckBoxBinder(this);
@@ -2104,6 +2160,7 @@ class UICheckBox extends Widget {
         self.checkLabel = self.elementById('checkLabel');
         self.checkLabel.htmlFor = self.checkElement.id;
         self.checkLabel.textContent = self.labelText;
+        self.checkElement.checked = self.initialChecked;
         self.checkElement.onchange = function (ev) {
             if (self.onCheckedChange != null)
                 self.onCheckedChange({ checked: self.checkElement.checked, event: ev });
@@ -2149,6 +2206,7 @@ class UICheckBox extends Widget {
         return this.checkElement.checked;
     }
 }
+//exports.UICheckBox = UICheckBox;
 class UIImageBinder extends WidgetBinder {
     constructor(image) {
         super(image);
@@ -2163,6 +2221,7 @@ class UIImageBinder extends WidgetBinder {
     }
     fillPropertyModel() { }
 }
+//exports.UIImageBinder = UIImageBinder;
 class UIImage extends Widget {
     constructor({ name, src, cssClass, alt }) {
         super(name);
@@ -2218,6 +2277,7 @@ class UIImage extends Widget {
         this.image.hidden = (visible == false);
     }
 }
+//exports.UIImage = UIImage;
 class UILabelBinder extends WidgetBinder {
     constructor(label) {
         super(label);
@@ -2236,26 +2296,27 @@ class UILabelBinder extends WidgetBinder {
         return text;
     }
 }
+//exports.UILabelBinder = UILabelBinder;
 class UILabel extends Widget {
     constructor({ name, text }) {
         super(name);
         this.lblText = text;
     }
-    getBinder() {
-        return new UILabelBinder(this);
-    }
     htmlTemplate() {
-        return `<label id="fsLabel" class="label"> Default label </label>`;
+        return `<label id="uiLabel" class="label"> Default label </label>`;
     }
     onWidgetDidLoad() {
-        this.label = this.elementById('fsLabel');
+        this.label = this.elementById('uiLabel');
         this.label.textContent = this.lblText;
+    }
+    setText(text) {
+        this.label.textContent = text;
     }
     getText() {
         return this.value();
     }
-    setText(text) {
-        this.label.textContent = text;
+    getBinder() {
+        return new UILabelBinder(this);
     }
     setCustomPresenter(renderer) {
         renderer.render(this);
@@ -2287,6 +2348,7 @@ class UILabel extends Widget {
         this.label.hidden = (visible == false);
     }
 }
+//exports.UILabel = UILabel;
 class UIListBinder extends WidgetBinder {
     constructor(listView) {
         super(listView);
@@ -2304,6 +2366,7 @@ class UIListBinder extends WidgetBinder {
     }
     fillPropertyModel() { }
 }
+//exports.UIListBinder = UIListBinder;
 class UIList extends Widget {
     /**
      *
@@ -2350,6 +2413,7 @@ class UIList extends Widget {
         return new UIListBinder(this);
     }
     fromList(viewModels, valueProperty, displayProperty) {
+        this.divContainer.innerHTML = '';
         if (viewModels == null || viewModels == undefined || viewModels.length == 0) {
             try {
                 var templateProvider = this.itemTemplateProvider();
@@ -2365,7 +2429,6 @@ class UIList extends Widget {
             return;
         }
         ;
-        this.divContainer.innerHTML = '';
         for (var i = 0; i < viewModels.length; i++) {
             var viewModel = viewModels[i];
             var text = (displayProperty == null ? `${viewModel}` : viewModel[displayProperty]);
@@ -2395,6 +2458,10 @@ class UIList extends Widget {
         item.setOwnerList(this);
         this.items.push(item);
         var view = item.itemTemplate();
+        var self = this;
+        view.onclick = function (ev) {
+            self.onItemClicked(item, ev);
+        };
         this.divContainer.append(view);
         return this;
     }
@@ -2471,6 +2538,7 @@ class UIList extends Widget {
         this.divContainer.hidden = (visible == false);
     }
 }
+//exports.UIList = UIList;
 class UIDialog extends Widget {
     constructor({ shell, name, title, contentTemplate, actions }) {
         super(name);
@@ -2575,6 +2643,7 @@ class UIDialog extends Widget {
         throw new Error("Method not implemented.");
     }
 }
+//exports.UIDialog = UIDialog;
 class UINavBar extends Widget {
     constructor(name) {
         super(name);
@@ -2637,6 +2706,7 @@ class UINavBar extends Widget {
         renderer.render(this);
     }
 }
+//exports.UINavBar = UINavBar;
 class UIProgressBar extends Widget {
     onWidgetDidLoad() {
         throw new Error("Method not implemented.");
@@ -2669,6 +2739,7 @@ class UIProgressBar extends Widget {
         throw new Error("Method not implemented.");
     }
 }
+//exports.UIProgressBar = UIProgressBar;
 class UISelectBinder extends WidgetBinder {
     constructor(select) {
         super(select);
@@ -2686,6 +2757,7 @@ class UISelectBinder extends WidgetBinder {
     }
     fillPropertyModel() { }
 }
+//exports.UISelectBinder = UISelectBinder;
 class UISelect extends Widget {
     constructor({ name, title }) {
         super(name);
@@ -2810,13 +2882,14 @@ class UISelect extends Widget {
         this.select.disabled = (enabled == false);
     }
 }
+//exports.UISelect = UISelect;
 class UISpinner extends Widget {
-    constructor({ name, colorClass, visible = true }) {
+    constructor({ name, colorClass = 'text-primary', visible = true }) {
         super(name);
         this.containerDiv = null;
         this.spanSpinner = null;
-        this.colorCls = colorClass;
-        this.initialVisible = visible;
+        this.colorCls = (Misc.isNullOrEmpty(colorClass) ? 'text-primary' : colorClass);
+        this.initialVisible = (Misc.isNull(visible) ? true : visible);
     }
     onWidgetDidLoad() {
         this.containerDiv = this.elementById('container');
@@ -2844,10 +2917,13 @@ class UISpinner extends Widget {
     setEnabled(enabled) {
     }
     addCSSClass(className) {
+        this.spanSpinner.classList.remove(className);
     }
     removeCSSClass(className) {
+        this.spanSpinner.classList.add(className);
     }
     applyCSS(propertyName, propertyValue) {
+        this.spanSpinner.style.setProperty(propertyName, propertyValue);
     }
     setPosition(position, marginLeft, marginTop, marginRight, marginBottom, transform) {
     }
@@ -2855,6 +2931,7 @@ class UISpinner extends Widget {
         this.containerDiv.hidden = (visible == false);
     }
 }
+//exports.UISpinner = UISpinner;
 class UISwitcher extends Widget {
     onWidgetDidLoad() {
         throw new Error("Method not implemented.");
@@ -2887,6 +2964,7 @@ class UISwitcher extends Widget {
         throw new Error("Method not implemented.");
     }
 }
+//exports.UISwitcher = UISwitcher;
 class Mask {
     static array() {
         return [
@@ -2906,6 +2984,7 @@ class Mask {
         ];
     }
 }
+//exports.Mask = Mask;
 /** 00/00/0000 */
 Mask.DATE = '00/00/0000';
 /**00:00:00 */
@@ -2950,14 +3029,16 @@ class UITextBoxBinder extends WidgetBinder {
         return text;
     }
 }
+//exports.UITextBoxBinder = UITextBoxBinder;
 class UITextBox extends Widget {
-    constructor({ name, type = 'text', title = '', maxlength = 100, placeHolder = '', text = '' }) {
+    constructor({ name, type = 'text', title = '', maxlength = 100, placeHolder = '', text = '', mask = '' }) {
         super(name);
         this.initialTitle = null;
         this.initialPlaceHolder = null;
         this.initialText = null;
         this.initialType = null;
         this.initialMaxlength = null;
+        this.initialMask = null;
         this.lbTitle = null;
         this.txInput = null;
         this.divContainer = null;
@@ -2966,6 +3047,7 @@ class UITextBox extends Widget {
         this.initialPlaceHolder = (Misc.isNullOrEmpty(placeHolder) ? '' : placeHolder);
         this.initialText = (Misc.isNullOrEmpty(text) ? '' : text);
         this.initialMaxlength = (Misc.isNullOrEmpty(maxlength) ? 100 : maxlength);
+        this.initialMask = (Misc.isNull(mask) ? '' : mask);
     }
     htmlTemplate() {
         return `
@@ -2981,6 +3063,8 @@ class UITextBox extends Widget {
         return new UITextBoxBinder(this);
     }
     applyMask(maskPattern) {
+        if (Misc.isNullOrEmpty(maskPattern))
+            return;
         //making jQuery call
         var jQueryCall = `$('#${this.txInput.id}').mask('${maskPattern}'`;
         var a = Mask.array();
@@ -2992,6 +3076,7 @@ class UITextBox extends Widget {
             jQueryCall += ', {reverse: true});';
         else
             jQueryCall += ');';
+        jQueryCall = `try { ${jQueryCall} } catch { }`;
         var maskFunction = new VirtualFunction({
             fnName: 'enableMask',
             fnContent: jQueryCall
@@ -3013,6 +3098,7 @@ class UITextBox extends Widget {
         this.txInput.value = this.initialText;
         this.setMaxLength(this.initialMaxlength);
         this.setInputType(this.initialType);
+        this.applyMask(this.initialMask);
     }
     setMaxLength(maxlength) {
         this.txInput.maxLength = maxlength;
@@ -3056,6 +3142,7 @@ class UITextBox extends Widget {
         this.divContainer.hidden = (visible == false);
     }
 }
+//exports.UITextBox = UITextBox;
 class UIToast extends Widget {
     onWidgetDidLoad() {
         throw new Error("Method not implemented.");
@@ -3088,6 +3175,7 @@ class UIToast extends Widget {
         throw new Error("Method not implemented.");
     }
 }
+//exports.UIToast = UIToast;
 class DataGridItem {
     constructor(name, model, pageShell) {
         this.selected = false;
@@ -3130,6 +3218,7 @@ class DataGridItem {
         return tr;
     }
 }
+//exports.DataGridItem = DataGridItem;
 class ListItem {
     constructor(name, text, value, imageSrc = null, badgeText = null) {
         this.selected = false;
@@ -3191,9 +3280,6 @@ class ListItem {
         self.anchorElement.style.padding = '0px';
         self.anchorElement.classList.add('list-group-item', 'align-items-center', 'list-group-item-action');
         self.anchorElement.id = this.itemName;
-        self.anchorElement.onclick = function (ev) {
-            self.ownerList.onItemClicked(self, ev);
-        };
         var rowDiv = pageShell.createElement('div');
         rowDiv.style.background = 'transparent';
         rowDiv.style.height = '40px';
@@ -3235,6 +3321,7 @@ class ListItem {
         return self.anchorElement;
     }
 }
+//exports.ListItem = ListItem;
 class UITemplateView {
     constructor(htmlContent, shell) {
         this.shellPage = shell;
@@ -3274,8 +3361,10 @@ class UITemplateView {
         this.viewDictionary.push(entry);
     }
 }
+//exports.UITemplateView = UITemplateView;
 class DataGridColumnDefinition {
 }
+//exports.DataGridColumnDefinition = DataGridColumnDefinition;
 class UIDataGridBinder extends WidgetBinder {
     constructor(dataGrid) {
         super(dataGrid);
@@ -3290,6 +3379,7 @@ class UIDataGridBinder extends WidgetBinder {
     }
     fillPropertyModel() { }
 }
+//exports.UIDataGridBinder = UIDataGridBinder;
 class UIDataGrid extends Widget {
     constructor({ name, autoGenCols = false, itemTemplateProvider = null }) {
         super(name);
@@ -3427,7 +3517,7 @@ class UIDataGrid extends Widget {
         throw new Error("Method not implemented.");
     }
     applyCSS(propertyName, propertyValue) {
-        throw new Error("Method not implemented.");
+        this.table.style.setProperty(propertyName, propertyValue);
     }
     setPosition(position, marginLeft, marginTop, marginRight, marginBottom, transform) {
         throw new Error("Method not implemented.");
@@ -3436,3 +3526,4 @@ class UIDataGrid extends Widget {
         throw new Error("Method not implemented.");
     }
 }
+//exports.UIDataGrid = UIDataGrid;

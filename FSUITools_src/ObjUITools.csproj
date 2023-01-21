@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <AssemblyName>OBJ-UI</AssemblyName>
+    <AssemblyName>obj-ui</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -23,8 +23,11 @@
     <Compile Include="AppBuildActions\RemoveLine.cs" />
     <Compile Include="AppBuildJsFile.cs" />
     <Compile Include="BuildApp.cs" />
+    <Compile Include="BuildSdk.cs" />
+    <Compile Include="ObjMon.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProjectCreator.cs" />
+    <Compile Include="TSC_Caller.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,6 @@
 ﻿"use strict";
+//Object.defineProperty(exports, "__esModule", { value: true });
+//exports.CustomDataGridItemTemplate = void 0;
 class CustomDataGridItemTemplate {
     constructor(shell, modelObj, onEdit, onDelete) {
         this.shell = shell;
@@ -53,3 +55,4 @@ class CustomDataGridItemTemplate {
         return row;
     }
 }
+//exports.CustomDataGridItemTemplate = CustomDataGridItemTemplate;

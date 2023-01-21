@@ -36,9 +36,17 @@ namespace ObjUITools
                     length: end).Replace("\\", "/");
             */
 
+            DirectoryInfo rootJsDir = new DirectoryInfo(Program.PROJECT_DIR)
+                .GetFiles("*.js", SearchOption.AllDirectories)
+                .FirstOrDefault()
+                .Directory;
 
-            FileInfo info = new FileInfo(jsFile.FullName);
-            string importName = $"    <script src=\"/{info.Name}\"></script>";
+
+
+            FileInfo currentFlInfo = new FileInfo(jsFile.FullName);
+            string importName = (currentFlInfo.Directory.Name == rootJsDir.Name
+                ? $"    <script src=\"/{currentFlInfo.Name}\"></script>"
+                : $"    <script src=\"/{currentFlInfo.Directory.Name }/{currentFlInfo.Name}\"></script>");
 
             if (fileActions.Count == 0) return importName;
             string[] lines = File.ReadAllLines(jsFile.FullName);

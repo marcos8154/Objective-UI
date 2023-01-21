@@ -103,6 +103,7 @@ export class UIList extends Widget implements IBindable
 
     public fromList(viewModels: Array<any>, valueProperty?: string, displayProperty?: string): void
     {
+        this.divContainer.innerHTML = '';
         if (viewModels == null || viewModels == undefined || viewModels.length == 0) 
         {
             try
@@ -120,7 +121,7 @@ export class UIList extends Widget implements IBindable
             }
             return;
         };
-        this.divContainer.innerHTML = '';
+
         for (var i = 0; i < viewModels.length; i++)
         {
             var viewModel: any | object = viewModels[i];
@@ -164,6 +165,13 @@ export class UIList extends Widget implements IBindable
         item.setOwnerList(this);
         this.items.push(item);
         var view: HTMLAnchorElement = item.itemTemplate();
+
+        var self = this;
+        view.onclick = function (ev)
+        {
+            self.onItemClicked(item, ev);
+        };
+
         this.divContainer.append(view);
         return this;
     }

@@ -4,6 +4,8 @@
  * which contains all the default widgets and mechanism for
  * basic screen controls.
  */
+//Object.defineProperty(exports, "__esModule", { value: true });
+//exports.HelloWorld = void 0;
 /**
  * An inheritance UIView class is able to represent a view and its controls.
  * Controls are represented in derived UIWidgets,
@@ -116,3 +118,4 @@ class HelloWorld extends UIView {
         modal.show();
     }
 }
+//exports.HelloWorld = HelloWorld;

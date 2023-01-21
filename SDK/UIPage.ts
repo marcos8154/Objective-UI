@@ -19,13 +19,15 @@ import { IAppStorageProvider } from "./IAppStorageProvider";
  */
 export abstract class UIPage
 {
-    public static readonly PRODUCT_VERSION: string = '0.8.9'
+    public static readonly PRODUCT_VERSION: string = '1.0.3'
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
 
     constructor(doc: Document)
     {
         this.mainShell = new PageShell(doc, this);
+
+        console.info(`* * * Objective-UI v${UIPage.PRODUCT_VERSION} * * *`);
     }
 
     protected setStorageProvider(provider: IAppStorageProvider): void

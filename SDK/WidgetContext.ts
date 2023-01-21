@@ -63,6 +63,15 @@ export class WidgetContext
         return widget;
     }
 
+    get(path: string)
+    {
+        const fragmentName: string = path.split('/')[0];
+        const widgetName: string = path.split('/')[1];
+        var fragment: WidgetFragment = this.findFragment(fragmentName);
+        var widget: Widget = fragment.findWidget(widgetName);
+        return widget;
+    }
+
     pushMessage(widgetName: string, messageId: number, messageText: string, messageAnyObject: object)
     {
         if (this.messageProtocolFunction != null)

@@ -111,9 +111,9 @@ export abstract class WebAPISimulator
                 {
                     const path = resource.replace(route.getResource(), '');
                     var params = path.split('/');
-                    if (params.length > 0)
+                 /*   if (params.length > 0)
                         if (params[0] == '')
-                            params = params.splice(-1, 1);
+                            params = params.splice(-1, 1); */
                     return new APIResponse({
                         code: 200,
                         msg: 'fetched from API Simulator',

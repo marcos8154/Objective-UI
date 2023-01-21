@@ -4,16 +4,26 @@ import { UIDialog } from "./UIDialog";
 export class ModalAction
 {
     public text: string;
-    public classes: string[];
+    public classes: string[] = [];
     public onClick?: Function;
     public dismis: boolean;
 
-    constructor(buttonText: string, dataDismiss: boolean, buttonClick?: Function, ...buttonClasses: string[])
+    constructor({ buttonText, dataDismiss = false, buttonClasses = 'btn btn-light', buttonClick = null }:
+        {
+            buttonText: string;
+            dataDismiss?: boolean;
+            buttonClick?: Function;
+            buttonClasses?: string;
+        })
     {
         this.text = buttonText;
-        this.classes = buttonClasses;
+
         this.onClick = buttonClick;
         this.dismis = dataDismiss;
+
+        const classesStr = buttonClasses.split(' ');
+        for (var c = 0; c < classesStr.length; c++)
+            this.classes.push(classesStr[c]);
 
         if (this.text == null)
             this.text = 'Modal action';

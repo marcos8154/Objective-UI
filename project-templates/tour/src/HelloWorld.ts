@@ -4,7 +4,7 @@
  * basic screen controls.
  */
 
-import { Col, UIButton, UIHead, UIImage, UIDialog, ModalAction, Row, ViewLayout, UIView, UIPage, UITemplateView } from "./Objective-UI";
+import { Col, UIButton, UIHead, UIImage, UIDialog, ModalAction, Row, ViewLayout, UIView, UIPage, UITemplateView, UIList, UILabel, UITextBox } from "./Objective-UI";
 import { Tour } from "./Tour";
 
 /**
@@ -14,146 +14,52 @@ import { Tour } from "./Tour";
  */
 export class HelloWorld extends UIView
 {
-    /**It is necessary to have a static instance to access this object 
-     * inside function events 
-     * ("this" CANNOT work inside a function event! )
-     * 
-     * The '$' is NOT about jQuery. 
-     * It's just a short way to access this variable 
-     * (call it whatever you want in your file, but that's better :) )
-     *  */
     private static $: HelloWorld;
 
-
-    //#region  Widgets used in this view */
-    private img = new UIImage({ name: 'img', src: "/img/demo-img.png" })
-    private hello = new UIHead({ name: 'helloH1', headType: 'h1', text: 'Hello World! Its working' })
-    private sub = new UIHead({ name: 'subTt', headType: 'h5', text: `Objective-UI ${UIPage.PRODUCT_VERSION}` })
-    private btnModal = new UIButton({ name: 'btnModal', btnClass: 'btn-success', text: 'Click to see it' })
-    private btnTour = new UIButton({ name: 'btnTour', btnClass: 'btn-primary', text: 'Start Tour' });
-    //#endregion
+    //Declare required Widgets in View
+    private label = new UILabel({ name: 'lbl1', text: 'My first UIView' })
+    private textBox = new UITextBox({ name: 'txtInput', title: 'Input value here' })
+    private btnShow = new UIButton({ name: 'btnShow', text: 'Show typed value!' })
 
     constructor()
     {
         super();
         HelloWorld.$ = this;
 
-        // Widget's events must be implemented in the derived UIView constructor
-        this.btnModal.onClick = this.modalShow;
-        this.btnTour.onClick = this.startTour;
+        this.btnShow.onClick = function ()
+        {
+            var view = HelloWorld.$;
+            var text = view.textBox.getText();
+            alert(`Typed: '${text}'`);
+        }
     }
-    /**
-     * After calling the constructor, the UIView (super) class takes 
-     * control of this class, and upon loading it (super) will call 
-     * some methods in the inherited class
-     */
 
-    /**
-     * It is the first function invoked by UIView (super).
-     * Here, you must define the divisions and demarcations of the layout.
-     *
-     * This is done under the ViewLayout class, which supports 2 input methods: 
-     * object and HTML string.
-     */
+    ///Provide a Layout for the View
     buildLayout(): ViewLayout
     {
-        const defClass = 'row d-flex flex-row justify-content-center';
-        // You can build the layout with representative objects (Row and Column)
         return new ViewLayout('app', [
-            new Row('rowImg', {
-                rowClass: defClass
-            }),
-            new Row('rowHello', {
-                rowClass: defClass,
-            }),
-            new Row('rowSub', {
-                rowClass: defClass,
+            new Row('layout-row', {
                 columns: [
-                    new Col('colSub', { colClass: 'col-3' })
+                    new Col('layout-column', {
+                        colClass: 'col-xs-12 col-sm-12 col-md-8 col-lg-4',
+                        colHeight: '100vh'
+                    })
                 ]
             })
-        ])
+        ]);
     }
-
-    /**
-     * It is the second function invoked by UIView (super) in the inherited class.
-     * 
-     * Here, you must attach the widgets to the respective div's of 
-     * the layout in which they should appear 
-     * (it was previously built in buildLayout() function)
-     */
+    //Append the Widgets declared in some div that was produced by buildLayout()
     composeView(): void
     {
-        this.addWidgets('rowImg', this.img,);
-        this.addWidgets('rowHello', this.hello);
-        this.addWidgets('colSub', this.sub, this.btnModal, this.btnTour);
+        this.addWidgets('layout-column', this.label, this.textBox, this.btnShow);
     }
-
-    /**
-     * It is the third and last function invoked by UIView (super)
-     * 
-     * At this point, the rendering of the view is complete and is 
-     * already visible on the page. You can change the widgets state here: 
-     * change text, apply styles, etc.
-     */
     onViewDidLoad(): void
     {
-        //feel free to try out the other functions/ways to modify Widgets CSS
-        //such as .applyCSS() or .applyAllCSS()
-        this.hello.cssFromString('width:100%; text-align:center');
-        this.sub.cssFromString('width:100; text-align:center');
-        this.img.cssFromString('width:200px; height:200px; margin-top:100px');
-        this.btnModal.addCSSClass('align-self-center');
-        this.renderDynamicContent();
+        /**
+         * All View and Widgets were properly 
+         * initialized and presented on the page. 
+         * Now we can change the state and go 
+         * ahead with our View's logic.
+         */
     }
-
-    //#region others general or specific functions pertinent to this class (inherited)
-    private renderDynamicContent()
-    {
-        const template: UITemplateView = this.inflateTemplateView(`
-            <p id="essential-libs">
-                Thanks for: <br/>
-            </p>
-        `);
-
-        const pElement: HTMLParagraphElement = template.elementById('essential-libs');
-        for (var i = 0; i < this.shellPage.importedLibs.length; i++)
-        {
-            const lib = this.shellPage.importedLibs[i];
-            pElement.append(`- ${lib.libName}`);
-            pElement.appendChild(this.shellPage.createElement('br'));;
-        }
-
-        const divToAppend = this.shellPage.elementById('colSub');
-        this.shellPage.appendChildToElement(divToAppend, pElement);
-    }
-
-    startTour(ev: Event): void
-    {
-        HelloWorld.$.shellPage.navigateToView(new Tour());
-    }   
-
-    modalShow(ev: Event): void
-    {
-        const $ = HelloWorld.$;//self-instance shortcut
-        const template = $.inflateTemplateView('<label id="lbHello"> Hello World! by Objective-UI </label>');
-        const lbHello = template.elementById('lbHello') as HTMLLabelElement;
-
-        var modal = new UIDialog({
-            title: 'Its works!',
-            shell: $.shellPage,
-            name: 'hello-world-modal',
-            contentTemplate: template,
-            actions: [
-                new ModalAction('Click to more surprise...', false, function (m: UIDialog)
-                {
-                    lbHello.textContent = 'Changed!';
-                }, 'btn', 'btn-primary'),
-                new ModalAction('Close', true, null, 'btn', 'btn-dark')
-            ]
-        });
-
-        modal.show();
-    }
-    //#endregion
 }

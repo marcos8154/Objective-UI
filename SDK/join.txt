@@ -43,6 +43,7 @@ controls/UISelect.ts
 controls/UISpinner.ts
 controls/UISwitcher.ts
 controls/UITextBox.ts
+controls/UITextArea.ts
 controls/UIToast.ts
 controls/DataGridItem.ts
 controls/IDataGridItemTemplateProvider.ts
@@ -52,3 +53,9 @@ controls/IListItemTemplate.ts
 controls/ListItem.ts
 controls/UITemplateView.ts
 controls/UIDataGrid.ts
+yord-api/DivContent.ts
+yord-api/IYordLayout.ts
+yord-api/YordManagedView.ts
+yord-api/YordView.ts
+yord-api/YordViewContext.ts
+yord-api/HtmlLayout.ts

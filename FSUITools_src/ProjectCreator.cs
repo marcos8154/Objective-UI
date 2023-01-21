@@ -27,7 +27,7 @@ namespace ObjUITools
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            string templateFile = $@"C:\Objective-UI\project-templates\{template}.zip";
+            string templateFile = Program.Key("TEMPLATES_PATH").Replace("{template}", template); // $@"C:\Objective-UI\project-templates\{template}.zip";
             System.IO.Compression.ZipFile.ExtractToDirectory(templateFile, Program.PROJECT_DIR);
 
             sw.Stop();

@@ -1,6 +1,7 @@
 import { Widget } from "../Widget";
 import { PageShell } from "../PageShell";
 import { ViewDictionaryEntry } from "../ViewDictionaryEntry";
+import { Misc } from "../Misc";
 
 export class UITemplateView
 {
@@ -49,6 +50,8 @@ export class UITemplateView
             if (entry.getOriginalId() == elementId)
             {
                 var elementResult: any = this.templateDOM.getElementById(entry.getManagedId());
+                if(Misc.isNull(elementResult))
+                    elementResult = document.getElementById(entry.getManagedId())
                 return elementResult;
             }
         }

@@ -1,4 +1,6 @@
 ﻿"use strict";
+//Object.defineProperty(exports, "__esModule", { value: true });
+//exports.CustomListItemTemplate = void 0;
 class CustomListItemTemplate {
     constructor(shell) {
         this.selected = false;
@@ -34,3 +36,4 @@ This line is a snippet of HTML that has been converted to an object and appended
         return this.linkElement;
     }
 }
+//exports.CustomListItemTemplate = CustomListItemTemplate;

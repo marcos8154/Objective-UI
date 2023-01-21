@@ -31,27 +31,28 @@ export class UILabelBinder extends WidgetBinder
 
 export class UILabel extends Widget implements IBindable
 {
-    public label: HTMLLabelElement;
     private lblText: string;
-    constructor({name, text}:
-        {name: string, text: string})
+
+    constructor({ name, text }: { name: string, text: string })
     {
         super(name);
         this.lblText = text;
     }
-    getBinder(): WidgetBinder
-    {
-        return new UILabelBinder(this);
-    }
+
+    public label: HTMLLabelElement;
     protected htmlTemplate(): string
     {
-        return `<label id="fsLabel" class="label"> Default label </label>`;
+        return `<label id="uiLabel" class="label"> Default label </label>`;
     }
 
     protected onWidgetDidLoad(): void
     {
-        this.label = this.elementById('fsLabel');
+        this.label = this.elementById('uiLabel');
         this.label.textContent = this.lblText;
+    }
+    public setText(text: string): void
+    {
+        this.label.textContent = text;
     }
 
     public getText(): string
@@ -59,9 +60,11 @@ export class UILabel extends Widget implements IBindable
         return this.value();
     }
 
-    public setText(text: string): void
+
+
+    getBinder(): WidgetBinder
     {
-        this.label.textContent = text;
+        return new UILabelBinder(this);
     }
 
     public setCustomPresenter(renderer: ICustomWidgetPresenter<Widget>): void

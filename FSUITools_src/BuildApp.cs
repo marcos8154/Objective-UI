@@ -11,6 +11,29 @@ namespace ObjUITools
 {
     internal class BuildApp
     {
+        public static void Build()
+        {
+            Console.WriteLine("Building app");
+            Console.ForegroundColor = ConsoleColor.Green;
+            DirectoryInfo projDir = new DirectoryInfo(Program.PROJECT_DIR);
+            Console.ForegroundColor = ConsoleColor.White;
+            string[] distFolders = Program.Key("VALID_DIST_PROJECT_FOLDERS").Split(';');
+
+            DirectoryInfo? distDir = projDir.GetDirectories()
+                .FirstOrDefault(d => distFolders.Contains(d.Name));
+            if (distDir == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("An distribution folder not found in project directory. Valid folder names: 'dist' , 'wwwroot', 'www', 'publish'");
+                Environment.Exit(1);
+            }
+            else
+                Console.WriteLine($"Distribution folder found as '{distDir.Name}' ");
+
+            BuildApp build = new BuildApp(distDir);
+            build.BuildInternal();
+        }
+
         private readonly DirectoryInfo distDir;
         private readonly List<AppBuildJsFile> appFiles;
         public BuildApp(DirectoryInfo appDistDir)
@@ -48,9 +71,9 @@ namespace ObjUITools
                     if (i == 0) continue;
 
                     if (line.StartsWith("Object.defineProperty"))
-                        appFile.AddAction(new RemoveLine(i));
+                        appFile.AddAction(new LineReplace(i, "Object.defineProperty", "//Object.defineProperty"));
                     if (line.StartsWith("exports."))
-                        appFile.AddAction(new RemoveLine(i));
+                        appFile.AddAction(new LineReplace(i, "exports.", "//exports."));
 
                     if (line.StartsWith("const "))
                     {
@@ -73,7 +96,7 @@ namespace ObjUITools
                     });
 
                     sw.Stop();
-            
+
                 }
 
                 appFiles.Add(appFile);
@@ -82,23 +105,41 @@ namespace ObjUITools
             }
         }
 
-        public void Build()
+        private void BuildInternal()
         {
-            StringBuilder importResults = new StringBuilder();
+            StringBuilder importFiles = new StringBuilder();
             foreach (AppBuildJsFile jsFile in appFiles)
-                importResults.AppendLine(jsFile.BuildFile());
+                importFiles.AppendLine(jsFile.BuildFile().Trim());
 
             DirectoryInfo di = new DirectoryInfo(Program.PROJECT_DIR);
-            FileInfo indexHtml = di.GetFiles("*.html", SearchOption.AllDirectories)
+            FileInfo indexHtml = di.GetFiles("*.ts", SearchOption.AllDirectories)
+                .FirstOrDefault()
+                .Directory
+                .GetFiles("*.html", SearchOption.AllDirectories)
                 .FirstOrDefault(f => f.Name.ToLower().Equals("index.html"));
 
-            if(indexHtml != null)
+            Console.WriteLine($" > INDEX HTML FILE: {(indexHtml?.Name)}");
+
+            if (indexHtml != null)
             {
-                string templateStr = File.ReadAllText(indexHtml.FullName);
-                templateStr = templateStr.Replace("@app", importResults.ToString());
+                string htmlFileTemplateStr = File.ReadAllText(indexHtml.FullName);
+                string[] importLines = importFiles.ToString().Split('\n');
+                StringBuilder importsResult = new StringBuilder();
+                foreach (string importLine in importLines)
+                {
+                    if (htmlFileTemplateStr.Contains(importLine))
+                        continue;
+                    if (importLine.ToLower().Contains("objective-ui"))
+                        continue;
+
+                    var import = importLine.Replace("\n", "").Replace("\r", "").Trim();
+                    importsResult.AppendLine($"    {import}");
+                }
+
+                htmlFileTemplateStr = htmlFileTemplateStr.Replace("@app", importsResult.ToString());
 
                 string templateFile = Path.Combine(distDir.FullName, "index.html");
-                File.WriteAllText(templateFile, templateStr);
+                File.WriteAllText(templateFile, htmlFileTemplateStr);
             }
 
         }

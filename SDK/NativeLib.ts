@@ -25,8 +25,8 @@ export class NativeLib
      * @param cssPath The name (or subpath) of the library's .css file. If not, ignore this parameter.
      * @param jsPath The name (or subpath) of the library's .js file. If not, ignore this parameter.
      */
-    constructor({ libName, cssPath = '', jsPath = '' }: {
-        libName: string;
+    constructor({ libName = '', cssPath = '', jsPath = '' }: {
+        libName?: string;
         cssPath?: string;
         jsPath?: string;
     })

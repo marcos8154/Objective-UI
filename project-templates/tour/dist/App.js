@@ -1,4 +1,6 @@
 ﻿"use strict";
+//Object.defineProperty(exports, "__esModule", { value: true });
+//exports.App = void 0;
 class App extends UIPage {
     constructor(mainDoc) {
         super(mainDoc);
@@ -29,3 +31,4 @@ class App extends UIPage {
         }
     }
 }
+//exports.App = App;

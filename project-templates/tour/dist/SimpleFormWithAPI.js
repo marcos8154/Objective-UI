@@ -1,4 +1,6 @@
 ﻿"use strict";
+//Object.defineProperty(exports, "__esModule", { value: true });
+//exports.SimpleFormWithAPI = //exports.ContactViewModel = void 0;
 class ContactViewModel {
     constructor() {
         this.contactId = 0;
@@ -7,6 +9,7 @@ class ContactViewModel {
         this.phone = '';
     }
 }
+//exports.ContactViewModel = ContactViewModel;
 class SimpleFormWithAPI extends UIView {
     constructor() {
         super();
@@ -135,3 +138,4 @@ class SimpleFormWithAPI extends UIView {
         return new CustomDataGridItemTemplate(this.shellPage, viewModel, this.editContact, this.deleteContact);
     }
 }
+//exports.SimpleFormWithAPI = SimpleFormWithAPI;

@@ -103,11 +103,7 @@ export class ListItem implements IListItemTemplate
         self.anchorElement.style.padding = '0px';
         self.anchorElement.classList.add('list-group-item', 'align-items-center', 'list-group-item-action');
         self.anchorElement.id = this.itemName;
-        self.anchorElement.onclick = function (ev)
-        {
-            self.ownerList.onItemClicked(self, ev);
-        };
-
+    
         var rowDiv = pageShell.createElement('div');
         rowDiv.style.background = 'transparent';
         rowDiv.style.height = '40px';

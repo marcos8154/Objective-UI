@@ -1,7 +1,9 @@
 {
   "profiles": {
     "FSUITools": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "-mon -p=\"C:\\Users\\marco\\Documents\\Visual Studio 2019\\Projects\\ParkingAPI\\ParkingAPI\"",
+      "workingDirectory": "C:\\ObjUI-release\\NPM"
     }
   }
 }

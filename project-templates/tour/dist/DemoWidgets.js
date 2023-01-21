@@ -1,4 +1,6 @@
 ﻿"use strict";
+//Object.defineProperty(exports, "__esModule", { value: true });
+//exports.DemoWidgets = void 0;
 class DemoWidgets extends UIView {
     constructor() {
         super();
@@ -169,3 +171,4 @@ class DemoWidgets extends UIView {
         this.dataGrid.fromList(objects);
     }
 }
+//exports.DemoWidgets = DemoWidgets;

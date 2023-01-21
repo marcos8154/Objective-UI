@@ -97,7 +97,7 @@ export class UITextBox extends Widget implements IBindable
     protected htmlTemplate(): string
     {
         return `
-<div id="textEntry" class="form-group">
+<div id="divContainer" class="form-group">
     <label id="entryTitle" style="margin: 0px; padding: 0px; font-weight:normal !important;" for="inputEntry"> Entry Title </label>
     <input id="entryInput" class="form-control form-control-sm"  placeholder="Entry placeholder">
 </div>`
@@ -182,7 +182,8 @@ export class UITextBox extends Widget implements IBindable
     {
         this.lbTitle = this.elementById('entryTitle');
         this.txInput = this.elementById('entryInput');
-        this.divContainer = this.elementById('textEntry');
+        this.divContainer = this.elementById('divContainer');
+        
         this.lbTitle.innerText = this.initialTitle;
         this.txInput.placeholder = this.initialPlaceHolder;
         this.txInput.value = this.initialText;
