@@ -11,10 +11,10 @@ namespace ObjUITools
     {
         private readonly string template;
 
-        public ProjectCreator(string template = "hello-world-obj-ui")
+        public ProjectCreator(string template = "hello-world")
         {
             if (string.IsNullOrEmpty(template))
-                template = "hello-world-fs";
+                template = "hello-world";
             this.template = template;
         }
 

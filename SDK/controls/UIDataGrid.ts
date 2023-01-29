@@ -126,11 +126,11 @@ export class UIDataGrid extends Widget implements IBindable
 
     public fromList(list: Array<any>): void
     {
-        if ((list == null || list == undefined) || list.length == 0)
-            return;
-
         this.table.tBodies[0].innerHTML = '';
         this.items = [];
+
+        if ((list == null || list == undefined) || list.length == 0)
+            return;
 
         var shell = this.getPageShell();
         if (this.autoGenerateColumns)

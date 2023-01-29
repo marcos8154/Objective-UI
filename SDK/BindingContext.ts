@@ -13,6 +13,11 @@ import { AppStorage } from "./AppStorage";
  */
 export class BindingContext<ViewModel>
 {
+    public toString(): string
+    {
+        return '[BINDING-CONTEXT]';
+    }
+
     private _binders: Array<WidgetBinder> = [];
     private viewModelInstance: ViewModel;
 

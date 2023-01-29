@@ -5,30 +5,21 @@
     <TargetFramework>net6.0</TargetFramework>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AssemblyName>obj-ui</AssemblyName>
+    <BaseOutputPath>C:\ObjUI-release\NPM\</BaseOutputPath>
+    <AssemblyVersion>1.0.4.0</AssemblyVersion>
+    <FileVersion>1.0.4.0</FileVersion>
+    <Version>1.0.4.0</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>C:\\Objective-UI\\</OutputPath>
+    <OutputPath>C:\ObjUI-release\NPM\</OutputPath>
+    <Optimize>False</Optimize>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="AppBuildActions - Cópia\**" />
-    <EmbeddedResource Remove="AppBuildActions - Cópia\**" />
-    <None Remove="AppBuildActions - Cópia\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="AppBuildAction.cs" />
-    <Compile Include="AppBuildActions\LineReplace.cs" />
-    <Compile Include="AppBuildActions\RemoveLine.cs" />
-    <Compile Include="AppBuildJsFile.cs" />
-    <Compile Include="BuildApp.cs" />
-    <Compile Include="BuildSdk.cs" />
-    <Compile Include="ObjMon.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="ProjectCreator.cs" />
-    <Compile Include="TSC_Caller.cs" />
-  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	  <OutputPath>C:\ObjUI-release\NPM\</OutputPath>
+	  <Optimize>True</Optimize>
+  </PropertyGroup>
 
   <ItemGroup>
     <None Include="App.config" />
@@ -39,6 +30,25 @@
 
   <ItemGroup>
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="AppBuildActions\" />
   </ItemGroup>
 
 </Project>

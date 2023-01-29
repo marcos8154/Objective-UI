@@ -6,6 +6,11 @@
  * */
 export abstract class AppStorage
 {
+    public toString(): string
+    {
+        return 'APP-STORAGE (temp. and persist data management)';
+    }
+
     protected type: string;
     protected schemaName: string;
 

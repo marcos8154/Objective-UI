@@ -1,0 +1,25 @@
+{
+  "name": "objective-ui",
+  "version": "1.0.5",
+  "description": "A typescript framework for an object-based frontend",
+  "main": "UIPage.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marcos8154/Objective-UI.git"
+  },
+  "keywords": [
+    "frontend",
+    "UI",
+    "gui",
+    "component",
+    "widgets",
+    "OO",
+    "objects"
+  ],
+  "author": "Marcos Vinícius",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/marcos8154/Objective-UI/issues"
+  },
+  "homepage": "https://github.com/marcos8154/Objective-UI#readme"
+}

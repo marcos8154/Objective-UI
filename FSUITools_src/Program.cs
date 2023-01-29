@@ -13,7 +13,7 @@ namespace ObjUITools
 {
     public class Program
     {
-        public static readonly string TOOLS_VERSION = "1.0.2";
+        public static string TOOLS_VERSION = "1.0.2";
         public static string PROJECT_DIR;
         public static string SDK_SRC_PATH;
 
@@ -34,6 +34,8 @@ namespace ObjUITools
         {
             try
             {
+                TOOLS_VERSION = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
                 if (!Console.IsOutputRedirected) Console.Clear();
                 
                 Console.ForegroundColor = ConsoleColor.Cyan;

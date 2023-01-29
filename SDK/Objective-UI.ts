@@ -767,6 +767,11 @@ export class WidgetContext
  */
 export class BindingContext<ViewModel>
 {
+    public toString(): string
+    {
+        return '[BINDING-CONTEXT]';
+    }
+
     private _binders: Array<WidgetBinder> = [];
     private viewModelInstance: ViewModel;
 
@@ -1400,9 +1405,10 @@ export abstract class WebAPISimulator
                 {
                     const path = resource.replace(route.getResource(), '');
                     var params = path.split('/');
-                 /*   if (params.length > 0)
+                    if (params.length > 0)
                         if (params[0] == '')
-                            params = params.splice(-1, 1); */
+                            params.shift();
+                            
                     return new APIResponse({
                         code: 200,
                         msg: 'fetched from API Simulator',
@@ -1439,6 +1445,11 @@ export class ColOptions
  */
 export class Col
 {
+    public toString(): string
+    {
+        return 'BT-COLUMN';
+    }
+
     id: string;
     colClass?: string = 'col-lg-12 col-md-12 col-sm-12 col-sm-12';
     colHeight?: string = '100px';
@@ -2027,6 +2038,11 @@ export class Misc
  * */
 export abstract class AppStorage
 {
+    public toString(): string
+    {
+        return 'APP-STORAGE (temp. and persist data management)';
+    }
+
     protected type: string;
     protected schemaName: string;
 
@@ -5423,11 +5439,11 @@ export class UIDataGrid extends Widget implements IBindable
 
     public fromList(list: Array<any>): void
     {
-        if ((list == null || list == undefined) || list.length == 0)
-            return;
-
         this.table.tBodies[0].innerHTML = '';
         this.items = [];
+
+        if ((list == null || list == undefined) || list.length == 0)
+            return;
 
         var shell = this.getPageShell();
         if (this.autoGenerateColumns)

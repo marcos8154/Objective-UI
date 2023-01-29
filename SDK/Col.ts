@@ -19,6 +19,11 @@ export class ColOptions
  */
 export class Col
 {
+    public toString(): string
+    {
+        return 'BT-COLUMN';
+    }
+
     id: string;
     colClass?: string = 'col-lg-12 col-md-12 col-sm-12 col-sm-12';
     colHeight?: string = '100px';
