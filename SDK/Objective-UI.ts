@@ -13,7 +13,7 @@
  */
 export abstract class UIPage
 {
-    public static readonly PRODUCT_VERSION: string = '1.0.3'
+    public static readonly PRODUCT_VERSION: string = '1.0.9'
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
 
@@ -603,7 +603,7 @@ export abstract class Widget implements INotifiable
  * created to manage another portion of Widgets 
  * located in other Divs.
  */
-export class WidgetContext
+export class WidgetContext implements INotifiable
 {
 
     fragments: WidgetFragment[];
@@ -630,6 +630,10 @@ export class WidgetContext
             var divElement = shellPage.elementById(elementId) as HTMLDivElement;
             self.fragments.push(new WidgetFragment(self, divElement));
         }
+    }
+    onNotified(sender: any, args: any[]): void
+    {
+
     }
     contextShell(): PageShell
     {
@@ -690,7 +694,8 @@ export class WidgetContext
 
         if (this.contextLoaded)
         {
-            fragment.renderFragmentwidgets();
+            let last = fragment.widgets.length - 1;
+            fragment.widgets[last].renderView(this);
         }
 
         return this;
@@ -711,8 +716,8 @@ export class WidgetContext
                 }
             }
             return widgets;
-        } 
-        catch(e)
+        }
+        catch (e)
         {
             return [];
         }
@@ -737,14 +742,22 @@ export class WidgetContext
         }
     }
 
+    clear()
+    {
+        for (var i = 0; i < this.fragments.length; i++)
+        {
+            var fragment: WidgetFragment = this.fragments[i];
+            fragment.clear();
+        }
+    }
+
     /**
      * Performs the rendering of the Widgets attached to this Context.
      * Immediately orders the Fragments managed by this Context to draw 
      * the Widgets they manage.
      * @param notifiable 
-     * @param clear 
      */
-    build(notifiable?: INotifiable, clear: boolean = false)
+    build(notifiable?: INotifiable)
     {
         this.fragmentsLoaded = 0;
         this.notifiableView = notifiable;
@@ -752,10 +765,8 @@ export class WidgetContext
         for (var i = 0; i < this.fragments.length; i++)
         {
             var fragment: WidgetFragment = this.fragments[i];
-            if (clear == true)
-                fragment.clear();
-
-            fragment.renderFragmentwidgets();
+            if (!this.contextLoaded)
+                fragment.renderFragmentwidgets();
         }
     }
 }
@@ -1130,7 +1141,7 @@ WebAPI
  */
 export class WebAPI
 {
-    private static urlBase: string;
+    public static urlBase: string;
     public static setURLBase(apiUrlBase: string)
     {
         WebAPI.urlBase = apiUrlBase;
@@ -1219,16 +1230,23 @@ export class WebAPI
                 })
                 .then(function (res: APIResponse)
                 {
-                    if (self.fnOnSuccess != null)
-                        self.fnOnSuccess(res);
-                    if (self.fnDataResultTo != null)
+                    const code = res.statusCode;
+                    if (code == 200 || code == 201 || code == 202)
                     {
-                        if (res.statusCode == 200)
+                        if (self.fnOnSuccess != null)
+                            self.fnOnSuccess(res);
+                        if (self.fnDataResultTo != null)
                         {
                             var data = res.content;
                             self.fnDataResultTo(data);
                         }
                     }
+                    else
+                    {
+                        if (self.fnOnError != null)
+                            self.fnOnError(new Error(`${code} - ${res.statusMessage}`))
+                    }
+
                 })
                 .catch(err => (self.fnOnError == null ? {} : self.fnOnError(err)));
         }
@@ -1246,11 +1264,8 @@ export class WebAPI
 
                 if (Misc.isNullOrEmpty(this.fnDataResultTo) == false)
                 {
-                    if (result.statusCode == 200)
-                    {
-                        var data = result.content;
-                        this.fnDataResultTo(data);
-                    }
+                    var data = result.content;
+                    this.fnDataResultTo(data);
                 }
             } catch (error)
             {
@@ -1315,6 +1330,13 @@ export class SimulatedAPIRoute
 
     public getResource()
     {
+        const parIndx: number = this.resource.indexOf('{');
+        if (parIndx > 0)
+        {
+            var pureRes = this.resource.substring(0,parIndx)
+            return pureRes;
+        }
+
         return this.resource;
     }
 
@@ -1408,7 +1430,7 @@ export abstract class WebAPISimulator
                     if (params.length > 0)
                         if (params[0] == '')
                             params.shift();
-                            
+
                     return new APIResponse({
                         code: 200,
                         msg: 'fetched from API Simulator',
@@ -1427,6 +1449,12 @@ export abstract class WebAPISimulator
                 break;
             }
         }
+
+        return new APIResponse({
+            code: 404,
+            msg: `[API SIMULATOR] Resource '${resource}' not found; Check if route is correctly typed; Ensure your simulated api functions is maped on constructor;`,
+            content: null
+        });
     }
 }
 /**
@@ -1663,10 +1691,12 @@ export class NativeLib
     
     public getCssFullPath(): string
     {
+        if(Misc.isNullOrEmpty(this.cssPath)) return '';
         return `${PageShell.LIB_ROOT}${this.libName}/${this.cssPath}`;
     }
     public getJsFullPath(): string
     {
+        if (Misc.isNullOrEmpty(this.jsPath)) return '';
         return `${PageShell.LIB_ROOT}${this.libName}/${this.jsPath}`;
     }
     public toString(): string
@@ -1906,12 +1936,22 @@ export class PageShell
         return containerElement.removeChild(childElement);
     }
 
-    public getImportedLib(libName: string): NativeLib
+    public getImportedLib({ js: jsPath = null, css: cssPath = null }: {
+        js?: string,
+        css?: string
+    }): NativeLib
     {
         if (this.importedLibs == undefined) return;
         for (var i = 0; i < this.importedLibs.length; i++)
-            if (this.importedLibs[i].libName == libName)
-                return this.importedLibs[i];
+        {
+            if (!Misc.isNullOrEmpty(jsPath))
+                if (this.importedLibs[i].getJsFullPath() == jsPath)
+                    return this.importedLibs[i];
+
+            if (!Misc.isNullOrEmpty(cssPath))
+                if (this.importedLibs[i].getCssFullPath() == cssPath)
+                    return this.importedLibs[i];          
+        }
         return null;
     }
 
@@ -1924,7 +1964,7 @@ export class PageShell
     {
         if (lib.libName != '')
         {
-            var existing = this.getImportedLib(lib.libName);
+            var existing = this.getImportedLib({ js: lib.getJsFullPath(), css: lib.getCssFullPath() });
             if (existing !== null)
                 return;
         }
@@ -1949,6 +1989,57 @@ export class PageShell
         }
 
         this.importedLibs.push(lib);
+    }
+
+    public removeImport(libName: string)
+    {
+        const libs: NativeLib[] = this.getImportedLibByName(libName);
+        for (var i = 0; i < libs.length; i++)
+        {
+            const lib = libs[i];
+            if (lib.hasCss)
+            {
+                for (var c = 0; c < document.head.childNodes.length; c++)
+                {
+                    let child = document.head.childNodes[c];
+                    if (child instanceof HTMLLinkElement)
+                    {
+                        let link = child as unknown as HTMLLinkElement;
+                        if (link.href == lib.getCssFullPath())
+                            link.remove();
+                    }
+                }
+            }
+
+            if (lib.hasJs)
+            {
+                for (var c = 0; c < document.body.childNodes.length; c++)
+                {
+                    let child = document.body.childNodes[c];
+                    if (child instanceof HTMLScriptElement)
+                    {
+                        let scriptEl = child as unknown as HTMLScriptElement;
+                        if (scriptEl.src == lib.getJsFullPath())
+                            scriptEl.remove();
+                    }
+                }
+            }
+            this.importedLibs.splice(i, 1);
+        }
+    }
+
+    public getImportedLibByName(libName: string): NativeLib[]
+    {
+        if (this.importedLibs == undefined) return [];
+        let result: NativeLib[] = [];
+
+        for (var i = 0; i < this.importedLibs.length; i++)
+        {
+            const imported = this.importedLibs[i];
+            if (imported.libName == libName)
+                result.push(imported);
+        }
+        return result;
     }
 }
 export class RowOptions
@@ -2290,8 +2381,39 @@ export class ViewLayout
         return null as unknown as Row;
     }
 
-    fromHTML(rawHtmlLayoutString: string): ViewLayout
+    /**
+     * 
+     * @param rawHtmlLayoutString Raw html snippet demarcating page layout with divs
+You should avoid declaring user elements directly here.
+     * @param staticData (Optional) An object to provide static values in the provided html-layout snippet.
+You must use '#propertyName' in the raw-html to bind to the object given here. 
+You can also concatenate directly to the raw-html string. Your choice 😍.
+
+Example:
+```
+this.fromHTML(`
+            <div class="row">
+                <div class="col-5">
+                    <h5> #supplierName </h5>
+                </div>
+            </div>
+        `, { //data obj
+            id: 1,
+            supplierName: 'ACC/IO Systems'
+        })
+```
+     * @returns 
+     */
+    fromHTML(rawHtmlLayoutString: string, staticData?: any|object): ViewLayout
     {
+        if (!Misc.isNull(staticData))
+        {
+            for (var prop in staticData)
+            {
+                rawHtmlLayoutString = rawHtmlLayoutString.replace(`#${prop}`, staticData[prop])
+            }
+        }
+
         this.fromString = true;
         this.rawHtml = rawHtmlLayoutString;
         return this;
@@ -2411,7 +2533,15 @@ export class WidgetFragment implements INotifiable
 
     clear()
     {
-      this.containerElement.innerHTML = '';
+        this.containerElement.innerHTML = '';
+        for (var i = 0; i < this.widgets.length; i++)
+        {
+            try
+            {
+                this.widgets[i].onWidgetDetached();
+            } catch { }
+        }
+        this.widgets = [];
     }
 
     /**
@@ -2492,7 +2622,8 @@ export class WidgetFragment implements INotifiable
             }
 
             var opacity = 0;
-            var interv =     setInterval(function(){
+            var interv = setInterval(function ()
+            {
                 if (opacity < 1)
                 {
                     opacity = opacity + 0.070
@@ -2727,7 +2858,7 @@ export class DefaultExceptionPage
 }
 export class UIHeadBinder extends WidgetBinder
 {
-    private head: UIHead;
+    public head: UIHead;
     constructor(head: UIHead)
     {
         super(head);
@@ -2750,7 +2881,7 @@ export class UIHead extends Widget implements IBindable
 {
     private headType: string;
     private textContent: string;
-    private headElement: HTMLHeadElement;
+    public headElement: HTMLHeadElement;
     constructor({ name, headType, text }:
         {
             name: string,
@@ -3148,11 +3279,11 @@ export class UIButton extends Widget
     public buttonElement: HTMLButtonElement;
     public imageElement: HTMLImageElement;
 
-    private text: string;
+    public text: string;
     public onClick: Function;
-    private btnClass: string;
-    private imageSrc: string;
-    private imageWidth: number;
+    public btnClass: string;
+    public imageSrc: string;
+    public imageWidth: number;
 
     constructor({ name, text, imageSrc, imageWidth, btnClass = 'btn-light' }:
         {
@@ -3204,6 +3335,17 @@ export class UIButton extends Widget
                 self.onClick(ev);
             };
         }
+    }
+
+    public setOnClickFn(clickFn: Function)
+    {
+        const self = this;
+        this.onClick = clickFn;
+        if (!Misc.isNull(this.buttonElement))
+            this.buttonElement.onclick = function ()
+            {
+                self.onClick()
+            };
     }
 
     public setText(text: string)
@@ -3680,6 +3822,18 @@ export class UIList extends Widget implements IBindable
         this.itemClickedCallback = itemClicked;
     }
 
+    /**
+     * 
+     * @param fnClick 
+     * ```
+     *  function onItemClicked(item: IListItemTemplate) { }
+     * ```
+     */
+    public setItemClickFn(fnClick: Function)
+    {
+        this.itemClickedCallback = fnClick;
+    }
+
     public setTemplateProvider(itemTemplateProvider: IListItemTemplateProvider)
     {
         this.templateProvider = itemTemplateProvider;
@@ -3744,6 +3898,8 @@ export class UIList extends Widget implements IBindable
                     `${i + 1}`,
                     text,
                     value);
+
+                defaultItemTemplate.viewModel = viewModels[i];
 
                 this.addItem(defaultItemTemplate);
             }
@@ -4030,7 +4186,7 @@ export class UIDialog extends Widget implements INotifiable
     {
         this.onComplete = onComplete;
         this.modalContext.addWidget('modalContainer', this);
-        this.modalContext.build(this, false);
+        this.modalContext.build(this);
         UIDialog.$ = this;
     }
 
@@ -4640,7 +4796,7 @@ export class UITextBox extends Widget implements IBindable
     protected htmlTemplate(): string
     {
         return `
-<div id="divContainer" class="form-group">
+<div id="divContainer" class="${this.containerClass}">
     <label id="entryTitle" style="margin: 0px; padding: 0px; font-weight:normal !important;" for="inputEntry"> Entry Title </label>
     <input id="entryInput" class="form-control form-control-sm"  placeholder="Entry placeholder">
 </div>`
@@ -4657,12 +4813,21 @@ export class UITextBox extends Widget implements IBindable
     private initialType: string = null;
     private initialMaxlength: number = null;
     private initialMask: string = null; 
+    private containerClass: string = null;
 
     public lbTitle: HTMLLabelElement = null;
     public txInput: HTMLInputElement = null;
     public divContainer: HTMLDivElement = null;
 
-    constructor({ name, type = 'text', title = '', maxlength = 100, placeHolder = '', text = '', mask = '' }:
+    constructor({ 
+        name,
+        type = 'text', 
+        title = '',
+        maxlength = 100, 
+        placeHolder = '', 
+        text = '',
+        mask = '',
+        containerClass = 'form-group'  }:
         {
             name: string;
             type?: string;
@@ -4671,6 +4836,7 @@ export class UITextBox extends Widget implements IBindable
             title?: string;
             placeHolder?: string;
             text?: string;
+            containerClass?:string
         })
     {
         super(name);
@@ -4681,6 +4847,7 @@ export class UITextBox extends Widget implements IBindable
         this.initialText = (Misc.isNullOrEmpty(text) ? '' : text);
         this.initialMaxlength = (Misc.isNullOrEmpty(maxlength) ? 100 : maxlength);
         this.initialMask = (Misc.isNull(mask) ? '' : mask);
+        this.containerClass = (Misc.isNull(containerClass) ? 'form-group' : containerClass);
     }
     getBinder(): WidgetBinder
     {
@@ -5013,7 +5180,7 @@ export class DataGridItem implements IDataGridItemTemplate
 {
     public value: any;
     public itemName: string;
-    private ownerDatagrid: UIDataGrid;
+    public ownerDatagrid: UIDataGrid;
     public rowElement: HTMLTableRowElement;
     private pageShell: PageShell;
 
@@ -5104,12 +5271,13 @@ export interface IListItemTemplate
 }
 export class ListItem implements IListItemTemplate
 {
+    public viewModel: any | object;
     public value: any | object;
     public itemName: string;
     public itemText: string;
     public itemImageSource: string;
     public itemBadgeText: string;
-    private ownerList: UIList;
+    public ownerList: UIList;
     public anchorElement: HTMLAnchorElement;
     public imgElement: HTMLImageElement;
     public divElement: HTMLDivElement;
@@ -5117,6 +5285,7 @@ export class ListItem implements IListItemTemplate
 
 
     private selected: boolean = false;
+
 
     constructor(name: string,
         text: string,
@@ -5203,7 +5372,7 @@ export class ListItem implements IListItemTemplate
         self.anchorElement.style.padding = '0px';
         self.anchorElement.classList.add('list-group-item', 'align-items-center', 'list-group-item-action');
         self.anchorElement.id = this.itemName;
-    
+
         var rowDiv = pageShell.createElement('div');
         rowDiv.style.background = 'transparent';
         rowDiv.style.height = '40px';
@@ -5258,20 +5427,36 @@ export class ListItem implements IListItemTemplate
         return self.anchorElement;
     }
 }
-export class UITemplateView
+export class UITemplateView 
 {
     public templateDOM: Document;
     public templateString: string;
 
     private viewDictionary: Array<ViewDictionaryEntry>;
     private shellPage: PageShell;
-    constructor(htmlContent: string, shell: PageShell)
+
+    /**
+     * 
+     * @param htmlContent 
+     * @param shell 
+     * @param data 
+     */
+    constructor(htmlContent: string, shell: PageShell, data?:any|object)
     {
         this.shellPage = shell;
         this.viewDictionary = [];
         //  this.parentFragment.clear();
 
         var html: string = htmlContent;
+
+        if(!Misc.isNull(data))
+        {
+            for(var prop in data)
+            {
+                html = html.replace(`#${prop}`, data[prop])
+            }
+        }
+
         var parser = new DOMParser();
         var domObj = parser.parseFromString(html, "text/html");
         var allIds = domObj.querySelectorAll('*[id]');
@@ -5633,6 +5818,11 @@ export abstract class YordView
     {
         this.viewComposing = composing;
         return this;
+    }
+
+    public createBinding<TModel>(model: TModel): BindingContext<TModel>
+    {
+        return new BindingContext<TModel>(model, this.managedView);
     }
 
     public abstract onInit(): void;

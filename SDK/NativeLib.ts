@@ -1,3 +1,4 @@
+import { Misc } from "./Misc";
 import { PageShell } from "./PageShell";
 
 /**
@@ -41,10 +42,12 @@ export class NativeLib
     
     public getCssFullPath(): string
     {
+        if(Misc.isNullOrEmpty(this.cssPath)) return '';
         return `${PageShell.LIB_ROOT}${this.libName}/${this.cssPath}`;
     }
     public getJsFullPath(): string
     {
+        if (Misc.isNullOrEmpty(this.jsPath)) return '';
         return `${PageShell.LIB_ROOT}${this.libName}/${this.jsPath}`;
     }
     public toString(): string

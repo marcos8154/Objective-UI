@@ -10,12 +10,14 @@ namespace ObjUITools
 {
     internal class AppBuildJsFile
     {
+        private readonly DirectoryInfo rootDir;
         private readonly FileInfo jsFile;
 
         private List<IAppBuildAction> fileActions;
 
-        public AppBuildJsFile(FileInfo jsFile)
+        public AppBuildJsFile(DirectoryInfo rootDir, FileInfo jsFile)
         {
+            this.rootDir = rootDir;
             this.jsFile = jsFile;
             fileActions = new List<IAppBuildAction>();
         }
@@ -36,7 +38,7 @@ namespace ObjUITools
                     length: end).Replace("\\", "/");
             */
 
-            DirectoryInfo rootJsDir = new DirectoryInfo(Program.PROJECT_DIR)
+            DirectoryInfo rootJsDir = rootDir
                 .GetFiles("*.js", SearchOption.AllDirectories)
                 .FirstOrDefault()
                 .Directory;
@@ -45,8 +47,8 @@ namespace ObjUITools
 
             FileInfo currentFlInfo = new FileInfo(jsFile.FullName);
             string importName = (currentFlInfo.Directory.Name == rootJsDir.Name
-                ? $"    <script src=\"/{currentFlInfo.Name}\"></script>"
-                : $"    <script src=\"/{currentFlInfo.Directory.Name }/{currentFlInfo.Name}\"></script>");
+                ? $"    <script src=\"{currentFlInfo.Name}\"></script>"
+                : $"    <script src=\"{currentFlInfo.Directory.FullName.Replace(rootDir.FullName, "") }/{currentFlInfo.Name}\"></script>");
 
             if (fileActions.Count == 0) return importName;
             string[] lines = File.ReadAllLines(jsFile.FullName);

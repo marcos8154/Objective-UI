@@ -6,7 +6,7 @@ export class DataGridItem implements IDataGridItemTemplate
 {
     public value: any;
     public itemName: string;
-    private ownerDatagrid: UIDataGrid;
+    public ownerDatagrid: UIDataGrid;
     public rowElement: HTMLTableRowElement;
     private pageShell: PageShell;
 

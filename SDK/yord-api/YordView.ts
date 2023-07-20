@@ -1,3 +1,4 @@
+import { BindingContext } from "../BindingContext";
 import { Widget, WidgetContext } from "../Widget";
 import { DivContent } from "./DivContent";
 import { IYordLayout } from "./IYordLayout";
@@ -27,6 +28,11 @@ export abstract class YordView
     {
         this.viewComposing = composing;
         return this;
+    }
+
+    public createBinding<TModel>(model: TModel): BindingContext<TModel>
+    {
+        return new BindingContext<TModel>(model, this.managedView);
     }
 
     public abstract onInit(): void;

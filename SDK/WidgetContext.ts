@@ -12,7 +12,7 @@ import { INotifiable } from "./INotifiable";
  * created to manage another portion of Widgets 
  * located in other Divs.
  */
-export class WidgetContext
+export class WidgetContext implements INotifiable
 {
 
     fragments: WidgetFragment[];
@@ -39,6 +39,10 @@ export class WidgetContext
             var divElement = shellPage.elementById(elementId) as HTMLDivElement;
             self.fragments.push(new WidgetFragment(self, divElement));
         }
+    }
+    onNotified(sender: any, args: any[]): void
+    {
+
     }
     contextShell(): PageShell
     {
@@ -99,7 +103,8 @@ export class WidgetContext
 
         if (this.contextLoaded)
         {
-            fragment.renderFragmentwidgets();
+            let last = fragment.widgets.length - 1;
+            fragment.widgets[last].renderView(this);
         }
 
         return this;
@@ -120,8 +125,8 @@ export class WidgetContext
                 }
             }
             return widgets;
-        } 
-        catch(e)
+        }
+        catch (e)
         {
             return [];
         }
@@ -146,14 +151,22 @@ export class WidgetContext
         }
     }
 
+    clear()
+    {
+        for (var i = 0; i < this.fragments.length; i++)
+        {
+            var fragment: WidgetFragment = this.fragments[i];
+            fragment.clear();
+        }
+    }
+
     /**
      * Performs the rendering of the Widgets attached to this Context.
      * Immediately orders the Fragments managed by this Context to draw 
      * the Widgets they manage.
      * @param notifiable 
-     * @param clear 
      */
-    build(notifiable?: INotifiable, clear: boolean = false)
+    build(notifiable?: INotifiable)
     {
         this.fragmentsLoaded = 0;
         this.notifiableView = notifiable;
@@ -161,10 +174,8 @@ export class WidgetContext
         for (var i = 0; i < this.fragments.length; i++)
         {
             var fragment: WidgetFragment = this.fragments[i];
-            if (clear == true)
-                fragment.clear();
-
-            fragment.renderFragmentwidgets();
+            if (!this.contextLoaded)
+                fragment.renderFragmentwidgets();
         }
     }
 }

@@ -1,6 +1,7 @@
 import { Col } from "./Col";
 import { DefaultLayoutPresenter } from "./DefaultLayoutPresenter";
 import { ILayoutPresenter } from "./ILayoutPresenter";
+import { Misc } from "./Misc";
 import { PageShell } from "./PageShell";
 import { Row } from "./Row";
 
@@ -70,8 +71,39 @@ export class ViewLayout
         return null as unknown as Row;
     }
 
-    fromHTML(rawHtmlLayoutString: string): ViewLayout
+    /**
+     * 
+     * @param rawHtmlLayoutString Raw html snippet demarcating page layout with divs
+You should avoid declaring user elements directly here.
+     * @param staticData (Optional) An object to provide static values in the provided html-layout snippet.
+You must use '#propertyName' in the raw-html to bind to the object given here. 
+You can also concatenate directly to the raw-html string. Your choice 😍.
+
+Example:
+```
+this.fromHTML(`
+            <div class="row">
+                <div class="col-5">
+                    <h5> #supplierName </h5>
+                </div>
+            </div>
+        `, { //data obj
+            id: 1,
+            supplierName: 'ACC/IO Systems'
+        })
+```
+     * @returns 
+     */
+    fromHTML(rawHtmlLayoutString: string, staticData?: any|object): ViewLayout
     {
+        if (!Misc.isNull(staticData))
+        {
+            for (var prop in staticData)
+            {
+                rawHtmlLayoutString = rawHtmlLayoutString.replace(`#${prop}`, staticData[prop])
+            }
+        }
+
         this.fromString = true;
         this.rawHtml = rawHtmlLayoutString;
         return this;

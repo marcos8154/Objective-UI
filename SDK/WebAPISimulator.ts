@@ -21,6 +21,13 @@ export class SimulatedAPIRoute
 
     public getResource()
     {
+        const parIndx: number = this.resource.indexOf('{');
+        if (parIndx > 0)
+        {
+            var pureRes = this.resource.substring(0,parIndx)
+            return pureRes;
+        }
+
         return this.resource;
     }
 
@@ -114,7 +121,7 @@ export abstract class WebAPISimulator
                     if (params.length > 0)
                         if (params[0] == '')
                             params.shift();
-                            
+
                     return new APIResponse({
                         code: 200,
                         msg: 'fetched from API Simulator',
@@ -133,5 +140,11 @@ export abstract class WebAPISimulator
                 break;
             }
         }
+
+        return new APIResponse({
+            code: 404,
+            msg: `[API SIMULATOR] Resource '${resource}' not found; Check if route is correctly typed; Ensure your simulated api functions is maped on constructor;`,
+            content: null
+        });
     }
 }

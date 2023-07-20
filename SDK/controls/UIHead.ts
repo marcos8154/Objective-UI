@@ -5,7 +5,7 @@ import { WidgetBinder } from "../WidgetBinder";
 
 export class UIHeadBinder extends WidgetBinder
 {
-    private head: UIHead;
+    public head: UIHead;
     constructor(head: UIHead)
     {
         super(head);
@@ -28,7 +28,7 @@ export class UIHead extends Widget implements IBindable
 {
     private headType: string;
     private textContent: string;
-    private headElement: HTMLHeadElement;
+    public headElement: HTMLHeadElement;
     constructor({ name, headType, text }:
         {
             name: string,

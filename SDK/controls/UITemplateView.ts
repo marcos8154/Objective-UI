@@ -3,20 +3,36 @@ import { PageShell } from "../PageShell";
 import { ViewDictionaryEntry } from "../ViewDictionaryEntry";
 import { Misc } from "../Misc";
 
-export class UITemplateView
+export class UITemplateView 
 {
     public templateDOM: Document;
     public templateString: string;
 
     private viewDictionary: Array<ViewDictionaryEntry>;
     private shellPage: PageShell;
-    constructor(htmlContent: string, shell: PageShell)
+
+    /**
+     * 
+     * @param htmlContent 
+     * @param shell 
+     * @param data 
+     */
+    constructor(htmlContent: string, shell: PageShell, data?:any|object)
     {
         this.shellPage = shell;
         this.viewDictionary = [];
         //  this.parentFragment.clear();
 
         var html: string = htmlContent;
+
+        if(!Misc.isNull(data))
+        {
+            for(var prop in data)
+            {
+                html = html.replace(`#${prop}`, data[prop])
+            }
+        }
+
         var parser = new DOMParser();
         var domObj = parser.parseFromString(html, "text/html");
         var allIds = domObj.querySelectorAll('*[id]');

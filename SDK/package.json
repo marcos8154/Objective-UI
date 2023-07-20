@@ -1,6 +1,6 @@
 {
   "name": "objective-ui",
-  "version": "1.0.5",
+  "version": "1.0.9",
   "description": "A typescript framework for an object-based frontend",
   "main": "UIPage.ts",
   "repository": {

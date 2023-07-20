@@ -13,7 +13,7 @@ namespace ObjUITools
 {
     public class Program
     {
-        public static string TOOLS_VERSION = "1.0.2";
+        public static string TOOLS_VERSION = "TO BE DYNAMIC FROM ASM";
         public static string PROJECT_DIR;
         public static string SDK_SRC_PATH;
 
@@ -37,7 +37,7 @@ namespace ObjUITools
                 TOOLS_VERSION = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
                 if (!Console.IsOutputRedirected) Console.Clear();
-                
+
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 SDK_SRC_PATH = Key("SDK_PATH");
 
@@ -47,26 +47,40 @@ namespace ObjUITools
                 {
                     Console.ForegroundColor = ConsoleColor.White;
                     Console.WriteLine($"*** Objective-UI command-line tools {TOOLS_VERSION} *** ");
+                    Console.WriteLine("");
                     Console.ForegroundColor = ConsoleColor.Cyan;
 
-                    Console.Write("\nCMD > ");
+                    string[] helpTxt = new string[] {
+"   new-project  : create new project based on template .zip",
+"   -lt          : list available template projects (zip)",
+"   -p=\"path\"    : defines project root path (where 'tsconfig.json' is located)",
+"   -build       : compile typescript (tsc); refact .js files; make index.html",
+"   -clear       : delete only your .js code files; keep lib files;",
+"   -sw          : generate Service Worker .js file with all app references",
+"   -mon         : starts Monitor for watch changes in .ts files then auto-build"
+                    };
+
+                    foreach(string tx in helpTxt)
+                    {
+                        string[] parts = tx.Split(":");
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write(parts[0]);
+                        Console.ForegroundColor = ConsoleColor.Blue;
+                        Console.Write($"- {parts[1]}");
+                        Console.WriteLine("");
+                    }
+
                     Console.ForegroundColor = ConsoleColor.White;
+                    Console.Write("\nCMD > ");
+             
                     string line = Console.ReadLine();
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-
                     if (!string.IsNullOrEmpty(line))
                     {
                         string[] arr = line.Split(" ");
                         args = arr;
                     }
-                }
 
-                if ((new string[] { "-h", "?", "-help", "-doc" }).Any(e => e.Equals(args[0])))
-                {
-                    string helpTxt = @"
--build      : 
-";
-                    Console.WriteLine(helpTxt);
+
                 }
 
                 string workDir = Directory.GetCurrentDirectory();
@@ -92,11 +106,35 @@ namespace ObjUITools
                 }
 
 
+                bool listTemplates = args.Any(a => a.StartsWith("-lt"));
+                if(listTemplates)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    string selfExePath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName;
+                    string templatesPath = Path.Combine(selfExePath, "project-templates");
+                    foreach(FileInfo f in new DirectoryInfo(templatesPath).GetFiles())
+                    {
+                        Console.WriteLine($"  {f.Name}");
+                    }
+
+                    Console.ForegroundColor = ConsoleColor.White;
+                    return;
+                }
+
+
+
                 bool monMode = args.Any(a => a.StartsWith("-mon"));
                 if (monMode)
                 {
                     ObjMon mon = new ObjMon(PROJECT_DIR);
                     Console.ReadKey();
+                }
+
+                bool clear = args.Any(a => a.Equals("-c") || a.StartsWith("-clear"));
+                if (clear)
+                {
+                    DistClear clr = new DistClear();
+                    clr.Run();
                 }
 
                 bool createProject = args.Any(a => a.StartsWith("new-project"));
@@ -115,18 +153,19 @@ namespace ObjUITools
                     return;
                 }
 
-                Console.WriteLine(
-$@"*** Objective-UI Build Tools {TOOLS_VERSION} ***
-    > Working Dir: {workDir}
-    > SDK Dir: {SDK_SRC_PATH}
-");
                 bool buildSdk = args.Any(a => a.StartsWith("-sdk"));
                 if (buildSdk) BuildSdk.BuildSDk();
 
                 bool buildApp = args.Any(a => a.StartsWith("-build"));
                 if (buildApp)
                 {
-                    string nodePath = Key("NPM_PATH");
+                    Console.WriteLine(
+$@"*** Objective-UI Build Tools {TOOLS_VERSION} ***
+    > Working Dir: {workDir}
+    > SDK Dir: {SDK_SRC_PATH}
+");
+
+                    string nodePath = Key("TSC_PATH");
 
                     if (Directory.Exists(nodePath) == false)
                     {
@@ -144,7 +183,13 @@ $@"*** Objective-UI Build Tools {TOOLS_VERSION} ***
                     if (args.Any(a => a.Equals("-build")))
                         BuildApp.Build();
                     PrintDone();
-                    Environment.Exit(0);
+                }
+
+                bool genSw = args.Any(a => a.StartsWith("-sw"));
+                if (genSw)
+                {
+                    GenerateSw g = new GenerateSw();
+                    g.GenSw();
                 }
             }
             catch (Exception ex)
@@ -195,9 +240,22 @@ $@"*** Objective-UI Build Tools {TOOLS_VERSION} ***
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Project directory not found: '{PROJECT_DIR}'");
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"Using called directory: '{Directory.GetCurrentDirectory()}'");
-            PROJECT_DIR = Directory.GetCurrentDirectory();
-            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine($"Use called directory '{Directory.GetCurrentDirectory()}' ? (y / n)");
+            char resp = Console.ReadKey().KeyChar;
+            Console.WriteLine("");
+            if (resp == 'y')
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"Using '{Directory.GetCurrentDirectory()}'");
+                PROJECT_DIR = Directory.GetCurrentDirectory();
+                Console.ForegroundColor = ConsoleColor.White;
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"bye!");
+                Environment.Exit(0);
+            }
         }
 
         private static void PrintNotTSFilesFound()

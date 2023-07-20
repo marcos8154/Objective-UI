@@ -4,6 +4,7 @@ import { UIView } from "./UIView";
 import { IAppStorageProvider } from "./IAppStorageProvider";
 import { ISplittableView } from "./ISplittableView";
 import { NativeLib as NativeLib } from "./NativeLib";
+import { Misc } from "./Misc";
 
 
 /**
@@ -238,12 +239,22 @@ export class PageShell
         return containerElement.removeChild(childElement);
     }
 
-    public getImportedLib(libName: string): NativeLib
+    public getImportedLib({ js: jsPath = null, css: cssPath = null }: {
+        js?: string,
+        css?: string
+    }): NativeLib
     {
         if (this.importedLibs == undefined) return;
         for (var i = 0; i < this.importedLibs.length; i++)
-            if (this.importedLibs[i].libName == libName)
-                return this.importedLibs[i];
+        {
+            if (!Misc.isNullOrEmpty(jsPath))
+                if (this.importedLibs[i].getJsFullPath() == jsPath)
+                    return this.importedLibs[i];
+
+            if (!Misc.isNullOrEmpty(cssPath))
+                if (this.importedLibs[i].getCssFullPath() == cssPath)
+                    return this.importedLibs[i];          
+        }
         return null;
     }
 
@@ -256,7 +267,7 @@ export class PageShell
     {
         if (lib.libName != '')
         {
-            var existing = this.getImportedLib(lib.libName);
+            var existing = this.getImportedLib({ js: lib.getJsFullPath(), css: lib.getCssFullPath() });
             if (existing !== null)
                 return;
         }
@@ -281,5 +292,56 @@ export class PageShell
         }
 
         this.importedLibs.push(lib);
+    }
+
+    public removeImport(libName: string)
+    {
+        const libs: NativeLib[] = this.getImportedLibByName(libName);
+        for (var i = 0; i < libs.length; i++)
+        {
+            const lib = libs[i];
+            if (lib.hasCss)
+            {
+                for (var c = 0; c < document.head.childNodes.length; c++)
+                {
+                    let child = document.head.childNodes[c];
+                    if (child instanceof HTMLLinkElement)
+                    {
+                        let link = child as unknown as HTMLLinkElement;
+                        if (link.href == lib.getCssFullPath())
+                            link.remove();
+                    }
+                }
+            }
+
+            if (lib.hasJs)
+            {
+                for (var c = 0; c < document.body.childNodes.length; c++)
+                {
+                    let child = document.body.childNodes[c];
+                    if (child instanceof HTMLScriptElement)
+                    {
+                        let scriptEl = child as unknown as HTMLScriptElement;
+                        if (scriptEl.src == lib.getJsFullPath())
+                            scriptEl.remove();
+                    }
+                }
+            }
+            this.importedLibs.splice(i, 1);
+        }
+    }
+
+    public getImportedLibByName(libName: string): NativeLib[]
+    {
+        if (this.importedLibs == undefined) return [];
+        let result: NativeLib[] = [];
+
+        for (var i = 0; i < this.importedLibs.length; i++)
+        {
+            const imported = this.importedLibs[i];
+            if (imported.libName == libName)
+                result.push(imported);
+        }
+        return result;
     }
 }

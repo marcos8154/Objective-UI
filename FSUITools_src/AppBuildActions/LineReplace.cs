@@ -23,6 +23,13 @@ namespace ObjUITools.AppBuildActions
         public void Run(ref string[] fileContentLines)
         {
             if (fileContentLines[line] == null) return;
+
+            if (fileContentLines[line].Contains("_1.default"))
+            {
+                fileContentLines[line] =
+                      fileContentLines[line].Replace("_1.default", "");
+            }
+            else
             fileContentLines[line] =
                 fileContentLines[line].Replace(content, replaceTo);
         }

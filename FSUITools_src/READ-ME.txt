@@ -10,7 +10,7 @@
     [VSCode] https://code.visualstudio.com/docs/?dv=win
     [NPM   ] https://nodejs.org/
 
-2 - "OBJ-UI.exe" requires .NET 5 (or highter) installed:
+2 - "OBJ-UI.exe" requires .NET 6 (or highter) installed:
 	[.NET Runtime] https://dotnet.microsoft.com/en-us/download
 
 3 - the work will be more comfortable if you create an environment variable (user) in your OS pointing to this CLI directory.
@@ -23,11 +23,6 @@
 - What is the "Objective-UI" project?
 It is a FrontEnd SPA framework written in TypeScript and declarative syntax, 
 capable of consuming any JavaScript library.
-It offers a strong-objectified approach to building web interfaces based on OO paradigms.
-It has a set of standard UI controls, a powerful system view, interface to WebAPI's, 
-interface to storage (local and session), efficient data binding context; ViewModel and UI talking naturally!
-It is ideal for devs coming from the C/C++/Java/JavaScript/C# world because of the 
-similarity of TypeScript syntax with these others, and also for the proximity of OO approaches.
 
 - Why do we need this CLI?
 Because it is able to automate necessary tasks such as linking and merging SDK source files, 
@@ -50,6 +45,14 @@ _>  "obj-ui new-project -t=TEMPLATE_NAME"
 	
 ------------------------------------------------------------
 
+_>  "obj-ui -clear" 
+===> Clear the distribution folder: removes your code .js files, index.html; keep lib's .js files.
+------------------------------------------------------------
+
+_>  "obj-ui -sw"
+===> '-sw' creates a Service Worker .js file with all references for your app
+------------------------------------------------------------
+
 _>  "obj-ui -build"   						
 ===> Generates the output (*.js) files in the distribution folder known in your project:
 	 ('dist', 'wwwroot', 'www', 'publish', 'website', 'webroot', 'distribution', 'product', 'app', 'webapp')
@@ -68,10 +71,3 @@ _>  "obj-ui -build -p='YOUR_PROJECT_PATH'"
 	 But for whatever reason if need be, there it is :)
 	 
 -------------------------------------------------------------
-
-Main support JS/CSS libraries:
-
-AdminLTE:  		https://adminlte.io/
-Bootstrap: 		https://getbootstrap.com/
-jQuery:    		https://jquery.com/
-Rhaboo:   	 	https://github.com/adrianmay/rhaboo

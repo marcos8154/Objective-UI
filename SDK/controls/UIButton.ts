@@ -7,11 +7,11 @@ export class UIButton extends Widget
     public buttonElement: HTMLButtonElement;
     public imageElement: HTMLImageElement;
 
-    private text: string;
+    public text: string;
     public onClick: Function;
-    private btnClass: string;
-    private imageSrc: string;
-    private imageWidth: number;
+    public btnClass: string;
+    public imageSrc: string;
+    public imageWidth: number;
 
     constructor({ name, text, imageSrc, imageWidth, btnClass = 'btn-light' }:
         {
@@ -63,6 +63,17 @@ export class UIButton extends Widget
                 self.onClick(ev);
             };
         }
+    }
+
+    public setOnClickFn(clickFn: Function)
+    {
+        const self = this;
+        this.onClick = clickFn;
+        if (!Misc.isNull(this.buttonElement))
+            this.buttonElement.onclick = function ()
+            {
+                self.onClick()
+            };
     }
 
     public setText(text: string)

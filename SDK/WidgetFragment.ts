@@ -38,7 +38,15 @@ export class WidgetFragment implements INotifiable
 
     clear()
     {
-      this.containerElement.innerHTML = '';
+        this.containerElement.innerHTML = '';
+        for (var i = 0; i < this.widgets.length; i++)
+        {
+            try
+            {
+                this.widgets[i].onWidgetDetached();
+            } catch { }
+        }
+        this.widgets = [];
     }
 
     /**
@@ -119,7 +127,8 @@ export class WidgetFragment implements INotifiable
             }
 
             var opacity = 0;
-            var interv =     setInterval(function(){
+            var interv = setInterval(function ()
+            {
                 if (opacity < 1)
                 {
                     opacity = opacity + 0.070

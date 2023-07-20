@@ -97,7 +97,7 @@ export class UITextBox extends Widget implements IBindable
     protected htmlTemplate(): string
     {
         return `
-<div id="divContainer" class="form-group">
+<div id="divContainer" class="${this.containerClass}">
     <label id="entryTitle" style="margin: 0px; padding: 0px; font-weight:normal !important;" for="inputEntry"> Entry Title </label>
     <input id="entryInput" class="form-control form-control-sm"  placeholder="Entry placeholder">
 </div>`
@@ -114,12 +114,21 @@ export class UITextBox extends Widget implements IBindable
     private initialType: string = null;
     private initialMaxlength: number = null;
     private initialMask: string = null; 
+    private containerClass: string = null;
 
     public lbTitle: HTMLLabelElement = null;
     public txInput: HTMLInputElement = null;
     public divContainer: HTMLDivElement = null;
 
-    constructor({ name, type = 'text', title = '', maxlength = 100, placeHolder = '', text = '', mask = '' }:
+    constructor({ 
+        name,
+        type = 'text', 
+        title = '',
+        maxlength = 100, 
+        placeHolder = '', 
+        text = '',
+        mask = '',
+        containerClass = 'form-group'  }:
         {
             name: string;
             type?: string;
@@ -128,6 +137,7 @@ export class UITextBox extends Widget implements IBindable
             title?: string;
             placeHolder?: string;
             text?: string;
+            containerClass?:string
         })
     {
         super(name);
@@ -138,6 +148,7 @@ export class UITextBox extends Widget implements IBindable
         this.initialText = (Misc.isNullOrEmpty(text) ? '' : text);
         this.initialMaxlength = (Misc.isNullOrEmpty(maxlength) ? 100 : maxlength);
         this.initialMask = (Misc.isNull(mask) ? '' : mask);
+        this.containerClass = (Misc.isNull(containerClass) ? 'form-group' : containerClass);
     }
     getBinder(): WidgetBinder
     {

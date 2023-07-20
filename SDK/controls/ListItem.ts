@@ -4,12 +4,13 @@ import { Misc } from "../Misc";
 
 export class ListItem implements IListItemTemplate
 {
+    public viewModel: any | object;
     public value: any | object;
     public itemName: string;
     public itemText: string;
     public itemImageSource: string;
     public itemBadgeText: string;
-    private ownerList: UIList;
+    public ownerList: UIList;
     public anchorElement: HTMLAnchorElement;
     public imgElement: HTMLImageElement;
     public divElement: HTMLDivElement;
@@ -17,6 +18,7 @@ export class ListItem implements IListItemTemplate
 
 
     private selected: boolean = false;
+
 
     constructor(name: string,
         text: string,
@@ -103,7 +105,7 @@ export class ListItem implements IListItemTemplate
         self.anchorElement.style.padding = '0px';
         self.anchorElement.classList.add('list-group-item', 'align-items-center', 'list-group-item-action');
         self.anchorElement.id = this.itemName;
-    
+
         var rowDiv = pageShell.createElement('div');
         rowDiv.style.background = 'transparent';
         rowDiv.style.height = '40px';

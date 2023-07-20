@@ -19,6 +19,12 @@ namespace ObjUITools
             Console.ForegroundColor = ConsoleColor.White;
             string[] distFolders = Program.Key("VALID_DIST_PROJECT_FOLDERS").Split(';');
 
+            string tsconfigJson = File.ReadAllText(Path.Combine(projDir.FullName, "tsconfig.json"));
+            TSConfig cfg = TSConfig.Get(tsconfigJson);
+
+            string outDir = cfg.compilerOptions.outDir;
+
+            /*
             DirectoryInfo? distDir = projDir.GetDirectories()
                 .FirstOrDefault(d => distFolders.Contains(d.Name));
             if (distDir == null)
@@ -29,8 +35,9 @@ namespace ObjUITools
             }
             else
                 Console.WriteLine($"Distribution folder found as '{distDir.Name}' ");
-
-            BuildApp build = new BuildApp(distDir);
+            */
+            DirectoryInfo outDirInfo = new DirectoryInfo(Path.Combine(projDir.FullName, outDir.Replace("/", "").Replace(".", "")));
+            BuildApp build = new BuildApp(outDirInfo);
             build.BuildInternal();
         }
 
@@ -59,7 +66,7 @@ namespace ObjUITools
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
 
-                AppBuildJsFile appFile = new AppBuildJsFile(file);
+                AppBuildJsFile appFile = new AppBuildJsFile(rootDir, file);
 
                 string[] lines = File.ReadAllLines(file.FullName);
                 List<string> constReplacements = new List<string>();
@@ -112,9 +119,9 @@ namespace ObjUITools
                 importFiles.AppendLine(jsFile.BuildFile().Trim());
 
             DirectoryInfo di = new DirectoryInfo(Program.PROJECT_DIR);
-            FileInfo indexHtml = di.GetFiles("*.ts", SearchOption.AllDirectories)
-                .FirstOrDefault()
-                .Directory
+            FileInfo indexHtml = di
+                .GetDirectories()
+                .FirstOrDefault(d => d.GetFiles().Any(f => f.Name.EndsWith(".ts")))
                 .GetFiles("*.html", SearchOption.AllDirectories)
                 .FirstOrDefault(f => f.Name.ToLower().Equals("index.html"));
 
@@ -127,12 +134,17 @@ namespace ObjUITools
                 StringBuilder importsResult = new StringBuilder();
                 foreach (string importLine in importLines)
                 {
-                    if (htmlFileTemplateStr.Contains(importLine))
+                    string scriptName = importLine.Replace("<script src=\"", "")
+                        .Replace("\"></script>", "")
+                        .Replace("\r", "")
+                        .Replace(@"\", "/");
+ 
+                    if (htmlFileTemplateStr.Contains(importLine) || htmlFileTemplateStr.Contains(scriptName))
                         continue;
                     if (importLine.ToLower().Contains("objective-ui"))
                         continue;
 
-                    var import = importLine.Replace("\n", "").Replace("\r", "").Trim();
+                    var import = $@"<script src=""{scriptName}""> </script>";
                     importsResult.AppendLine($"    {import}");
                 }
 

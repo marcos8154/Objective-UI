@@ -58,7 +58,7 @@ WebAPI
  */
 export class WebAPI
 {
-    private static urlBase: string;
+    public static urlBase: string;
     public static setURLBase(apiUrlBase: string)
     {
         WebAPI.urlBase = apiUrlBase;
@@ -147,16 +147,23 @@ export class WebAPI
                 })
                 .then(function (res: APIResponse)
                 {
-                    if (self.fnOnSuccess != null)
-                        self.fnOnSuccess(res);
-                    if (self.fnDataResultTo != null)
+                    const code = res.statusCode;
+                    if (code == 200 || code == 201 || code == 202)
                     {
-                        if (res.statusCode == 200)
+                        if (self.fnOnSuccess != null)
+                            self.fnOnSuccess(res);
+                        if (self.fnDataResultTo != null)
                         {
                             var data = res.content;
                             self.fnDataResultTo(data);
                         }
                     }
+                    else
+                    {
+                        if (self.fnOnError != null)
+                            self.fnOnError(new Error(`${code} - ${res.statusMessage}`))
+                    }
+
                 })
                 .catch(err => (self.fnOnError == null ? {} : self.fnOnError(err)));
         }
@@ -174,11 +181,8 @@ export class WebAPI
 
                 if (Misc.isNullOrEmpty(this.fnDataResultTo) == false)
                 {
-                    if (result.statusCode == 200)
-                    {
-                        var data = result.content;
-                        this.fnDataResultTo(data);
-                    }
+                    var data = result.content;
+                    this.fnDataResultTo(data);
                 }
             } catch (error)
             {

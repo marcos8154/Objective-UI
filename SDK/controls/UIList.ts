@@ -70,6 +70,18 @@ export class UIList extends Widget implements IBindable
         this.itemClickedCallback = itemClicked;
     }
 
+    /**
+     * 
+     * @param fnClick 
+     * ```
+     *  function onItemClicked(item: IListItemTemplate) { }
+     * ```
+     */
+    public setItemClickFn(fnClick: Function)
+    {
+        this.itemClickedCallback = fnClick;
+    }
+
     public setTemplateProvider(itemTemplateProvider: IListItemTemplateProvider)
     {
         this.templateProvider = itemTemplateProvider;
@@ -134,6 +146,8 @@ export class UIList extends Widget implements IBindable
                     `${i + 1}`,
                     text,
                     value);
+
+                defaultItemTemplate.viewModel = viewModels[i];
 
                 this.addItem(defaultItemTemplate);
             }

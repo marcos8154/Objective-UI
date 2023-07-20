@@ -158,7 +158,7 @@ export class UIDialog extends Widget implements INotifiable
     {
         this.onComplete = onComplete;
         this.modalContext.addWidget('modalContainer', this);
-        this.modalContext.build(this, false);
+        this.modalContext.build(this);
         UIDialog.$ = this;
     }
 
