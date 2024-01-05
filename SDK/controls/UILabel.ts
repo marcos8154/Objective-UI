@@ -103,6 +103,6 @@ export class UILabel extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.label.hidden = (visible == false);
+        this.label.style.visibility = (visible ? 'visible' : 'hidden')
     }
 }

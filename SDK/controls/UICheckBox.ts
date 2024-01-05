@@ -2,6 +2,7 @@ import { Widget } from "../Widget";
 import { IBindable } from "../IBindable";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
 import { WidgetBinder } from "../WidgetBinder";
+import { Misc } from "../Misc";
 
 export class UICheckBoxBinder extends WidgetBinder
 {
@@ -38,17 +39,21 @@ export class UICheckBox extends Widget implements IBindable
 
     private initialChecked: boolean;
     private labelText: string;
-    constructor({ name, text, checked = false }:
+    private customBaseTemplate: string;
+
+    constructor({ name, text, checked = false, customTemplate = null }:
         {
             name: string;
             text: string;
-            checked?: boolean
+            checked?: boolean;
+            customTemplate?: string
         })
     {
         super(name);
 
         this.labelText = text;
         this.initialChecked = checked;
+        this.customBaseTemplate = customTemplate;
     }
     getBinder(): WidgetBinder
     {
@@ -57,8 +62,19 @@ export class UICheckBox extends Widget implements IBindable
 
     protected htmlTemplate(): string
     {
+        if (!Misc.isNullOrEmpty(this.customBaseTemplate))
+        {
+            if (this.customBaseTemplate.indexOf('UICheckBox') == -1)
+                throw new Error(`UICheckBox '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="UICheckBox".`)
+            if (this.customBaseTemplate.indexOf('checkElement') == -1)
+                throw new Error(`UICheckBox '${this.widgetName}' failed to load: custom base-template does not contains an <input/> with Id="checkElement".`)
+            if (this.customBaseTemplate.indexOf('checkLabel') == -1)
+                throw new Error(`UICheckBox '${this.widgetName}' failed to load: custom base-template does not contains an <label/> with Id="checkLabel".`)
+
+            return this.customBaseTemplate;
+        }
         return `
-<div id="fsCheckBox" class="custom-control custom-checkbox">
+<div id="UICheckBox" class="custom-control custom-checkbox">
   <input id="checkElement" class="custom-control-input" type="checkbox" value="">
   <label id="checkLabel" class="custom-control-label font-weight-normal" for="checkElement">
     Default checkbox
@@ -69,7 +85,7 @@ export class UICheckBox extends Widget implements IBindable
     protected onWidgetDidLoad(): void
     {
         var self = this;
-        self.divContainer = self.elementById('fsCheckBox');
+        self.divContainer = self.elementById('UICheckBox');
         self.checkElement = self.elementById('checkElement');
         self.checkLabel = self.elementById('checkLabel');
         self.checkLabel.htmlFor = self.checkElement.id;
@@ -79,6 +95,15 @@ export class UICheckBox extends Widget implements IBindable
         self.checkElement.onchange = function (ev)
         {
             if (self.onCheckedChange != null) self.onCheckedChange({ checked: self.checkElement.checked, event: ev });
+        };
+    }
+
+
+    public setOnCheckChange(fnOnChange: Function)
+    {
+        this.checkElement.onchange = function (ev)
+        {
+            fnOnChange()
         };
     }
 
@@ -129,7 +154,7 @@ export class UICheckBox extends Widget implements IBindable
 
     public setVisible(visible: boolean): void
     {
-        this.divContainer.hidden = (visible == false);
+        this.divContainer.style.visibility = (visible  ? 'visible' : 'hidden');
     }
 
     public setChecked(isChecked: boolean): void

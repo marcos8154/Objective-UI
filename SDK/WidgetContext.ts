@@ -67,13 +67,13 @@ export class WidgetContext implements INotifiable
         return widget;
     }
 
-    get(path: string)
+    get<TWidget>(path: string): TWidget
     {
         const fragmentName: string = path.split('/')[0];
         const widgetName: string = path.split('/')[1];
         var fragment: WidgetFragment = this.findFragment(fragmentName);
         var widget: Widget = fragment.findWidget(widgetName);
-        return widget;
+        return widget as unknown as TWidget;
     }
 
     pushMessage(widgetName: string, messageId: number, messageText: string, messageAnyObject: object)
@@ -166,7 +166,7 @@ export class WidgetContext implements INotifiable
      * the Widgets they manage.
      * @param notifiable 
      */
-    build(notifiable?: INotifiable)
+    build(notifiable?: INotifiable, clear: boolean = false)
     {
         this.fragmentsLoaded = 0;
         this.notifiableView = notifiable;
@@ -174,8 +174,10 @@ export class WidgetContext implements INotifiable
         for (var i = 0; i < this.fragments.length; i++)
         {
             var fragment: WidgetFragment = this.fragments[i];
-            if (!this.contextLoaded)
-                fragment.renderFragmentwidgets();
+            if (clear == true)
+                fragment.clear();
+
+            fragment.renderFragmentwidgets();
         }
     }
 }

@@ -190,10 +190,11 @@ onViewDidLoad(): void
      * @param layoutId An 'Id' of div contained in the `ViewLayout` class
      * @param widgets An array of Widget objects that will be bound to 'layoutId'
      */
-    protected addWidgets(layoutId: string, ...widgets: Widget[]): void
+    public addWidgets(layoutId: string, ...widgets: Widget[]): UIView
     {
         for (var i = 0; i < widgets.length; i++)
             this.widgetContext.addWidget(layoutId, widgets[i]);
+        return this;
     }
 
     /**

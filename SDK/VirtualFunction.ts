@@ -1,3 +1,4 @@
+import { Misc } from "./Misc";
 import { Widget } from "./Widget";
 
 /**
@@ -43,7 +44,7 @@ export class VirtualFunction
         this.keep = keepAfterCalled;
         this.functionArgs = fnArgNames;
         this.functionBodyContent = fnContent;
-        this.functionId = Widget.generateUUID();
+        this.functionId = Misc.generateUUID();
     }
 
     /**
@@ -62,7 +63,7 @@ export class VirtualFunction
      * function will be inside it
      * @param argValues An array with the VALUES of the arguments defined in the function. Note that you must pass the array according to the actual parameters of the function.
      */
-    call(...argValues: string[]) : void
+    call(...argValues: string[]): VirtualFunction
     {
         var argNamesStr = this.argNamesStr();
         var argValuesStr = this.argValuesStr(...argValues);
@@ -80,11 +81,13 @@ export class VirtualFunction
         var els = document.getElementsByTagName('body');
         els[0].append(fn);
 
-        if(this.keep == false)
-          fn.remove();
+        if (this.keep == false)
+            fn.remove();
+
+        return this;
     }
 
-    private argValuesStr(...argValues: string[]) : string
+    private argValuesStr(...argValues: string[]): string
     {
         var argValuesStr = '';
         for (var a = 0; a < argValues.length; a++)

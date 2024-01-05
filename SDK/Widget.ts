@@ -7,6 +7,8 @@ import { PageShell } from './PageShell';
 import { INotifiable } from './INotifiable';
 import { UIView } from './UIView';
 import { DefaultExceptionPage } from './DefaultExceptionPage';
+import { UIPage } from './UIPage';
+import { Misc } from './Misc';
 
 export { WidgetContext as WidgetContext, WidgetMessage, WidgetFragment };
 
@@ -23,6 +25,8 @@ and then make them available to the inherited class as DOM objects.
  */
 export abstract class Widget implements INotifiable
 {
+    protected abstract htmlTemplate(): string;
+
     /**
      * This function (in the inherited object) is triggered when "renderView()" 
      * manages to get the HTML resource from the WebDir and bind it to this Widget.
@@ -32,49 +36,44 @@ export abstract class Widget implements INotifiable
      * "elementById<TElement>(string)"
      */
     protected abstract onWidgetDidLoad(): void;
-    protected abstract htmlTemplate(): string;
+
 
     /**
      * Occurs when the Widget is detached from the WidgetContext
      */
-    public onWidgetDetached(): void
-    {
-
-    }
-
-    /**
-     * Defines an instance (of the implementation) of a custom presenter for this Widget.
-     *  
-     * Custom presenter may contain some specific logic for styling the DOM elements managed by these Widgets.
-     * @param presenter 
-     */
-    public abstract setCustomPresenter(presenter: ICustomWidgetPresenter<Widget>): void;
+    public onWidgetDetached(): void { }
 
     /**
      * Gets the default value of this widget; Note that not every Widget will implement the return of its value by this function.
      */
-    public abstract value(): string;
+    public value(): any | object | string { };
 
-    public abstract setEnabled(enabled: boolean): void
+    public setEnabled(enabled: boolean): void { };
+
+    /**
+     * Determines if this Widget is visible on the page
+     * @param visible True or False
+     */
+    public setVisible(visible: boolean): void { };
 
     /**
      * Add a CSS class by name; Some Widgets may not implement this eventually.
      * @param className CSS class name
      */
-    public abstract addCSSClass(className: string): void;
+    public addCSSClass(className: string): void { }
 
     /**
      * Remove a CSS class by name; Some Widgets may not implement this eventually.
      * @param className CSS class name
      */
-    public abstract removeCSSClass(className: string): void;
+    public removeCSSClass(className: string): void { }
 
     /**
      * Applies a CSS property value; Some Widgets may not implement this eventually.
      * @param propertyName CSS property name
      * @param propertyValue Property value
      */
-    public abstract applyCSS(propertyName: string, propertyValue: string): void;
+    public applyCSS(propertyName: string, propertyValue: string): void { }
 
     /**
      * Change Widget Position
@@ -83,13 +82,14 @@ export abstract class Widget implements INotifiable
      * @param marginLeft A margin left value
      * @param transform (optional) indicates the CSS value of 'Transform' https://developer.mozilla.org/pt-BR/docs/Web/CSS/transform
      */
-    public abstract setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void;
+    public setPosition(position: string,
+        marginLeft: string,
+        marginTop: string,
+        marginRight: string,
+        marginBottom: string,
+        transform?: string): void { }
 
-    /**
-     * Determines if this Widget is visible on the page
-     * @param visible True or False
-     */
-    public abstract setVisible(visible: boolean): void;
+
 
     /**
      * 
@@ -107,14 +107,14 @@ export abstract class Widget implements INotifiable
     public cssFromString(cssString: string): void
     {
         var statements = cssString.split(';');
-        for(var i = 0; i < statements.length; i++)
+        for (var i = 0; i < statements.length; i++)
         {
             var statement = statements[i];
-            if(statement == '') continue;
+            if (statement == '') continue;
             var parts = statement.split(':');
-            if(parts.length == 0) continue;
+            if (parts.length == 0) continue;
             var key = parts[0].trim();
-            if(key == '')continue;
+            if (key == '') continue;
             var value = parts[1].trim();
             this.applyCSS(key, value);
         }
@@ -153,7 +153,7 @@ export abstract class Widget implements INotifiable
                 .shellPage;
         } catch (error)
         {
-            throw new Error(`Attempt to access or manipulate an unattached Widget. Check if the Widget was attached during the composeView() function of the respective View that originated this call.`);
+            throw new Error(`Attempt to access or manipulate an unattached Widget (name '${this.widgetName}'). Check if the Widget was attached during the composeView() function of the respective View that originated this call.`);
         }
     }
 
@@ -252,7 +252,7 @@ export abstract class Widget implements INotifiable
 
     /**
      * This function is triggered by WidgetFragment and is responsible 
-     * for fetching the HTML resource in WebDir and linking it to this Widget. 
+     * for use the HTML template and linking it to this Widget. 
      * 
      * From here, all elements present in the HTML marked with some "Id" 
      * attribute will be made availableas DOM Elements to the inherited object when 
@@ -276,7 +276,7 @@ export abstract class Widget implements INotifiable
             var currentId = element.getAttribute('id');
             if (currentId != null)
             {
-                var newId = `${currentId}_${Widget.generateUUID()}`;
+                var newId = `${currentId}_${Misc.generateUUID()}`;
                 self.addDictionaryEntry(currentId, newId);
                 element.setAttribute('id', newId);
             }
@@ -285,8 +285,15 @@ export abstract class Widget implements INotifiable
         self.DOM = domObj;
 
         var child: ChildNode = domObj.documentElement.childNodes[1].firstChild;
-        self.parentFragment.appendChildElementToContainer(child as Element);
 
+        if (UIPage.DEBUG_MODE)
+        {
+            var lb = document.createElement('label');
+            lb.textContent = `Widget: ${this.widgetName}`
+            child.appendChild(lb);
+        }
+
+        self.parentFragment.appendChildElementToContainer(child as Element);
         self.onWidgetDidLoad();
         onloadNotifiable.onNotified('FSWidget', [self, domObj]);
     }
@@ -294,32 +301,15 @@ export abstract class Widget implements INotifiable
 
     onNotified(sender: any, args: any[]): void { }
 
+
     /**
-     * Public Domain/MIT
-     * 
-     * This function generates a UUID (universal unique identifier value) to bind to an HTML element
+     * @deprecated Now, call this function from "Misc" class. Ex.:
+     * ```
+     * var uid = Misc.generateUUID();
+     * ```
      */
-    public static generateUUID()
+    public static generateUUID(): string
     {
-        var d = new Date().getTime();//Timestamp
-        var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now() * 1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
-        var res = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c)
-        {
-            var r = Math.random() * 16;//random number between 0 and 16
-            if (d > 0)
-            {//Use timestamp until depleted
-                r = (d + r) % 16 | 0;
-                d = Math.floor(d / 16);
-            } else
-            {//Use microseconds since page-load if supported
-                r = (d2 + r) % 16 | 0;
-                d2 = Math.floor(d2 / 16);
-            }
-            var result = (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-
-            return result;
-        });
-
-        return res.split('-')[0];
+        return Misc.generateUUID();
     }
 }

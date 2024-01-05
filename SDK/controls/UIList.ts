@@ -50,6 +50,9 @@ export class UIList extends Widget implements IBindable
     public selectedBackColor: string = null;
     public selectedForeColor: string = null;
 
+    disableSel: boolean = false;
+    disableUnSel: boolean = false;
+
 
     /**
      * 
@@ -57,17 +60,24 @@ export class UIList extends Widget implements IBindable
      * 
      * Parameters: **(item: IListItemTemplate, ev: Event)**
      */
-    constructor({ name, itemClicked = null, templateProvider = null }:
+    constructor({ name }:
         {
             name: string;
-            itemClicked?: Function,
-            templateProvider?: IListItemTemplateProvider
         })
     {
         super(name);
+    }
 
-        this.templateProvider = templateProvider;
-        this.itemClickedCallback = itemClicked;
+    public disableSelection(): UIList
+    {
+        this.disableSel = true;
+        return this;
+    }
+
+    public disableUnSelection(): UIList
+    {
+        this.disableUnSel = true;
+        return this;
     }
 
     /**
@@ -165,13 +175,17 @@ export class UIList extends Widget implements IBindable
         this.divContainer = this.elementById('fsListView');
     }
 
-    public onItemClicked(item: IListItemTemplate, ev: Event): void
+    public onItemClicked(senderItem: IListItemTemplate, ev: Event): void
     {
-        for (var i = 0; i < this.items.length; i++)
-            this.items[i].unSelect();
-        item.select();
+        if (this.disableUnSel == false)
+            for (var i = 0; i < this.items.length; i++)
+                this.items[i].unSelect();
+
+        if (this.disableSel == false)
+            senderItem.select();
+
         if (this.itemClickedCallback != null && this.itemClickedCallback != undefined)
-            this.itemClickedCallback(item, ev);
+            this.itemClickedCallback(senderItem, ev);
     }
 
     public addItem(item: IListItemTemplate): UIList
@@ -281,6 +295,11 @@ export class UIList extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.divContainer.hidden = (visible == false);
+        this.divContainer.style.visibility = (visible ? 'visible' : 'hidden')
+    }
+
+    public setOnItemClick(itemClicked: Function)
+    {
+        this.itemClickedCallback = itemClicked;
     }
 }

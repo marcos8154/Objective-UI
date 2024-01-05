@@ -161,7 +161,7 @@ export class UITextArea extends Widget implements IBindable
 
     public setVisible(visible: boolean): void 
     {
-        this.divContainer.hidden = (visible == false);
+        this.divContainer.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }

@@ -5,68 +5,7 @@ import { PageShell } from "../PageShell";
 import { WidgetBinder } from "../WidgetBinder";
 import { UITemplateView } from "./UITemplateView";
 import { Misc } from "../Misc";
-
-export class RadioOption
-{
-    public optionContainer: HTMLDivElement;
-    public radioInput: HTMLInputElement;
-    public radioLabel: HTMLLabelElement;
-    private ownerGroup: UIRadioGroup;
-
-    constructor(text: string,
-        value: string,
-        fieldSetId: string,
-        shell: PageShell,
-        ownerGroup: UIRadioGroup)
-    {
-        var template: UITemplateView = new UITemplateView(
-            `
-<div id="radioOptionContainer" style="margin-right: 10px" class="custom-control custom-radio">
-    <input id="radioInput" type="radio" name="fieldset" class="custom-control-input">
-    <label id="radioLabel" class="custom-control-label font-weight-normal" for=""> Radio Option </label>
-</div>
-`,
-            shell);
-
-        this.ownerGroup = ownerGroup;
-        this.optionContainer = template.elementById('radioOptionContainer');
-        this.radioInput = template.elementById('radioInput');
-        this.radioLabel = template.elementById('radioLabel');
-
-        this.radioLabel.textContent = text;
-        this.radioInput.value = value;
-        this.radioInput.name = fieldSetId;
-        this.radioLabel.htmlFor = this.radioInput.id;
-
-        var self = this;
-        this.radioInput.onclick = function (ev: Event)
-        {
-            ownerGroup.optionChanged(self);
-        }
-    }
-
-    isChecked(): boolean
-    {
-        return this.radioInput.checked;
-    }
-
-    value(): string
-    {
-        return this.radioInput.value;
-    }
-
-    setChecked(isChecked: boolean): void
-    {
-        if (isChecked)
-            this.ownerGroup.optionChanged(this);
-        this.radioInput.checked = isChecked;
-    }
-
-    setEnabled(isEnabled: boolean): void
-    {
-        this.radioInput.disabled = (isEnabled == false);
-    }
-}
+import { RadioOption } from "./UIRadioOption";
 
 export class UIRadioGroupBinder extends WidgetBinder
 {
@@ -201,6 +140,12 @@ export class UIRadioGroup extends Widget implements IBindable
         this.fieldSet.appendChild(newOpt.optionContainer);
     }
 
+    addOptionR(newOpt: RadioOption)
+    {
+        this.options.push(newOpt);
+        this.fieldSet.appendChild(newOpt.optionContainer);
+    }
+
     fromList(models: Array<any>, textKey: string, valueKey: string)
     {
         for (var i = 0; i < models.length; i++)
@@ -277,7 +222,7 @@ export class UIRadioGroup extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.groupContainer.hidden = (visible == false);
+        this.groupContainer.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }

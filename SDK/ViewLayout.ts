@@ -4,6 +4,7 @@ import { ILayoutPresenter } from "./ILayoutPresenter";
 import { Misc } from "./Misc";
 import { PageShell } from "./PageShell";
 import { Row } from "./Row";
+import { UIPage } from "./UIPage";
 
 
 /**
@@ -39,7 +40,7 @@ export class ViewLayout
 {
     public static AUTO_GENERATE_COLUMNS = false;
 
-    
+
     private layoutDOM: Document;
     public layoutRows: Row[];
     public containerDivObj: Element;
@@ -94,7 +95,7 @@ this.fromHTML(`
 ```
      * @returns 
      */
-    fromHTML(rawHtmlLayoutString: string, staticData?: any|object): ViewLayout
+    fromHTML(rawHtmlLayoutString: string, staticData?: any | object): ViewLayout
     {
         if (!Misc.isNull(staticData))
         {
@@ -108,10 +109,11 @@ this.fromHTML(`
         this.rawHtml = rawHtmlLayoutString;
         return this;
     }
+    
 
     render(shellPage: PageShell, customPresenter?: ILayoutPresenter): Element
     {
-        this.containerDivObj = shellPage.elementById(this.containerDivName);
+        this.containerDivObj = shellPage.elementById(this.containerDivName) as HTMLDivElement;
 
         if (this.fromString)
         {
@@ -120,6 +122,14 @@ this.fromHTML(`
             this.layoutDOM = dom;
             this.containerDivObj.innerHTML = '';
             var objDom = this.layoutDOM.children[0].children[1];
+
+            if (UIPage.DEBUG_MODE)
+            {
+                const lb = document.createElement('label');
+                lb.textContent = ` ViewLayout: #${this.containerDivObj.id}`;
+                lb.style.color = 'green';
+                objDom.append(lb)
+            }
 
             for (var i = 0; i < objDom.childNodes.length; i++)
                 this.containerDivObj.appendChild(objDom.childNodes[i]);
@@ -185,5 +195,29 @@ this.fromHTML(`
             }
         }
         return result;
+    }
+
+    /**
+   * 
+   * @param layoutUri /path/to/layout.html
+   * @param intoCallBack callback to receive raw-html string
+   * ```
+   * function(html: string) {  }
+   * ``` 
+   */
+    public static load(layoutUri: string, intoCallBack: Function)
+    {
+        if (!layoutUri.endsWith('.html'))
+            layoutUri += '.html';
+
+        fetch(layoutUri)
+            .then(function (r)
+            {
+                return r.text();
+            })
+            .then(function (r)
+            {
+                intoCallBack(r);
+            });
     }
 }

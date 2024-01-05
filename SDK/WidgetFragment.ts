@@ -1,6 +1,7 @@
 import { Widget, WidgetContext } from './Widget'
 import { INotifiable } from './INotifiable';
 import { PageShell } from './PageShell';
+import { UIPage } from './UIPage';
 
 /**
  * The WidgetFragment has the ability to "draw" Widget objects 
@@ -126,6 +127,14 @@ export class WidgetFragment implements INotifiable
                 widget.renderView(this as INotifiable);
             }
 
+            if (UIPage.DEBUG_MODE){
+                const lb = document.createElement('label');
+                lb.textContent = `Fragment: #${self.containerElement.id}`;
+                lb.style.color = 'blue';
+                self.containerElement.append(lb);
+                self.containerElement.append(document.createElement('br'));
+            }
+
             var opacity = 0;
             var interv = setInterval(function ()
             {
@@ -133,6 +142,7 @@ export class WidgetFragment implements INotifiable
                 {
                     opacity = opacity + 0.070
                     self.containerElement.style.opacity = opacity.toString();
+                
                 }
                 else clearInterval(interv);
             });

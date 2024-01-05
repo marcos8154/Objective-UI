@@ -82,13 +82,11 @@ export class UITextBoxBinder extends WidgetBinder
     }
     fillPropertyModel(): void
     {
-        var text: string = this.textBox.getText();
-        this.setModelPropertyValue(text);
+        this.setModelPropertyValue(this.textBox.value());
     }
     getWidgetValue()
     {
-        var text: string = this.textBox.getText();
-        return text;
+        return this.textBox.value();
     }
 }
 
@@ -113,35 +111,40 @@ export class UITextBox extends Widget implements IBindable
     private initialText: string = null;
     private initialType: string = null;
     private initialMaxlength: number = null;
-    private initialMask: string = null; 
+    private initialMask: string = null;
     private containerClass: string = null;
+    private required: boolean = false;
+
 
     public lbTitle: HTMLLabelElement = null;
     public txInput: HTMLInputElement = null;
     public divContainer: HTMLDivElement = null;
 
-    constructor({ 
+    constructor({
         name,
-        type = 'text', 
+        type = 'text',
         title = '',
-        maxlength = 100, 
-        placeHolder = '', 
+        maxlength = 100,
+        placeHolder = '',
         text = '',
         mask = '',
-        containerClass = 'form-group'  }:
-        {
-            name: string;
-            type?: string;
-            mask?: string,
-            maxlength?: number,
-            title?: string;
-            placeHolder?: string;
-            text?: string;
-            containerClass?:string
-        })
+        containerClass = 'form-group',
+        isRequired = false
+    }: {
+        name: string;
+        type?: string;
+        mask?: string,
+        maxlength?: number,
+        title?: string;
+        placeHolder?: string;
+        text?: string;
+        containerClass?: string
+        isRequired?: boolean
+    })
     {
         super(name);
 
+        this.required = isRequired;
         this.initialType = (Misc.isNullOrEmpty(type) ? 'text' : type);
         this.initialTitle = (Misc.isNullOrEmpty(title) ? '' : title);
         this.initialPlaceHolder = (Misc.isNullOrEmpty(placeHolder) ? '' : placeHolder);
@@ -150,6 +153,15 @@ export class UITextBox extends Widget implements IBindable
         this.initialMask = (Misc.isNull(mask) ? '' : mask);
         this.containerClass = (Misc.isNull(containerClass) ? 'form-group' : containerClass);
     }
+    public setOnEnter(fnOnEnter: Function)
+    {
+        this.txInput.onkeydown = (ev) => 
+        {
+            if (ev.key == 'Enter')
+                fnOnEnter();
+        }
+    }
+
     getBinder(): WidgetBinder
     {
         return new UITextBoxBinder(this);
@@ -194,7 +206,7 @@ export class UITextBox extends Widget implements IBindable
         this.lbTitle = this.elementById('entryTitle');
         this.txInput = this.elementById('entryInput');
         this.divContainer = this.elementById('divContainer');
-        
+
         this.lbTitle.innerText = this.initialTitle;
         this.txInput.placeholder = this.initialPlaceHolder;
         this.txInput.value = this.initialText;
@@ -202,6 +214,9 @@ export class UITextBox extends Widget implements IBindable
         this.setMaxLength(this.initialMaxlength);
         this.setInputType(this.initialType);
         this.applyMask(this.initialMask);
+
+        if (this.required)
+            this.txInput.setAttribute('required', 'required');
     }
 
     public setMaxLength(maxlength: number): void
@@ -222,10 +237,24 @@ export class UITextBox extends Widget implements IBindable
     {
         return this.value();
     }
-
+    private isFloat = false;
     public setText(newText: string): void
     {
-        this.txInput.value = (Misc.isNullOrEmpty(newText) ? '' : newText);
+        const tp = this.txInput.type;
+        if (tp == 'text')
+            this.txInput.value = (Misc.isNullOrEmpty(newText) ? '' : newText);
+        if (tp == 'date')
+            this.txInput.valueAsDate = (Misc.isNullOrEmpty(newText) ? new Date() : new Date(newText));
+        if (tp == 'number')
+        {
+            if (newText.indexOf('.') == -1)
+                this.txInput.valueAsNumber = (Misc.isNullOrEmpty(newText) ? 0 : Number.parseInt(newText));
+            else
+            {
+                this.txInput.valueAsNumber = (Misc.isNullOrEmpty(newText) ? 0 : Number.parseFloat(newText));
+                this.isFloat = true;
+            }
+        }
     }
 
     public setTitle(newTitle: string): void
@@ -233,8 +262,16 @@ export class UITextBox extends Widget implements IBindable
         this.lbTitle.textContent = newTitle;
     }
 
-    public value(): string
+    public value(): object | any | string
     {
+        if (this.txInput.type == 'text') return this.txInput.value.toString();
+        if (this.txInput.type == 'number')
+        {
+            if (this.isFloat) return Number.parseFloat(this.txInput.value);
+            else return Number.parseInt(this.txInput.value);
+        }
+        if (this.txInput.type == 'date')
+            return new Date(this.txInput.value)
         return this.txInput.value;
     }
 
@@ -270,7 +307,7 @@ export class UITextBox extends Widget implements IBindable
 
     public setVisible(visible: boolean): void 
     {
-        this.divContainer.hidden = (visible == false);
+        this.divContainer.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }

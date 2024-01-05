@@ -1,47 +1,119 @@
-import { Widget } from "../Widget";
+import { Widget, WidgetContext } from "../Widget";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
+import { UIFlatView } from "../UIFlatView";
+import { INotifiable } from "../INotifiable";
+import { UIPage } from "../UIPage";
 
 export class UIToast extends Widget
 {
-    protected onWidgetDidLoad(): void
+    text: string;
+
+    private constructor(name: string, text: string)
     {
-        throw new Error("Method not implemented.");
+        super(name);
+        this.text = text;
     }
+
+    toastDiv: HTMLDivElement;
+
     protected htmlTemplate(): string
     {
-        throw new Error("Method not implemented.");
+        return `
+        <div class="d-flex justify-content-center">
+            <style>
+                .toast-success{
+                    background: rgb(221, 255, 221);
+                    border: solid 1px rgb(0, 94, 0);
+                }
+                .toast-error{
+                    background: rgb(255, 188, 188);
+                    border: solid 1px rgb(255, 79, 79);
+                }
+                .dv-toast {
+                    opacity: 0;
+                    position: absolute;
+                    min-width: 100px;
+                    max-width: 500px;
+                    min-height: 40px;
+                    margin-top: 10px;
+                    z-index: 10;
+                    border-radius: 8px;
+         
+                }
+            </style>
+            <div id="toast-div" class="dv-toast ${this.widgetName} ps-2 pe-2 shadow-lg d-flex justify-content-center align-items-center text-center">
+                <!-- toast text -->
+            </div>
+        </div>
+    `
     }
-    public setCustomPresenter(renderer: ICustomWidgetPresenter<Widget>): void
+
+    protected onWidgetDidLoad(): void
     {
-        throw new Error("Method not implemented.");
+        this.toastDiv = this.elementById('toast-div')
+        this.toastDiv.textContent = this.text
+        const $ = this;
+        this.toastDiv.onclick = () => $.toastDiv.remove()
     }
-    public value(): string
+
+    public static success(text: string, targetDivId: string)
     {
-        throw new Error("Method not implemented.");
+        const toast = new UIToast('toast-success', text)
+        UIToast.show(targetDivId, toast);
     }
-    public setEnabled(enabled: boolean): void
+
+
+    public static error(text: string, targetDivId: string)
     {
-        throw new Error("Method not implemented.");
+        const toast = new UIToast('toast-error', text)
+        UIToast.show(targetDivId, toast);
     }
-    public addCSSClass(className: string): void
+
+    private static show(targetDivId: string, toast: UIToast)
     {
-        throw new Error("Method not implemented.");
+        const ctx = new WidgetContext(UIPage.shell, [targetDivId]);
+        ctx.addWidget(targetDivId, toast);
+        ctx.build(new class noty implements INotifiable
+        {
+            onNotified(sender: any, args: any[]): void
+            {
+                var is = setInterval(() =>
+                {
+                    if (toast.toastDiv.style.opacity == '')
+                        toast.toastDiv.style.opacity = '0'
+
+                    if (parseFloat(toast.toastDiv.style.opacity) < 1.0)
+                    {
+                        toast.toastDiv.style.opacity = `${parseFloat(toast.toastDiv.style.opacity) + 0.08}`;
+                    }
+
+                    else
+                    {
+                        clearInterval(is);
+                        var t = setTimeout(() =>
+                        {
+
+                            var it = setInterval(() =>
+                            {
+                                if (parseFloat(toast.toastDiv.style.opacity) > 0)
+                                {
+                                    toast.toastDiv.style.opacity = `${parseFloat(toast.toastDiv.style.opacity) - 0.02}`;
+                                }
+                                else
+                                {
+                                    toast.toastDiv.remove();
+                                    ctx.clear();
+                                    clearInterval(it);
+                                }
+                            }, 50);
+
+                            clearTimeout(t);
+                        }, 1500);
+                    }
+
+                }, 50);
+            }
+
+        });
     }
-    public removeCSSClass(className: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public applyCSS(propertyName: string, propertyValue: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setVisible(visible: boolean): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    
 }

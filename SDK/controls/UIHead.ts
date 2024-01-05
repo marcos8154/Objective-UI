@@ -2,6 +2,7 @@ import { Widget } from "../Widget";
 import { IBindable } from "../IBindable";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
 import { WidgetBinder } from "../WidgetBinder";
+import { Misc } from "../Misc";
 
 export class UIHeadBinder extends WidgetBinder
 {
@@ -29,11 +30,13 @@ export class UIHead extends Widget implements IBindable
     private headType: string;
     private textContent: string;
     public headElement: HTMLHeadElement;
-    constructor({ name, headType, text }:
+    private cssClass: string;
+    constructor({ name, headType, text, cssClass }:
         {
             name: string,
             headType: string,
-            text: string
+            text: string,
+            cssClass?: string
         })
     {
         super(name);
@@ -46,6 +49,7 @@ export class UIHead extends Widget implements IBindable
             .replace('<', '')
             .replace('/', '')
             .replace('>', '');
+        this.cssClass = cssClass;
     }
     getBinder(): WidgetBinder
     {
@@ -59,6 +63,13 @@ export class UIHead extends Widget implements IBindable
     {
         this.headElement = this.elementById('fsHead');
         this.headElement.textContent = this.textContent;
+
+        if (!Misc.isNullOrEmpty(this.cssClass))
+        {
+            var classes = this.cssClass.split(' ');
+            for (var c = 0; c < classes.length; c++)
+                this.addCSSClass(classes[c])
+        }
     }
 
     public setCustomPresenter(presenter: ICustomWidgetPresenter<Widget>): void
@@ -102,7 +113,7 @@ export class UIHead extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.headElement.hidden = (visible == false);
+        this.headElement.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }

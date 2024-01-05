@@ -97,15 +97,20 @@ export class BindingContext<ViewModel>
      * @param viewModelInstance `ViewModel` 
      * @returns 
      */
-    public setViewModel(viewModelInstance: ViewModel): BindingContext<ViewModel>
+
+    public setViewModel(viewModelInstance: ViewModel, updateUI: boolean = true): BindingContext<ViewModel>
     {
         this.viewModelInstance = viewModelInstance;
-        for (var b = 0; b < this._binders.length; b++)
+
+        if (updateUI)
         {
-            var binder: WidgetBinder = this._binders[b];
-            binder.setModel(this.viewModelInstance, binder.modelPropertyName);
+            for (var b = 0; b < this._binders.length; b++)
+            {
+                var binder: WidgetBinder = this._binders[b];
+                binder.setModel(this.viewModelInstance, binder.modelPropertyName);
+            }
+            this.refreshAll();
         }
-        this.refreshAll();
         return this;
     }
 

@@ -2,6 +2,7 @@ import { Widget } from "../Widget";
 import { IBindable } from "../IBindable";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
 import { WidgetBinder } from "../WidgetBinder";
+import { Misc } from "../Misc";
 
 export class UIImageBinder extends WidgetBinder
 {
@@ -13,12 +14,12 @@ export class UIImageBinder extends WidgetBinder
     }
     getWidgetValue()
     {
-       return this.img.value();
+        return this.img.value();
     }
     refreshUI(): void
     {
-       var valueModel = this.getModelPropertyValue();
-       this.img.setSource(valueModel);
+        var valueModel = this.getModelPropertyValue();
+        this.img.setSource(valueModel);
     }
     fillPropertyModel(): void { }
 }
@@ -26,24 +27,24 @@ export class UIImageBinder extends WidgetBinder
 export class UIImage extends Widget implements IBindable
 {
     public image: HTMLImageElement;
-    
-    private imgSrc:string;
-    private imgAlt:string;
+
+    private imgSrc: string;
+    private imgAlt: string;
     private imgCssClass: string;
 
-    constructor({name, src, cssClass, alt}: 
+    constructor({ name, src, cssClass, alt }:
         {
-          name: string, 
-          src?: string, 
-          cssClass?:string, 
-          alt?: string
+            name: string,
+            src?: string,
+            cssClass?: string,
+            alt?: string
         })
     {
         super(name);
 
-        if(cssClass == null)
-           cssClass = 'img-fluid'
-        
+        if (cssClass == null)
+            cssClass = 'img-fluid'
+
         this.imgCssClass = cssClass;
         this.imgSrc = src;
         this.imgAlt = `${alt}`;
@@ -63,7 +64,13 @@ export class UIImage extends Widget implements IBindable
         this.image = this.elementById('fsImageView');
         this.image.alt = this.imgAlt;
         this.setSource(this.imgSrc);
-        this.addCSSClass(this.imgCssClass);
+
+        if (!Misc.isNullOrEmpty(this.imgCssClass))
+        {
+            var classes = this.imgCssClass.split(' ');
+            for (var c = 0; c < classes.length; c++)
+                this.addCSSClass(classes[c])
+        }
     }
 
     public setSource(imgSource: string)
@@ -107,6 +114,6 @@ export class UIImage extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.image.hidden = (visible == false);
+        this.image.style.visibility = (visible ? 'visible' : 'hidden')
     }
 }

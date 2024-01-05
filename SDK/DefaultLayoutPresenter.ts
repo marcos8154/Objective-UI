@@ -4,6 +4,7 @@ import { Row } from "./Row";
 import { PageShell } from './PageShell';
 import { Col } from './Col';
 import { Misc } from './Misc';
+import { UIPage } from './UIPage';
 
 /**
  * A standard implementation for `ILayoutPresenter`
@@ -26,14 +27,30 @@ export class DefaultLayoutPresenter implements ILayoutPresenter
 
         if (parentContainer == null) return null;
 
+
+
         parentContainer.innerHTML = '';
         // parentContainer.style.opacity = '0';
+
+
+        if (UIPage.DEBUG_MODE)
+        {
+            parentContainer.append(`
+                ViewLayout: ${parentContainer.id}
+            `);
+        }
 
         for (let rowIndex = 0; rowIndex < layout.layoutRows.length; rowIndex++)
         {
             var rowObj: Row = layout.layoutRows[rowIndex];
-            var rowView = this.renderRow(rowObj);
-            parentContainer.appendChild(rowView);
+            var rowDivEl = this.renderRow(rowObj) as HTMLDivElement;
+
+            if(UIPage.DEBUG_MODE)
+               rowDivEl. append(`
+                Row: ${rowDivEl.id}
+            `);
+
+            parentContainer.appendChild(rowDivEl);
         }
 
         return parentContainer;
@@ -73,13 +90,18 @@ export class DefaultLayoutPresenter implements ILayoutPresenter
                     for (var i = 0; i < classes.length; i++)
                     {
                         const className = classes[i].trim();
-                        if(className == '') continue;
+                        if (className == '') continue;
                         colDiv.classList.add(className);
                     }
                 }
 
                 colDiv.id = column.id;
                 colDiv.style.height = column.colHeight;
+
+                if(UIPage.DEBUG_MODE)
+                    colDiv.append(`
+                        Col: ${colDiv.id}
+                    `);
 
                 rowDiv.appendChild(colDiv);
 

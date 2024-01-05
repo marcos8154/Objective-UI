@@ -27,9 +27,11 @@ export class UITemplateView
 
         if(!Misc.isNull(data))
         {
-            for(var prop in data)
+            for (var prop in data)
             {
-                html = html.replace(`#${prop}`, data[prop])
+                var find = `#${prop}`;
+                while (html.indexOf(find) != -1)
+                    html = html.replace(find, data[prop])
             }
         }
 
@@ -53,7 +55,7 @@ export class UITemplateView
         this.templateString = domObj.children[0].outerHTML;
     }
 
-    content(): Element
+    public content(): Element
     {
         return this.templateDOM.children[0];
     }

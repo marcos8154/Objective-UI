@@ -5,6 +5,7 @@ import { WidgetBinder } from "../WidgetBinder";
 import { DataGridItem } from "./DataGridItem";
 import { IDataGridItemTemplate } from "./IDataGridItemTemplate";
 import { IDataGridItemTemplateProvider } from "./IDataGridItemTemplateProvider";
+import { Misc } from "../Misc";
 
 export class DataGridColumnDefinition
 {
@@ -30,10 +31,10 @@ export class UIDataGridBinder extends WidgetBinder
     }
     refreshUI(): void
     {
-        var viewModels:Array<any|object> = this.getModelPropertyValue();
+        var viewModels: Array<any | object> = this.getModelPropertyValue();
         this.dataGrid.fromList(viewModels);
     }
-    fillPropertyModel(): void  { }
+    fillPropertyModel(): void { }
 }
 
 export class UIDataGrid extends Widget implements IBindable
@@ -53,17 +54,56 @@ export class UIDataGrid extends Widget implements IBindable
 
     public MODEL_KEYS: Array<string> = [];
 
-    constructor({ name, autoGenCols = false, itemTemplateProvider = null }:
-        {
-            name: string,
-            autoGenCols?: boolean,
-            itemTemplateProvider?: IDataGridItemTemplateProvider
-        })
+    private baseTemplate: string = null;
+
+
+    private tableCssClasses: string = 'table table-hover table-bordered table-sm';
+    constructor({ name, autoGenCols = false, baseTemplate = null, cssClasses = null }: {
+        name: string,
+        autoGenCols?: boolean,
+        itemTemplateProvider?: IDataGridItemTemplateProvider,
+        baseTemplate?: string,
+        cssClasses?: string
+    })
     {
         super(name);
-        this.templateProvider = itemTemplateProvider;
         this.autoGenerateColumns = autoGenCols;
+        this.baseTemplate = baseTemplate;
+        if (!Misc.isNullOrEmpty(cssClasses))
+            this.tableCssClasses = cssClasses;
     }
+
+
+    protected htmlTemplate(): string
+    {
+        if (!Misc.isNullOrEmpty(this.baseTemplate))
+        {
+            if (this.baseTemplate.indexOf('gridHeader') == -1)
+                throw new Error(`UIDataGrid '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="gridHeader".`)
+            if (this.baseTemplate.indexOf('gridBody') == -1)
+                throw new Error(`UIDataGrid '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="gridBody".`)
+
+            return this.baseTemplate;
+        }
+        return `
+<table id="fsDataGrid" class="${this.tableCssClasses}">
+  <thead id="gridHeader">
+  </thead>
+  <tbody id="gridBody" style="overflow-y:scroll;">
+  </tbody>
+</table>        
+`;
+    }
+
+    protected onWidgetDidLoad(): void
+    {
+        this.table = this.elementById('fsDataGrid');
+        this.table.style.background = 'white';
+        this.tableHeader = this.elementById('gridHeader');
+        this.tableBody = this.elementById('gridBody');
+    }
+
+
     getBinder(): WidgetBinder
     {
         return new UIDataGridBinder(this);
@@ -83,12 +123,13 @@ export class UIDataGrid extends Widget implements IBindable
         }
     }
 
-    public setTemplateProvider(provider: IDataGridItemTemplateProvider)
+    public setTemplateProvider(provider: IDataGridItemTemplateProvider): UIDataGrid
     {
         this.templateProvider = provider;
+        return this;
     }
 
-    public addColumn(columnHeader: string, modelKey: string): void
+    public addColumn(columnHeader: string, modelKey: string): UIDataGrid
     {
         var shell = this.getPageShell();
         this.MODEL_KEYS.push(modelKey);
@@ -100,6 +141,8 @@ export class UIDataGrid extends Widget implements IBindable
         var th = shell.createElement('th', columnHeader);
         th.scope = 'col';
         thead.children[0].appendChild(th);
+
+        return this;
     }
 
     private generateColumns(list: Array<any>): void
@@ -195,25 +238,7 @@ export class UIDataGrid extends Widget implements IBindable
         item.select();
     }
 
-    protected htmlTemplate(): string
-    {
-        return `
-<table id="fsDataGrid" class="table table-hover table-bordered table-sm">
-  <thead id="gridHeader">
-  </thead>
-  <tbody id="gridBody" style="overflow-y:scrol; height: 100px">
-  </tbody>
-</table>        
-`;
-    }
 
-    protected onWidgetDidLoad(): void
-    {
-        this.table = this.elementById('fsDataGrid');
-        this.table.style.background = 'white';
-        this.tableHeader = this.elementById('gridHeader');
-        this.tableBody = this.elementById('gridBody');
-    }
 
     public setCustomPresenter(presenter: ICustomWidgetPresenter<Widget>): void
     {
@@ -245,7 +270,7 @@ export class UIDataGrid extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        throw new Error("Method not implemented.");
+        this.table.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }

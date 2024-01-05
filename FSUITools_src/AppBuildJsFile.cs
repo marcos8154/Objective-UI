@@ -15,8 +15,11 @@ namespace ObjUITools
 
         private List<IAppBuildAction> fileActions;
 
+        public bool IsJs { get; private set; }
+
         public AppBuildJsFile(DirectoryInfo rootDir, FileInfo jsFile)
         {
+            IsJs = jsFile.Name.EndsWith(".js");
             this.rootDir = rootDir;
             this.jsFile = jsFile;
             fileActions = new List<IAppBuildAction>();
@@ -27,7 +30,7 @@ namespace ObjUITools
             fileActions.Add(action);
         }
 
-        public string BuildFile()
+        public virtual string BuildFile()
         {
 
             /*

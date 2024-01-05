@@ -5,6 +5,7 @@ import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
 import { SelectOption } from "../SelectOption";
 import { WidgetBinder } from "../WidgetBinder";
 import { UIListBinder } from "./UIList";
+import { Misc } from "../Misc";
 
 export class UISelectBinder extends WidgetBinder
 {
@@ -26,7 +27,13 @@ export class UISelectBinder extends WidgetBinder
         else
             this.select.fromList(models);
     }
-    fillPropertyModel(): void { }
+    fillPropertyModel(): void
+    {
+        if(this.isTargetDefined())
+        {
+            this.fillModelTargetPropertyValue();
+        }
+    }
 }
 
 export class UISelect extends Widget implements IBindable
@@ -44,22 +51,26 @@ export class UISelect extends Widget implements IBindable
     public divContainer: HTMLDivElement = null;
     public title: HTMLLabelElement = null;
     public select: HTMLSelectElement = null;
-    
+
     public onSelectionChanged: Function = null;
     private initialTitle: string = null;
 
-    constructor({ name, title }:
+    private containerClass: string = null;
+
+    constructor({ name, title, containerClass }:
         {
             name: string,
-            title: string
+            title: string,
+            containerClass?: string
         })
     {
         super(name);
         this.initialTitle = title;
+        this.containerClass = containerClass;
     }
     getBinder(): WidgetBinder
     {
-        return new UISelectBinder(this);;
+        return new UISelectBinder(this);
     }
 
     protected onWidgetDidLoad(): void
@@ -70,6 +81,13 @@ export class UISelect extends Widget implements IBindable
         this.title = this.elementById('selectTitle');
         this.select = this.elementById('selectEl');
 
+        if (!Misc.isNull(this.containerClass))
+        {
+            var classes = this.containerClass.split(' ');
+            for (var c = 0; c < classes.length; c++)
+                this.divContainer.classList.add(classes[c]);
+        }
+        
         this.select.onchange = function (ev)
         {
             if (self.onSelectionChanged != null)
@@ -78,6 +96,16 @@ export class UISelect extends Widget implements IBindable
         this.title.textContent = this.initialTitle;
 
     }
+
+    public setOnChange(changeFn: Function)
+    {
+        this.select.onchange = function (ev)
+        {
+            changeFn();
+        };
+    }
+
+
     public setSelectedOption(optionValue: any): void
     {
         try
@@ -181,13 +209,13 @@ export class UISelect extends Widget implements IBindable
      * Its works only when uses 'fromList(...)' UISelect function
      * @returns T
      */
-    public getSelectedItem<T extends any|object>(): T
+    public getSelectedItem<T extends any | object>(): T
     {
         var val = this.value(); //key value of object-item
-        for(var i = 0; i < this.itemsSource.length; i++)
+        for (var i = 0; i < this.itemsSource.length; i++)
         {
             var itemObj = this.itemsSource[i];
-            if(itemObj[this.valueProperty] == val)
+            if (itemObj[this.valueProperty] == val)
                 return itemObj as unknown as T;
         }
         return null;
@@ -221,7 +249,7 @@ export class UISelect extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.divContainer.hidden = (visible == false);
+        this.divContainer.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
     public setEnabled(enabled: boolean): void

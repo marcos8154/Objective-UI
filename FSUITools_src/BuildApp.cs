@@ -110,13 +110,24 @@ namespace ObjUITools
 
                 Console.ForegroundColor = ConsoleColor.White;
             }
+
+            files = new DirectoryInfo(Path.Combine(Program.PROJECT_DIR, "src")).GetFiles("*.html", SearchOption.AllDirectories);
+            foreach (FileInfo file in files)
+            {
+                appFiles.Add(new AppBuildResFile(rootDir, file));
+            }
         }
 
         private void BuildInternal()
         {
             StringBuilder importFiles = new StringBuilder();
             foreach (AppBuildJsFile jsFile in appFiles)
-                importFiles.AppendLine(jsFile.BuildFile().Trim());
+            {
+                if (jsFile.IsJs)
+                    importFiles.AppendLine(jsFile.BuildFile().Trim());
+                else
+                    jsFile.BuildFile();
+            }
 
             DirectoryInfo di = new DirectoryInfo(Program.PROJECT_DIR);
             FileInfo indexHtml = di
@@ -138,7 +149,7 @@ namespace ObjUITools
                         .Replace("\"></script>", "")
                         .Replace("\r", "")
                         .Replace(@"\", "/");
- 
+
                     if (htmlFileTemplateStr.Contains(importLine) || htmlFileTemplateStr.Contains(scriptName))
                         continue;
                     if (importLine.ToLower().Contains("objective-ui"))

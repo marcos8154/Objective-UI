@@ -1,3 +1,4 @@
+import { Misc } from "../Misc";
 import { UIView } from "../UIView";
 import { ViewLayout } from "../ViewLayout";
 import { Widget } from "../Widget";
@@ -24,6 +25,9 @@ export class YordManagedView extends UIView
 
     composeView(): void
     {
+        if (Misc.isNull(this.yordView.viewComposing))
+            return;
+
         for (var c = 0; c < this.yordView.viewComposing.length; c++)
         {
             var composingInfo = this.yordView.viewComposing[c];

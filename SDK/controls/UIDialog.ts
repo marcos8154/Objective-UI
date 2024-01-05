@@ -27,11 +27,16 @@ export class UIDialog extends Widget implements INotifiable
 
     private modalContext: WidgetContext;
 
-    constructor(shell: PageShell)
+
+    private customTemplate: string = null;
+    constructor(shell: PageShell, customTempl?: string)
     {
         super('UIDialog');
 
         this.shell = shell;
+
+        if (!Misc.isNullOrEmpty(customTempl))
+            this.customTemplate = customTempl;
 
         // obtem o body da pagina
         var body: Element = shell.getPageBody();
@@ -55,6 +60,11 @@ export class UIDialog extends Widget implements INotifiable
             null);
     }
 
+    public closeDialog()
+    {
+        this.modalContainer.remove();
+    }
+
     public action(action: ModalAction): UIDialog
     {
         this.modalActions.push(action);
@@ -64,6 +74,12 @@ export class UIDialog extends Widget implements INotifiable
     public setTitle(dialogTitle: string): UIDialog
     {
         this.titleText = dialogTitle;
+        return this;
+    }
+
+    public modalBody(templateView: UITemplateView): UIDialog
+    {
+        this.contentTemplate = templateView;
         return this;
     }
 
@@ -79,16 +95,35 @@ export class UIDialog extends Widget implements INotifiable
         return this;
     }
 
+    private dataDismissAttrName: string = 'data-dismiss'
+    public setDataDismisAttributeName(attrName: string)
+    {
+        this.dataDismissAttrName = attrName;
+    }
+
     protected htmlTemplate(): string
     {
+        if (!Misc.isNullOrEmpty(this.customTemplate))
+        {
+            if (this.customTemplate.indexOf('UIModalView') == -1)
+                throw new Error(`UIDialog '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="UIModalView".`)
+            if (this.customTemplate.indexOf('modalTitle') == -1)
+                throw new Error(`UIDialog '${this.widgetName}' failed to load: custom base-template does not contains an Element with Id="modalTitle".`)
+            if (this.customTemplate.indexOf('modalBody') == -1)
+                throw new Error(`UIDialog '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="modalBody".`)
+            if (this.customTemplate.indexOf('modalFooter') == -1)
+                throw new Error(`UIDialog '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="modalFooter".`)
+
+            return this.customTemplate;
+        }
         return `
- <div id="fsModalView" class="modal fade" role="dialog">
+ <div id="UIModalView" class="modal fade" role="dialog">
     <div class="modal-dialog" role="document">        
         <div class="modal-content">
             <div class="modal-header">
-                <h5 id="modalTitle" class="modal-title" id="exampleModalLongTitle">Modal title</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
+                <h5 id="modalTitle" class="modal-title">Modal title</h5>
+                <button type="button" class="close" ${this.dataDismissAttrName}="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             
@@ -108,11 +143,13 @@ export class UIDialog extends Widget implements INotifiable
     protected onWidgetDidLoad(): void
     {
         var self = this;
+
+        self.modalContainer = self.elementById('UIModalView');
         self.titleElement = self.elementById('modalTitle');
         self.bodyContainer = self.elementById('modalBody');
         self.footerContainer = self.elementById('modalFooter');
         self.titleElement.textContent = self.titleText;
-        self.modalContainer = self.elementById('fsModalView');
+
 
         if (!Misc.isNullOrEmpty(self.contentTemplate))
             self.bodyContainer.appendChild(self.contentTemplate.content());
@@ -122,7 +159,7 @@ export class UIDialog extends Widget implements INotifiable
             const action: ModalAction = self.modalActions[i];
             const btn: HTMLButtonElement = self.shell.createElement('button');
             btn.type = 'button';
-            btn.id = `modalAction_${Widget.generateUUID()}`;
+            btn.id = `modalAction_${Misc.generateUUID()}`;
             btn.textContent = action.text;
 
             for (var c = 0; c < action.classes.length; c++)
@@ -130,27 +167,27 @@ export class UIDialog extends Widget implements INotifiable
 
             action.setButton(btn, this);
             if (action.dismis)
-                btn.setAttribute('data-dismiss', 'modal');
+                btn.setAttribute(`${this.dataDismissAttrName}`, 'modal');
 
             self.footerContainer.appendChild(btn);
         }
 
         self.showFunction = new VirtualFunction({
             fnName: 'modalShow',
-            fnArgNames: [],
+            fnArgNames: [
+                'containerId',
+                'showFunctionId'
+            ],
             keepAfterCalled: true
-        })
-
-        self.showFunction.setContent(`
-            var md = new bootstrap.Modal(document.getElementById('${self.modalContainer.id}'), { backdrop: false })
+        }).setContent(`
+            var md = new bootstrap.Modal(document.getElementById(containerId), { backdrop: false })
             md.show();
-            $('#${self.modalContainer.id}').on('hidden.bs.modal', function (e) {
-                document.getElementById('${self.modalContainer.id}').remove();
-                document.getElementById('${self.showFunction.functionId}').remove();
-            })`);
-
-
-        self.showFunction.call();
+            var refId = ('#' + containerId)
+            $(refId).on('hidden.bs.modal', function (e) {
+                document.getElementById(containerId).remove();
+                document.getElementById(showFunctionId).remove();
+            })
+        `).call(self.modalContainer.id, self.showFunction.functionId);
     }
 
     private onComplete: Function = null;
@@ -172,33 +209,4 @@ export class UIDialog extends Widget implements INotifiable
     {
         renderer.render(this);
     }
-    public value(): string
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setEnabled(enabled: boolean): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public addCSSClass(className: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public removeCSSClass(className: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public applyCSS(propertyName: string, propertyValue: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setVisible(visible: boolean): void
-    {
-        throw new Error("Method not implemented.");
-    }
-
 }

@@ -19,14 +19,18 @@ import { IAppStorageProvider } from "./IAppStorageProvider";
  */
 export abstract class UIPage
 {
-    public static readonly PRODUCT_VERSION: string = '1.0.9'
+    public static readonly PRODUCT_VERSION: string = '1.0.14'
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
+    public static shell: PageShell;
+
+    public static DEBUG_MODE: boolean = false;
+
 
     constructor(doc: Document)
     {
         this.mainShell = new PageShell(doc, this);
-
+        UIPage.shell = this.mainShell;
         console.info(`* * * Objective-UI v${UIPage.PRODUCT_VERSION} * * *`);
     }
 
@@ -56,7 +60,7 @@ export abstract class UIPage
         {
             view.initialize(this.mainShell);
         }
-        catch(error)
+        catch (error)
         {
             new DefaultExceptionPage(error as Error);
         }

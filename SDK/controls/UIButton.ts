@@ -11,14 +11,14 @@ export class UIButton extends Widget
     public onClick: Function;
     public btnClass: string;
     public imageSrc: string;
-    public imageWidth: number;
+    public imageWidth: string;
 
-    constructor({ name, text, imageSrc, imageWidth, btnClass = 'btn-light' }:
+    constructor({ name, text, imageSrc, imageWidth = '20px', btnClass = 'btn' }:
         {
             name: string;
             text: string;
             imageSrc?: string;
-            imageWidth?: number,
+            imageWidth?: string,
             btnClass?: string
         })
     {
@@ -35,12 +35,12 @@ export class UIButton extends Widget
         if (this.imageSrc != '' && this.imageSrc != null && this.imageSrc != undefined)
         {
             return `
-<button id="fsButton" type="button" style="height: 35px" class="btn btn-block"> 
-     <img alt="img" id="fsButtonImage" src="/icons/sb_menu.png" width="20" ></img> 
+<button id="fsButton" type="button"> 
+     <img alt="img" id="fsButtonImage" src="${this.imageSrc}" style="width: ${this.imageWidth}"></img> 
 </button>`
         }
         else
-            return `<button id="fsButton" type="button" style="height: 35px" class="btn btn-block">Button</button>`
+            return `<button id="fsButton" type="button"> Button </button>`
     }
     protected onWidgetDidLoad(): void
     {
@@ -52,8 +52,13 @@ export class UIButton extends Widget
         if (Misc.isNullOrEmpty(this.btnClass) == false)
         {
             var btnClasses: Array<string> = this.btnClass.split(' ');
+
             for (var i = 0; i < btnClasses.length; i++)
-                this.buttonElement.classList.add(btnClasses[i].trim());
+            {
+                var className = btnClasses[i].trim();
+                if (!this.buttonElement.classList.contains(className))
+                    this.buttonElement.classList.add(className);
+            }
         }
 
         if (self.onClick != null)
@@ -83,7 +88,7 @@ export class UIButton extends Widget
         if (this.imageSrc != '' && this.imageSrc != null && this.imageSrc != undefined)
         {
             this.imageElement.src = this.imageSrc;
-            this.imageElement.width = this.imageWidth;
+            this.imageElement.style.width = this.imageWidth;
             this.buttonElement.appendChild(this.imageElement);
         }
     }
@@ -95,7 +100,7 @@ export class UIButton extends Widget
 
     public setVisible(visible: boolean): void
     {
-        this.buttonElement.hidden = (visible == false);
+        this.buttonElement.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
     public setEnabled(enabled: boolean): void

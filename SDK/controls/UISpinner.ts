@@ -71,7 +71,7 @@ export class UISpinner extends Widget
     }
     public setVisible(visible: boolean): void
     {
-        this.containerDiv.hidden = (visible == false);
+        this.containerDiv.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }

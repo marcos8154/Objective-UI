@@ -13,14 +13,18 @@
  */
 export abstract class UIPage
 {
-    public static readonly PRODUCT_VERSION: string = '1.0.9'
+    public static readonly PRODUCT_VERSION: string = '1.0.14'
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
+    public static shell: PageShell;
+
+    public static DEBUG_MODE: boolean = false;
+
 
     constructor(doc: Document)
     {
         this.mainShell = new PageShell(doc, this);
-
+        UIPage.shell = this.mainShell;
         console.info(`* * * Objective-UI v${UIPage.PRODUCT_VERSION} * * *`);
     }
 
@@ -50,7 +54,7 @@ export abstract class UIPage
         {
             view.initialize(this.mainShell);
         }
-        catch(error)
+        catch (error)
         {
             new DefaultExceptionPage(error as Error);
         }
@@ -237,10 +241,11 @@ onViewDidLoad(): void
      * @param layoutId An 'Id' of div contained in the `ViewLayout` class
      * @param widgets An array of Widget objects that will be bound to 'layoutId'
      */
-    protected addWidgets(layoutId: string, ...widgets: Widget[]): void
+    public addWidgets(layoutId: string, ...widgets: Widget[]): UIView
     {
         for (var i = 0; i < widgets.length; i++)
             this.widgetContext.addWidget(layoutId, widgets[i]);
+        return this;
     }
 
     /**
@@ -282,6 +287,280 @@ onViewDidLoad(): void
         );
     }
 }
+export class FlatList implements IListItemTemplateProvider
+{
+    private callFn: Function;
+    constructor(fn: Function)
+    {
+        this.callFn = fn
+    }
+    getListItemTemplate(sender: UIList, viewModel: any): IListItemTemplate
+    {
+        if (Misc.isNull(viewModel)) return
+        var item = new FlatListItem(viewModel)
+        this.callFn(item)
+        return item
+    }
+
+}
+
+export class FlatListItem implements IListItemTemplate
+{
+    public value: any;
+    itemName: string;
+    sh: PageShell;
+
+    constructor(vm: any)
+    {
+        this.value = vm;
+    }
+
+    public anchorElement: HTMLAnchorElement;
+
+    /**  define o callback para isSelected()  */
+    public onCheckSelected(fn: Function): FlatListItem
+    {
+        this.fn_isSelected = fn;
+        return this;
+    }
+    private fn_isSelected: Function;
+
+    /**  define o callback para select()*/
+    public onSelect(fn: Function): FlatListItem
+    {
+        this.fn_select = fn;
+        return this;
+    }
+    private fn_select: Function;
+    /**  define o callback para unSelect()*/
+    public onUnSelect(fn: Function): FlatListItem
+    {
+        this.fn_unSelect = fn;
+        return this;
+    }
+    private fn_unSelect: Function;
+    /**  define o callback para itemTemplate()*/
+    public onItemTemplate(fn: Function): FlatListItem
+    {
+        this.fn_itemTemplate = fn;
+        return this;
+    }
+    private fn_itemTemplate: Function;
+    /**  define o um trecho html para ser usado pela funcão itemTemplate()*/
+    public withHTML(htmlString: string): FlatListItem
+    {
+        this.fn_itemTemplateString = htmlString;
+        return this;
+    }
+
+    public containsCssClass(className: string): boolean
+    {
+        return this.anchorElement.classList.contains(className)
+    }
+
+    public addCssClass(className: string)
+    {
+        this.anchorElement.classList.add(className)
+    }
+
+    public removeCssClass(className: string)
+    {
+        this.anchorElement.classList.remove(className)
+    }
+
+    private fn_itemTemplateString: string;
+
+
+    setOwnerList(listView: UIList): void
+    {
+        this.sh = listView.getPageShell();
+    }
+    isSelected(): boolean
+    {
+        if (Misc.isNull(this.fn_isSelected)) return false;
+        return this.fn_isSelected(this);
+    }
+    select(): void
+    {
+        if (Misc.isNull(this.fn_isSelected)) return;
+        this.fn_select(this);
+    }
+    unSelect(): void
+    {
+        if (Misc.isNull(this.fn_isSelected)) return;
+        this.fn_unSelect(this);
+    }
+    itemTemplate(): HTMLAnchorElement
+    {
+        if (!Misc.isNull(this.fn_itemTemplate))
+            return this.fn_itemTemplate(this);
+
+        if (!Misc.isNull(this.fn_itemTemplateString))
+        {
+            const templ = new UITemplateView(this.fn_itemTemplateString, this.sh, this.value);
+            var anchor = templ.elementById('anchor') as HTMLAnchorElement;
+            this.anchorElement = anchor;
+            return anchor;
+
+        }
+    }
+}
+export abstract class UIFlatView extends UIView
+{
+    private static caches: ViewCache[] = [];
+
+    private static findCached(path: string)
+    {
+        for (var c = 0; c < this.caches.length; c++)
+        {
+            const cached = this.caches[c];
+            if (cached.path == path) return cached;
+        }
+        return null;
+    }
+
+    public static load(view: UIFlatView)
+    {
+        view.builder = view.buildView();
+
+        const cached = this.findCached(view.builder.layoutPath);
+        if (!Misc.isNull(cached))
+        {
+            view.builder.layoutHtml = cached.content;
+            UIPage.shell.navigateToView(view)
+        }
+        else
+            ViewLayout.load(view.builder.layoutPath, function (html: string)
+            {
+                view.builder.layoutHtml = html;
+                UIPage.shell.navigateToView(view)
+                UIFlatView.caches.push(new ViewCache(view.builder.layoutPath, html))
+            });
+    }
+
+    private builder: UIFlatViewBuilder;
+    private binding: BindingContext<any | object>;
+    protected abstract buildView(): UIFlatViewBuilder;
+
+    buildLayout(): ViewLayout
+    {
+        return new ViewLayout(this.builder.targetId).fromHTML(this.builder.layoutHtml)
+    }
+    composeView(): void
+    {
+        for (var c = 0; c < this.builder.viewContent.length; c++)
+        {
+            var content: DivContent = this.builder.viewContent[c];
+            this.addWidgets(content.id, ...content.w);
+        }
+    }
+    onViewDidLoad(): void
+    {
+        if (this.builder.hasBinding())
+            this.binding = this.builder.getBinding(this);
+        this.builder.callLoadFn(this.viewContext());
+    }
+
+    protected getViewModel<TViewModel>(): TViewModel
+    {
+        return this.binding.getViewModel<TViewModel>();
+    }
+
+    protected setViewModel<TViewModel>(instance: TViewModel, updateUI: boolean = true): void
+    {
+        this.binding.setViewModel(instance, updateUI);
+    }
+
+    protected getBindingFor(modelPropertyName: string): WidgetBinderBehavior
+    {
+        return this.binding.getBindingFor(modelPropertyName);
+    }
+}
+export class UIFlatViewBuilder
+{
+
+    public targetId: string;
+    public layoutPath: string = '';
+    public viewContent: DivContent[] = []
+    public layoutHtml: string = null;
+    private onLoadFn: Function;
+
+
+    private constructor(layoutPath: string)
+    {
+        if (Misc.isNullOrEmpty(layoutPath))
+            throw new Error('UIFlatView build failed: layoutPath is required.');
+        this.layoutPath = layoutPath;
+    }
+
+    public static from(layoutPath: string): UIFlatViewBuilder
+    {
+        return new UIFlatViewBuilder(layoutPath);
+    }
+
+    public to(targetDivID: string): UIFlatViewBuilder
+    {
+        this.targetId = targetDivID;
+        return this;
+    }
+
+    public with(...content: DivContent[]): UIFlatViewBuilder
+    {
+        if (!Misc.isNull(content))
+            this.viewContent = content;
+        return this;
+    }
+
+
+    private viewModelBind: any | object = null;
+
+    public bindWith<TViewModel>(instance: TViewModel): UIFlatViewBuilder
+    {
+        this.viewModelBind = instance;
+        return this;
+    }
+
+    public hasBinding()
+    {
+        return Misc.isNull(this.viewModelBind) == false;
+    }
+
+    public getBinding(view: UIView): BindingContext<any | object>
+    {
+        return new BindingContext(this.viewModelBind, view);
+    }
+
+    public put(divId: string, ...w: Widget[]): UIFlatViewBuilder
+    {
+        this.viewContent.push(
+            new DivContent(divId, ...w)
+        ); 
+        return this;
+    }
+
+    public onLoad(fn: Function): UIFlatViewBuilder
+    {
+        this.onLoadFn = fn;
+        return this;
+    }
+
+    callLoadFn(ctx: WidgetContext)
+    {
+        if (!Misc.isNull(this.onLoadFn))
+            this.onLoadFn(ctx);
+    }
+}
+export class ViewCache
+{
+    public path: string = '';
+    public content: string = '';
+
+    constructor(path: string, content: string)
+    {
+        this.path = path;
+        this.content = content;
+    }
+}
 /**
 A Widget is a TS object that represents a piece of HTML. It is able to
 fetch that piece of html into a webdir and bring it to the MainPage.
@@ -293,6 +572,8 @@ and then make them available to the inherited class as DOM objects.
  */
 export abstract class Widget implements INotifiable
 {
+    protected abstract htmlTemplate(): string;
+
     /**
      * This function (in the inherited object) is triggered when "renderView()" 
      * manages to get the HTML resource from the WebDir and bind it to this Widget.
@@ -302,49 +583,44 @@ export abstract class Widget implements INotifiable
      * "elementById<TElement>(string)"
      */
     protected abstract onWidgetDidLoad(): void;
-    protected abstract htmlTemplate(): string;
+
 
     /**
      * Occurs when the Widget is detached from the WidgetContext
      */
-    public onWidgetDetached(): void
-    {
-
-    }
-
-    /**
-     * Defines an instance (of the implementation) of a custom presenter for this Widget.
-     *  
-     * Custom presenter may contain some specific logic for styling the DOM elements managed by these Widgets.
-     * @param presenter 
-     */
-    public abstract setCustomPresenter(presenter: ICustomWidgetPresenter<Widget>): void;
+    public onWidgetDetached(): void { }
 
     /**
      * Gets the default value of this widget; Note that not every Widget will implement the return of its value by this function.
      */
-    public abstract value(): string;
+    public value(): any | object | string { };
 
-    public abstract setEnabled(enabled: boolean): void
+    public setEnabled(enabled: boolean): void { };
+
+    /**
+     * Determines if this Widget is visible on the page
+     * @param visible True or False
+     */
+    public setVisible(visible: boolean): void { };
 
     /**
      * Add a CSS class by name; Some Widgets may not implement this eventually.
      * @param className CSS class name
      */
-    public abstract addCSSClass(className: string): void;
+    public addCSSClass(className: string): void { }
 
     /**
      * Remove a CSS class by name; Some Widgets may not implement this eventually.
      * @param className CSS class name
      */
-    public abstract removeCSSClass(className: string): void;
+    public removeCSSClass(className: string): void { }
 
     /**
      * Applies a CSS property value; Some Widgets may not implement this eventually.
      * @param propertyName CSS property name
      * @param propertyValue Property value
      */
-    public abstract applyCSS(propertyName: string, propertyValue: string): void;
+    public applyCSS(propertyName: string, propertyValue: string): void { }
 
     /**
      * Change Widget Position
@@ -353,13 +629,14 @@ export abstract class Widget implements INotifiable
      * @param marginLeft A margin left value
      * @param transform (optional) indicates the CSS value of 'Transform' https://developer.mozilla.org/pt-BR/docs/Web/CSS/transform
      */
-    public abstract setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void;
+    public setPosition(position: string,
+        marginLeft: string,
+        marginTop: string,
+        marginRight: string,
+        marginBottom: string,
+        transform?: string): void { }
 
-    /**
-     * Determines if this Widget is visible on the page
-     * @param visible True or False
-     */
-    public abstract setVisible(visible: boolean): void;
+
 
     /**
      * 
@@ -377,14 +654,14 @@ export abstract class Widget implements INotifiable
     public cssFromString(cssString: string): void
     {
         var statements = cssString.split(';');
-        for(var i = 0; i < statements.length; i++)
+        for (var i = 0; i < statements.length; i++)
         {
             var statement = statements[i];
-            if(statement == '') continue;
+            if (statement == '') continue;
             var parts = statement.split(':');
-            if(parts.length == 0) continue;
+            if (parts.length == 0) continue;
             var key = parts[0].trim();
-            if(key == '')continue;
+            if (key == '') continue;
             var value = parts[1].trim();
             this.applyCSS(key, value);
         }
@@ -423,7 +700,7 @@ export abstract class Widget implements INotifiable
                 .shellPage;
         } catch (error)
         {
-            throw new Error(`Attempt to access or manipulate an unattached Widget. Check if the Widget was attached during the composeView() function of the respective View that originated this call.`);
+            throw new Error(`Attempt to access or manipulate an unattached Widget (name '${this.widgetName}'). Check if the Widget was attached during the composeView() function of the respective View that originated this call.`);
         }
     }
 
@@ -522,7 +799,7 @@ export abstract class Widget implements INotifiable
 
     /**
      * This function is triggered by WidgetFragment and is responsible 
-     * for fetching the HTML resource in WebDir and linking it to this Widget. 
+     * for use the HTML template and linking it to this Widget. 
      * 
      * From here, all elements present in the HTML marked with some "Id" 
      * attribute will be made availableas DOM Elements to the inherited object when 
@@ -546,7 +823,7 @@ export abstract class Widget implements INotifiable
             var currentId = element.getAttribute('id');
             if (currentId != null)
             {
-                var newId = `${currentId}_${Widget.generateUUID()}`;
+                var newId = `${currentId}_${Misc.generateUUID()}`;
                 self.addDictionaryEntry(currentId, newId);
                 element.setAttribute('id', newId);
             }
@@ -555,8 +832,15 @@ export abstract class Widget implements INotifiable
         self.DOM = domObj;
 
         var child: ChildNode = domObj.documentElement.childNodes[1].firstChild;
-        self.parentFragment.appendChildElementToContainer(child as Element);
 
+        if (UIPage.DEBUG_MODE)
+        {
+            var lb = document.createElement('label');
+            lb.textContent = `Widget: ${this.widgetName}`
+            child.appendChild(lb);
+        }
+
+        self.parentFragment.appendChildElementToContainer(child as Element);
         self.onWidgetDidLoad();
         onloadNotifiable.onNotified('FSWidget', [self, domObj]);
     }
@@ -564,33 +848,16 @@ export abstract class Widget implements INotifiable
 
     onNotified(sender: any, args: any[]): void { }
 
+
     /**
-     * Public Domain/MIT
-     * 
-     * This function generates a UUID (universal unique identifier value) to bind to an HTML element
+     * @deprecated Now, call this function from "Misc" class. Ex.:
+     * ```
+     * var uid = Misc.generateUUID();
+     * ```
      */
-    public static generateUUID()
+    public static generateUUID(): string
     {
-        var d = new Date().getTime();//Timestamp
-        var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now() * 1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
-        var res = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c)
-        {
-            var r = Math.random() * 16;//random number between 0 and 16
-            if (d > 0)
-            {//Use timestamp until depleted
-                r = (d + r) % 16 | 0;
-                d = Math.floor(d / 16);
-            } else
-            {//Use microseconds since page-load if supported
-                r = (d2 + r) % 16 | 0;
-                d2 = Math.floor(d2 / 16);
-            }
-            var result = (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-
-            return result;
-        });
-
-        return res.split('-')[0];
+        return Misc.generateUUID();
     }
 }
 /**
@@ -658,13 +925,13 @@ export class WidgetContext implements INotifiable
         return widget;
     }
 
-    get(path: string)
+    get<TWidget>(path: string): TWidget
     {
         const fragmentName: string = path.split('/')[0];
         const widgetName: string = path.split('/')[1];
         var fragment: WidgetFragment = this.findFragment(fragmentName);
         var widget: Widget = fragment.findWidget(widgetName);
-        return widget;
+        return widget as unknown as TWidget;
     }
 
     pushMessage(widgetName: string, messageId: number, messageText: string, messageAnyObject: object)
@@ -757,7 +1024,7 @@ export class WidgetContext implements INotifiable
      * the Widgets they manage.
      * @param notifiable 
      */
-    build(notifiable?: INotifiable)
+    build(notifiable?: INotifiable, clear: boolean = false)
     {
         this.fragmentsLoaded = 0;
         this.notifiableView = notifiable;
@@ -765,8 +1032,10 @@ export class WidgetContext implements INotifiable
         for (var i = 0; i < this.fragments.length; i++)
         {
             var fragment: WidgetFragment = this.fragments[i];
-            if (!this.contextLoaded)
-                fragment.renderFragmentwidgets();
+            if (clear == true)
+                fragment.clear();
+
+            fragment.renderFragmentwidgets();
         }
     }
 }
@@ -862,15 +1131,20 @@ export class BindingContext<ViewModel>
      * @param viewModelInstance `ViewModel` 
      * @returns 
      */
-    public setViewModel(viewModelInstance: ViewModel): BindingContext<ViewModel>
+
+    public setViewModel(viewModelInstance: ViewModel, updateUI: boolean = true): BindingContext<ViewModel>
     {
         this.viewModelInstance = viewModelInstance;
-        for (var b = 0; b < this._binders.length; b++)
+
+        if (updateUI)
         {
-            var binder: WidgetBinder = this._binders[b];
-            binder.setModel(this.viewModelInstance, binder.modelPropertyName);
+            for (var b = 0; b < this._binders.length; b++)
+            {
+                var binder: WidgetBinder = this._binders[b];
+                binder.setModel(this.viewModelInstance, binder.modelPropertyName);
+            }
+            this.refreshAll();
         }
-        this.refreshAll();
         return this;
     }
 
@@ -1526,14 +1800,30 @@ export class DefaultLayoutPresenter implements ILayoutPresenter
 
         if (parentContainer == null) return null;
 
+
+
         parentContainer.innerHTML = '';
         // parentContainer.style.opacity = '0';
+
+
+        if (UIPage.DEBUG_MODE)
+        {
+            parentContainer.append(`
+                ViewLayout: ${parentContainer.id}
+            `);
+        }
 
         for (let rowIndex = 0; rowIndex < layout.layoutRows.length; rowIndex++)
         {
             var rowObj: Row = layout.layoutRows[rowIndex];
-            var rowView = this.renderRow(rowObj);
-            parentContainer.appendChild(rowView);
+            var rowDivEl = this.renderRow(rowObj) as HTMLDivElement;
+
+            if(UIPage.DEBUG_MODE)
+               rowDivEl. append(`
+                Row: ${rowDivEl.id}
+            `);
+
+            parentContainer.appendChild(rowDivEl);
         }
 
         return parentContainer;
@@ -1573,13 +1863,18 @@ export class DefaultLayoutPresenter implements ILayoutPresenter
                     for (var i = 0; i < classes.length; i++)
                     {
                         const className = classes[i].trim();
-                        if(className == '') continue;
+                        if (className == '') continue;
                         colDiv.classList.add(className);
                     }
                 }
 
                 colDiv.id = column.id;
                 colDiv.style.height = column.colHeight;
+
+                if(UIPage.DEBUG_MODE)
+                    colDiv.append(`
+                        Col: ${colDiv.id}
+                    `);
 
                 rowDiv.appendChild(colDiv);
 
@@ -2121,6 +2416,35 @@ export class Misc
     {
         return (value == null || value == undefined || value == '');
     }
+
+    /**
+  * Public Domain/MIT
+  * 
+  * This function generates a UUID (universal unique identifier value) to bind to an HTML element
+  */
+    public static generateUUID()
+    {
+        var d = new Date().getTime();//Timestamp
+        var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now() * 1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
+        var res = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c)
+        {
+            var r = Math.random() * 16;//random number between 0 and 16
+            if (d > 0)
+            {//Use timestamp until depleted
+                r = (d + r) % 16 | 0;
+                d = Math.floor(d / 16);
+            } else
+            {//Use microseconds since page-load if supported
+                r = (d2 + r) % 16 | 0;
+                d2 = Math.floor(d2 / 16);
+            }
+            var result = (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+
+            return result;
+        });
+
+        return res.split('-')[0];
+    }
 }
 /**
  * A common abstraction for local storage features, 
@@ -2349,7 +2673,7 @@ export class ViewLayout
 {
     public static AUTO_GENERATE_COLUMNS = false;
 
-    
+
     private layoutDOM: Document;
     public layoutRows: Row[];
     public containerDivObj: Element;
@@ -2404,7 +2728,7 @@ this.fromHTML(`
 ```
      * @returns 
      */
-    fromHTML(rawHtmlLayoutString: string, staticData?: any|object): ViewLayout
+    fromHTML(rawHtmlLayoutString: string, staticData?: any | object): ViewLayout
     {
         if (!Misc.isNull(staticData))
         {
@@ -2418,10 +2742,11 @@ this.fromHTML(`
         this.rawHtml = rawHtmlLayoutString;
         return this;
     }
+    
 
     render(shellPage: PageShell, customPresenter?: ILayoutPresenter): Element
     {
-        this.containerDivObj = shellPage.elementById(this.containerDivName);
+        this.containerDivObj = shellPage.elementById(this.containerDivName) as HTMLDivElement;
 
         if (this.fromString)
         {
@@ -2430,6 +2755,14 @@ this.fromHTML(`
             this.layoutDOM = dom;
             this.containerDivObj.innerHTML = '';
             var objDom = this.layoutDOM.children[0].children[1];
+
+            if (UIPage.DEBUG_MODE)
+            {
+                const lb = document.createElement('label');
+                lb.textContent = ` ViewLayout: #${this.containerDivObj.id}`;
+                lb.style.color = 'green';
+                objDom.append(lb)
+            }
 
             for (var i = 0; i < objDom.childNodes.length; i++)
                 this.containerDivObj.appendChild(objDom.childNodes[i]);
@@ -2495,6 +2828,30 @@ this.fromHTML(`
             }
         }
         return result;
+    }
+
+    /**
+   * 
+   * @param layoutUri /path/to/layout.html
+   * @param intoCallBack callback to receive raw-html string
+   * ```
+   * function(html: string) {  }
+   * ``` 
+   */
+    public static load(layoutUri: string, intoCallBack: Function)
+    {
+        if (!layoutUri.endsWith('.html'))
+            layoutUri += '.html';
+
+        fetch(layoutUri)
+            .then(function (r)
+            {
+                return r.text();
+            })
+            .then(function (r)
+            {
+                intoCallBack(r);
+            });
     }
 }
 /**
@@ -2621,6 +2978,14 @@ export class WidgetFragment implements INotifiable
                 widget.renderView(this as INotifiable);
             }
 
+            if (UIPage.DEBUG_MODE){
+                const lb = document.createElement('label');
+                lb.textContent = `Fragment: #${self.containerElement.id}`;
+                lb.style.color = 'blue';
+                self.containerElement.append(lb);
+                self.containerElement.append(document.createElement('br'));
+            }
+
             var opacity = 0;
             var interv = setInterval(function ()
             {
@@ -2628,6 +2993,7 @@ export class WidgetFragment implements INotifiable
                 {
                     opacity = opacity + 0.070
                     self.containerElement.style.opacity = opacity.toString();
+                
                 }
                 else clearInterval(interv);
             });
@@ -2751,7 +3117,7 @@ export class VirtualFunction
         this.keep = keepAfterCalled;
         this.functionArgs = fnArgNames;
         this.functionBodyContent = fnContent;
-        this.functionId = Widget.generateUUID();
+        this.functionId = Misc.generateUUID();
     }
 
     /**
@@ -2770,7 +3136,7 @@ export class VirtualFunction
      * function will be inside it
      * @param argValues An array with the VALUES of the arguments defined in the function. Note that you must pass the array according to the actual parameters of the function.
      */
-    call(...argValues: string[]) : void
+    call(...argValues: string[]): VirtualFunction
     {
         var argNamesStr = this.argNamesStr();
         var argValuesStr = this.argValuesStr(...argValues);
@@ -2788,11 +3154,13 @@ export class VirtualFunction
         var els = document.getElementsByTagName('body');
         els[0].append(fn);
 
-        if(this.keep == false)
-          fn.remove();
+        if (this.keep == false)
+            fn.remove();
+
+        return this;
     }
 
-    private argValuesStr(...argValues: string[]) : string
+    private argValuesStr(...argValues: string[]): string
     {
         var argValuesStr = '';
         for (var a = 0; a < argValues.length; a++)
@@ -2810,6 +3178,37 @@ export class VirtualFunction
         if (argNamesStr.endsWith(', '))
             argNamesStr = argNamesStr.substring(0, argNamesStr.length - 2);
         return argNamesStr;
+    }
+}
+/**
+ * An wrapper of jQuery lib ported for Objective-UI
+ */
+export class jQuery
+{
+    private static callback: Function = null;
+
+    /**
+     * 
+     * @param idOrClass 
+     * @param fn 
+     * ``` 
+     *  function($:any) { 
+        // $ is jQuery instance
+      } 
+     * ```
+     */
+    public static $(idOrClass: string, fn: Function)
+    {
+        jQuery.callback = fn;
+        new VirtualFunction({
+            fnName: 'wrapQuery',
+            fnArgNames: ['idOrClass'],
+            fnContent: `
+                jQuery.callback($(idOrClass));
+                jQuery.callback = null;
+            `    ,
+            keepAfterCalled: true
+        },).call(idOrClass);
     }
 }
 /**
@@ -2882,11 +3281,13 @@ export class UIHead extends Widget implements IBindable
     private headType: string;
     private textContent: string;
     public headElement: HTMLHeadElement;
-    constructor({ name, headType, text }:
+    private cssClass: string;
+    constructor({ name, headType, text, cssClass }:
         {
             name: string,
             headType: string,
-            text: string
+            text: string,
+            cssClass?: string
         })
     {
         super(name);
@@ -2899,6 +3300,7 @@ export class UIHead extends Widget implements IBindable
             .replace('<', '')
             .replace('/', '')
             .replace('>', '');
+        this.cssClass = cssClass;
     }
     getBinder(): WidgetBinder
     {
@@ -2912,6 +3314,13 @@ export class UIHead extends Widget implements IBindable
     {
         this.headElement = this.elementById('fsHead');
         this.headElement.textContent = this.textContent;
+
+        if (!Misc.isNullOrEmpty(this.cssClass))
+        {
+            var classes = this.cssClass.split(' ');
+            for (var c = 0; c < classes.length; c++)
+                this.addCSSClass(classes[c])
+        }
     }
 
     public setCustomPresenter(presenter: ICustomWidgetPresenter<Widget>): void
@@ -2955,7 +3364,7 @@ export class UIHead extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.headElement.hidden = (visible == false);
+        this.headElement.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }
@@ -2999,68 +3408,6 @@ export class ModalAction
             };
     }
 }
-export class RadioOption
-{
-    public optionContainer: HTMLDivElement;
-    public radioInput: HTMLInputElement;
-    public radioLabel: HTMLLabelElement;
-    private ownerGroup: UIRadioGroup;
-
-    constructor(text: string,
-        value: string,
-        fieldSetId: string,
-        shell: PageShell,
-        ownerGroup: UIRadioGroup)
-    {
-        var template: UITemplateView = new UITemplateView(
-            `
-<div id="radioOptionContainer" style="margin-right: 10px" class="custom-control custom-radio">
-    <input id="radioInput" type="radio" name="fieldset" class="custom-control-input">
-    <label id="radioLabel" class="custom-control-label font-weight-normal" for=""> Radio Option </label>
-</div>
-`,
-            shell);
-
-        this.ownerGroup = ownerGroup;
-        this.optionContainer = template.elementById('radioOptionContainer');
-        this.radioInput = template.elementById('radioInput');
-        this.radioLabel = template.elementById('radioLabel');
-
-        this.radioLabel.textContent = text;
-        this.radioInput.value = value;
-        this.radioInput.name = fieldSetId;
-        this.radioLabel.htmlFor = this.radioInput.id;
-
-        var self = this;
-        this.radioInput.onclick = function (ev: Event)
-        {
-            ownerGroup.optionChanged(self);
-        }
-    }
-
-    isChecked(): boolean
-    {
-        return this.radioInput.checked;
-    }
-
-    value(): string
-    {
-        return this.radioInput.value;
-    }
-
-    setChecked(isChecked: boolean): void
-    {
-        if (isChecked)
-            this.ownerGroup.optionChanged(this);
-        this.radioInput.checked = isChecked;
-    }
-
-    setEnabled(isEnabled: boolean): void
-    {
-        this.radioInput.disabled = (isEnabled == false);
-    }
-}
-
 export class UIRadioGroupBinder extends WidgetBinder
 {
     private radioGp: UIRadioGroup;
@@ -3194,6 +3541,12 @@ export class UIRadioGroup extends Widget implements IBindable
         this.fieldSet.appendChild(newOpt.optionContainer);
     }
 
+    addOptionR(newOpt: RadioOption)
+    {
+        this.options.push(newOpt);
+        this.fieldSet.appendChild(newOpt.optionContainer);
+    }
+
     fromList(models: Array<any>, textKey: string, valueKey: string)
     {
         for (var i = 0; i < models.length; i++)
@@ -3270,10 +3623,107 @@ export class UIRadioGroup extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.groupContainer.hidden = (visible == false);
+        this.groupContainer.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }
+export class RadioOption
+{
+    public optionContainer: HTMLDivElement;
+    public radioInput: HTMLInputElement;
+    public radioLabel: HTMLLabelElement;
+    private ownerGroup: UIRadioGroup;
+
+    constructor(text: string,
+        value: string,
+        fieldSetId: string,
+        shell: PageShell,
+        ownerGroup: UIRadioGroup,
+        customTemplate?: string)
+    {
+
+        if(!Misc.isNullOrEmpty(customTemplate))
+        {
+            if (customTemplate.indexOf('radioOptionContainer') == -1)
+                throw new Error(`RadioOption '${text} / ${value}' failed to load: custom base-template does not contains an <div/> with Id="radioOptionContainer".`)
+            if (customTemplate.indexOf('radioInput') == -1)
+                throw new Error(`RadioOption '${text} / ${value}' failed to load: custom base-template does not contains an <input/> with Id="radioInput".`)
+            if (customTemplate.indexOf('radioLabel') == -1)
+                throw new Error(`RadioOption '${text} / ${value}' failed to load: custom base-template does not contains an <label/> with Id="radioLabel".`)
+        }
+
+        var template: UITemplateView = new UITemplateView(
+            Misc.isNullOrEmpty(customTemplate)
+                ? `
+                <div id="radioOptionContainer" style="margin-right: 10px" class="custom-control custom-radio">
+                    <input id="radioInput" type="radio" name="fieldset" class="custom-control-input">
+                    <label id="radioLabel" class="custom-control-label font-weight-normal" for=""> Radio Option </label>
+                </div>`
+                : customTemplate,
+            shell);
+
+        this.ownerGroup = ownerGroup;
+        this.optionContainer = template.elementById('radioOptionContainer');
+        this.radioInput = template.elementById('radioInput');
+        this.radioLabel = template.elementById('radioLabel');
+
+        this.radioLabel.textContent = text;
+        this.radioInput.value = value;
+        this.radioInput.name = fieldSetId;
+        this.radioLabel.htmlFor = this.radioInput.id;
+
+        var self = this;
+        this.radioInput.onclick = function (ev: Event)
+        {
+            ownerGroup.optionChanged(self);
+        }
+    }
+    isChecked(): boolean
+    {
+        return this.radioInput.checked;
+    }
+
+    value(): string
+    {
+        return this.radioInput.value;
+    }
+
+    setChecked(isChecked: boolean): void
+    {
+        if (isChecked)
+            this.ownerGroup.optionChanged(this);
+        this.radioInput.checked = isChecked;
+    }
+
+    setEnabled(isEnabled: boolean): void
+    {
+        this.radioInput.disabled = (isEnabled == false);
+    }
+}
+
+/**
+ * Exclusive Bootstrap 5.x UIRadioOption compat.
+ */
+export class UIRadioOptionBS5 extends RadioOption
+{
+    constructor(text: string,
+        value: string,
+        fieldSetId: string,
+        shell: PageShell,
+        ownerGroup: UIRadioGroup)
+    {
+        super(text, value, fieldSetId, shell, ownerGroup,
+            `
+<div id="radioOptionContainer" style="margin-right: 10px" class="form-check form-check-primary mt-3">
+  <input id="radioInput" name="default-radio-1" class="form-check-input" type="radio" value="" id="defaultRadio2">
+  <label id="radioLabel" class="form-check-label" for="defaultRadio2">
+      Checked
+  </label>
+</div> `)
+    }
+
+}
+
 export class UIButton extends Widget
 {
     public buttonElement: HTMLButtonElement;
@@ -3283,14 +3733,14 @@ export class UIButton extends Widget
     public onClick: Function;
     public btnClass: string;
     public imageSrc: string;
-    public imageWidth: number;
+    public imageWidth: string;
 
-    constructor({ name, text, imageSrc, imageWidth, btnClass = 'btn-light' }:
+    constructor({ name, text, imageSrc, imageWidth = '20px', btnClass = 'btn' }:
         {
             name: string;
             text: string;
             imageSrc?: string;
-            imageWidth?: number,
+            imageWidth?: string,
             btnClass?: string
         })
     {
@@ -3307,12 +3757,12 @@ export class UIButton extends Widget
         if (this.imageSrc != '' && this.imageSrc != null && this.imageSrc != undefined)
         {
             return `
-<button id="fsButton" type="button" style="height: 35px" class="btn btn-block"> 
-     <img alt="img" id="fsButtonImage" src="/icons/sb_menu.png" width="20" ></img> 
+<button id="fsButton" type="button"> 
+     <img alt="img" id="fsButtonImage" src="${this.imageSrc}" style="width: ${this.imageWidth}"></img> 
 </button>`
         }
         else
-            return `<button id="fsButton" type="button" style="height: 35px" class="btn btn-block">Button</button>`
+            return `<button id="fsButton" type="button"> Button </button>`
     }
     protected onWidgetDidLoad(): void
     {
@@ -3324,8 +3774,13 @@ export class UIButton extends Widget
         if (Misc.isNullOrEmpty(this.btnClass) == false)
         {
             var btnClasses: Array<string> = this.btnClass.split(' ');
+
             for (var i = 0; i < btnClasses.length; i++)
-                this.buttonElement.classList.add(btnClasses[i].trim());
+            {
+                var className = btnClasses[i].trim();
+                if (!this.buttonElement.classList.contains(className))
+                    this.buttonElement.classList.add(className);
+            }
         }
 
         if (self.onClick != null)
@@ -3355,7 +3810,7 @@ export class UIButton extends Widget
         if (this.imageSrc != '' && this.imageSrc != null && this.imageSrc != undefined)
         {
             this.imageElement.src = this.imageSrc;
-            this.imageElement.width = this.imageWidth;
+            this.imageElement.style.width = this.imageWidth;
             this.buttonElement.appendChild(this.imageElement);
         }
     }
@@ -3367,7 +3822,7 @@ export class UIButton extends Widget
 
     public setVisible(visible: boolean): void
     {
-        this.buttonElement.hidden = (visible == false);
+        this.buttonElement.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
     public setEnabled(enabled: boolean): void
@@ -3445,17 +3900,21 @@ export class UICheckBox extends Widget implements IBindable
 
     private initialChecked: boolean;
     private labelText: string;
-    constructor({ name, text, checked = false }:
+    private customBaseTemplate: string;
+
+    constructor({ name, text, checked = false, customTemplate = null }:
         {
             name: string;
             text: string;
-            checked?: boolean
+            checked?: boolean;
+            customTemplate?: string
         })
     {
         super(name);
 
         this.labelText = text;
         this.initialChecked = checked;
+        this.customBaseTemplate = customTemplate;
     }
     getBinder(): WidgetBinder
     {
@@ -3464,8 +3923,19 @@ export class UICheckBox extends Widget implements IBindable
 
     protected htmlTemplate(): string
     {
+        if (!Misc.isNullOrEmpty(this.customBaseTemplate))
+        {
+            if (this.customBaseTemplate.indexOf('UICheckBox') == -1)
+                throw new Error(`UICheckBox '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="UICheckBox".`)
+            if (this.customBaseTemplate.indexOf('checkElement') == -1)
+                throw new Error(`UICheckBox '${this.widgetName}' failed to load: custom base-template does not contains an <input/> with Id="checkElement".`)
+            if (this.customBaseTemplate.indexOf('checkLabel') == -1)
+                throw new Error(`UICheckBox '${this.widgetName}' failed to load: custom base-template does not contains an <label/> with Id="checkLabel".`)
+
+            return this.customBaseTemplate;
+        }
         return `
-<div id="fsCheckBox" class="custom-control custom-checkbox">
+<div id="UICheckBox" class="custom-control custom-checkbox">
   <input id="checkElement" class="custom-control-input" type="checkbox" value="">
   <label id="checkLabel" class="custom-control-label font-weight-normal" for="checkElement">
     Default checkbox
@@ -3476,7 +3946,7 @@ export class UICheckBox extends Widget implements IBindable
     protected onWidgetDidLoad(): void
     {
         var self = this;
-        self.divContainer = self.elementById('fsCheckBox');
+        self.divContainer = self.elementById('UICheckBox');
         self.checkElement = self.elementById('checkElement');
         self.checkLabel = self.elementById('checkLabel');
         self.checkLabel.htmlFor = self.checkElement.id;
@@ -3486,6 +3956,15 @@ export class UICheckBox extends Widget implements IBindable
         self.checkElement.onchange = function (ev)
         {
             if (self.onCheckedChange != null) self.onCheckedChange({ checked: self.checkElement.checked, event: ev });
+        };
+    }
+
+
+    public setOnCheckChange(fnOnChange: Function)
+    {
+        this.checkElement.onchange = function (ev)
+        {
+            fnOnChange()
         };
     }
 
@@ -3536,7 +4015,7 @@ export class UICheckBox extends Widget implements IBindable
 
     public setVisible(visible: boolean): void
     {
-        this.divContainer.hidden = (visible == false);
+        this.divContainer.style.visibility = (visible  ? 'visible' : 'hidden');
     }
 
     public setChecked(isChecked: boolean): void
@@ -3546,6 +4025,29 @@ export class UICheckBox extends Widget implements IBindable
     public isChecked(): boolean
     {
         return this.checkElement.checked;
+    }
+}
+/**
+ * Exclusive Bootstrap v5.x CheckBox compat.
+ */
+export class UICheckBoxBS5 extends UICheckBox
+{
+    constructor({ name, text, checked = false}:
+        {
+            name: string;
+            text: string;
+            checked?: boolean;
+        })
+    {
+        const customTemplate = `
+        <div id="fsCheckBox" class="form-check">
+            <input id="checkElement" class="form-check-input" type="checkbox" value="">
+            <label id="checkLabel" class="form-check-label" for="checkLabel">
+                Checked checkbox
+            </label>
+        </div> `;
+
+        super({ name, text, checked, customTemplate });
     }
 }
 export class UIImageBinder extends WidgetBinder
@@ -3558,12 +4060,12 @@ export class UIImageBinder extends WidgetBinder
     }
     getWidgetValue()
     {
-       return this.img.value();
+        return this.img.value();
     }
     refreshUI(): void
     {
-       var valueModel = this.getModelPropertyValue();
-       this.img.setSource(valueModel);
+        var valueModel = this.getModelPropertyValue();
+        this.img.setSource(valueModel);
     }
     fillPropertyModel(): void { }
 }
@@ -3571,24 +4073,24 @@ export class UIImageBinder extends WidgetBinder
 export class UIImage extends Widget implements IBindable
 {
     public image: HTMLImageElement;
-    
-    private imgSrc:string;
-    private imgAlt:string;
+
+    private imgSrc: string;
+    private imgAlt: string;
     private imgCssClass: string;
 
-    constructor({name, src, cssClass, alt}: 
+    constructor({ name, src, cssClass, alt }:
         {
-          name: string, 
-          src?: string, 
-          cssClass?:string, 
-          alt?: string
+            name: string,
+            src?: string,
+            cssClass?: string,
+            alt?: string
         })
     {
         super(name);
 
-        if(cssClass == null)
-           cssClass = 'img-fluid'
-        
+        if (cssClass == null)
+            cssClass = 'img-fluid'
+
         this.imgCssClass = cssClass;
         this.imgSrc = src;
         this.imgAlt = `${alt}`;
@@ -3608,7 +4110,13 @@ export class UIImage extends Widget implements IBindable
         this.image = this.elementById('fsImageView');
         this.image.alt = this.imgAlt;
         this.setSource(this.imgSrc);
-        this.addCSSClass(this.imgCssClass);
+
+        if (!Misc.isNullOrEmpty(this.imgCssClass))
+        {
+            var classes = this.imgCssClass.split(' ');
+            for (var c = 0; c < classes.length; c++)
+                this.addCSSClass(classes[c])
+        }
     }
 
     public setSource(imgSource: string)
@@ -3652,7 +4160,7 @@ export class UIImage extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.image.hidden = (visible == false);
+        this.image.style.visibility = (visible ? 'visible' : 'hidden')
     }
 }
 export class UILabelBinder extends WidgetBinder
@@ -3755,7 +4263,7 @@ export class UILabel extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.label.hidden = (visible == false);
+        this.label.style.visibility = (visible ? 'visible' : 'hidden')
     }
 }
 export class UIListBinder extends WidgetBinder
@@ -3802,6 +4310,9 @@ export class UIList extends Widget implements IBindable
     public selectedBackColor: string = null;
     public selectedForeColor: string = null;
 
+    disableSel: boolean = false;
+    disableUnSel: boolean = false;
+
 
     /**
      * 
@@ -3809,17 +4320,24 @@ export class UIList extends Widget implements IBindable
      * 
      * Parameters: **(item: IListItemTemplate, ev: Event)**
      */
-    constructor({ name, itemClicked = null, templateProvider = null }:
+    constructor({ name }:
         {
             name: string;
-            itemClicked?: Function,
-            templateProvider?: IListItemTemplateProvider
         })
     {
         super(name);
+    }
 
-        this.templateProvider = templateProvider;
-        this.itemClickedCallback = itemClicked;
+    public disableSelection(): UIList
+    {
+        this.disableSel = true;
+        return this;
+    }
+
+    public disableUnSelection(): UIList
+    {
+        this.disableUnSel = true;
+        return this;
     }
 
     /**
@@ -3917,13 +4435,17 @@ export class UIList extends Widget implements IBindable
         this.divContainer = this.elementById('fsListView');
     }
 
-    public onItemClicked(item: IListItemTemplate, ev: Event): void
+    public onItemClicked(senderItem: IListItemTemplate, ev: Event): void
     {
-        for (var i = 0; i < this.items.length; i++)
-            this.items[i].unSelect();
-        item.select();
+        if (this.disableUnSel == false)
+            for (var i = 0; i < this.items.length; i++)
+                this.items[i].unSelect();
+
+        if (this.disableSel == false)
+            senderItem.select();
+
         if (this.itemClickedCallback != null && this.itemClickedCallback != undefined)
-            this.itemClickedCallback(item, ev);
+            this.itemClickedCallback(senderItem, ev);
     }
 
     public addItem(item: IListItemTemplate): UIList
@@ -4033,7 +4555,12 @@ export class UIList extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.divContainer.hidden = (visible == false);
+        this.divContainer.style.visibility = (visible ? 'visible' : 'hidden')
+    }
+
+    public setOnItemClick(itemClicked: Function)
+    {
+        this.itemClickedCallback = itemClicked;
     }
 }
 export class UIDialog extends Widget implements INotifiable
@@ -4055,11 +4582,16 @@ export class UIDialog extends Widget implements INotifiable
 
     private modalContext: WidgetContext;
 
-    constructor(shell: PageShell)
+
+    private customTemplate: string = null;
+    constructor(shell: PageShell, customTempl?: string)
     {
         super('UIDialog');
 
         this.shell = shell;
+
+        if (!Misc.isNullOrEmpty(customTempl))
+            this.customTemplate = customTempl;
 
         // obtem o body da pagina
         var body: Element = shell.getPageBody();
@@ -4083,6 +4615,11 @@ export class UIDialog extends Widget implements INotifiable
             null);
     }
 
+    public closeDialog()
+    {
+        this.modalContainer.remove();
+    }
+
     public action(action: ModalAction): UIDialog
     {
         this.modalActions.push(action);
@@ -4092,6 +4629,12 @@ export class UIDialog extends Widget implements INotifiable
     public setTitle(dialogTitle: string): UIDialog
     {
         this.titleText = dialogTitle;
+        return this;
+    }
+
+    public modalBody(templateView: UITemplateView): UIDialog
+    {
+        this.contentTemplate = templateView;
         return this;
     }
 
@@ -4107,16 +4650,35 @@ export class UIDialog extends Widget implements INotifiable
         return this;
     }
 
+    private dataDismissAttrName: string = 'data-dismiss'
+    public setDataDismisAttributeName(attrName: string)
+    {
+        this.dataDismissAttrName = attrName;
+    }
+
     protected htmlTemplate(): string
     {
+        if (!Misc.isNullOrEmpty(this.customTemplate))
+        {
+            if (this.customTemplate.indexOf('UIModalView') == -1)
+                throw new Error(`UIDialog '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="UIModalView".`)
+            if (this.customTemplate.indexOf('modalTitle') == -1)
+                throw new Error(`UIDialog '${this.widgetName}' failed to load: custom base-template does not contains an Element with Id="modalTitle".`)
+            if (this.customTemplate.indexOf('modalBody') == -1)
+                throw new Error(`UIDialog '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="modalBody".`)
+            if (this.customTemplate.indexOf('modalFooter') == -1)
+                throw new Error(`UIDialog '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="modalFooter".`)
+
+            return this.customTemplate;
+        }
         return `
- <div id="fsModalView" class="modal fade" role="dialog">
+ <div id="UIModalView" class="modal fade" role="dialog">
     <div class="modal-dialog" role="document">        
         <div class="modal-content">
             <div class="modal-header">
-                <h5 id="modalTitle" class="modal-title" id="exampleModalLongTitle">Modal title</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
+                <h5 id="modalTitle" class="modal-title">Modal title</h5>
+                <button type="button" class="close" ${this.dataDismissAttrName}="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             
@@ -4136,11 +4698,13 @@ export class UIDialog extends Widget implements INotifiable
     protected onWidgetDidLoad(): void
     {
         var self = this;
+
+        self.modalContainer = self.elementById('UIModalView');
         self.titleElement = self.elementById('modalTitle');
         self.bodyContainer = self.elementById('modalBody');
         self.footerContainer = self.elementById('modalFooter');
         self.titleElement.textContent = self.titleText;
-        self.modalContainer = self.elementById('fsModalView');
+
 
         if (!Misc.isNullOrEmpty(self.contentTemplate))
             self.bodyContainer.appendChild(self.contentTemplate.content());
@@ -4150,7 +4714,7 @@ export class UIDialog extends Widget implements INotifiable
             const action: ModalAction = self.modalActions[i];
             const btn: HTMLButtonElement = self.shell.createElement('button');
             btn.type = 'button';
-            btn.id = `modalAction_${Widget.generateUUID()}`;
+            btn.id = `modalAction_${Misc.generateUUID()}`;
             btn.textContent = action.text;
 
             for (var c = 0; c < action.classes.length; c++)
@@ -4158,27 +4722,27 @@ export class UIDialog extends Widget implements INotifiable
 
             action.setButton(btn, this);
             if (action.dismis)
-                btn.setAttribute('data-dismiss', 'modal');
+                btn.setAttribute(`${this.dataDismissAttrName}`, 'modal');
 
             self.footerContainer.appendChild(btn);
         }
 
         self.showFunction = new VirtualFunction({
             fnName: 'modalShow',
-            fnArgNames: [],
+            fnArgNames: [
+                'containerId',
+                'showFunctionId'
+            ],
             keepAfterCalled: true
-        })
-
-        self.showFunction.setContent(`
-            var md = new bootstrap.Modal(document.getElementById('${self.modalContainer.id}'), { backdrop: false })
+        }).setContent(`
+            var md = new bootstrap.Modal(document.getElementById(containerId), { backdrop: false })
             md.show();
-            $('#${self.modalContainer.id}').on('hidden.bs.modal', function (e) {
-                document.getElementById('${self.modalContainer.id}').remove();
-                document.getElementById('${self.showFunction.functionId}').remove();
-            })`);
-
-
-        self.showFunction.call();
+            var refId = ('#' + containerId)
+            $(refId).on('hidden.bs.modal', function (e) {
+                document.getElementById(containerId).remove();
+                document.getElementById(showFunctionId).remove();
+            })
+        `).call(self.modalContainer.id, self.showFunction.functionId);
     }
 
     private onComplete: Function = null;
@@ -4200,35 +4764,35 @@ export class UIDialog extends Widget implements INotifiable
     {
         renderer.render(this);
     }
-    public value(): string
+}
+export class UIDialogBS5 extends UIDialog
+{
+    public static $: UIDialogBS5;
+    constructor(shell: PageShell, height:string = '60vh')
     {
-        throw new Error("Method not implemented.");
-    }
-    public setEnabled(enabled: boolean): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public addCSSClass(className: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public removeCSSClass(className: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public applyCSS(propertyName: string, propertyValue: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setVisible(visible: boolean): void
-    {
-        throw new Error("Method not implemented.");
-    }
+        const tmpl = `
+<div id="fsModalView" class="modal" tabindex="-1" style="height:${height}">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5   id="modalTitle" class="modal-title">Modal title</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div id="modalBody" class="modal-body">
 
+      </div>
+      <div id="modalFooter" class="modal-footer">
+   
+      </div>
+    </div>
+  </div>
+</div> `
+
+      super(shell, tmpl)
+      this.setDataDismisAttributeName('data-bs-dismiss')
+      UIDialogBS5.$ = this;
+      UIDialog.$ = this;
+    }
 }
 export class UINavBar extends Widget
 {
@@ -4323,47 +4887,14 @@ export class UINavBar extends Widget
 }
 export class UIProgressBar extends Widget
 {
-    protected onWidgetDidLoad(): void
-    {
-        throw new Error("Method not implemented.");
-    }
     protected htmlTemplate(): string
     {
         throw new Error("Method not implemented.");
     }
-    public setCustomPresenter(renderer: ICustomWidgetPresenter<Widget>): void
+    protected onWidgetDidLoad(): void
     {
         throw new Error("Method not implemented.");
     }
-    public value(): string
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setEnabled(enabled: boolean): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public addCSSClass(className: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public removeCSSClass(className: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public applyCSS(propertyName: string, propertyValue: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setVisible(visible: boolean): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    
 }
 export class UISelectBinder extends WidgetBinder
 {
@@ -4385,7 +4916,13 @@ export class UISelectBinder extends WidgetBinder
         else
             this.select.fromList(models);
     }
-    fillPropertyModel(): void { }
+    fillPropertyModel(): void
+    {
+        if(this.isTargetDefined())
+        {
+            this.fillModelTargetPropertyValue();
+        }
+    }
 }
 
 export class UISelect extends Widget implements IBindable
@@ -4403,22 +4940,26 @@ export class UISelect extends Widget implements IBindable
     public divContainer: HTMLDivElement = null;
     public title: HTMLLabelElement = null;
     public select: HTMLSelectElement = null;
-    
+
     public onSelectionChanged: Function = null;
     private initialTitle: string = null;
 
-    constructor({ name, title }:
+    private containerClass: string = null;
+
+    constructor({ name, title, containerClass }:
         {
             name: string,
-            title: string
+            title: string,
+            containerClass?: string
         })
     {
         super(name);
         this.initialTitle = title;
+        this.containerClass = containerClass;
     }
     getBinder(): WidgetBinder
     {
-        return new UISelectBinder(this);;
+        return new UISelectBinder(this);
     }
 
     protected onWidgetDidLoad(): void
@@ -4429,6 +4970,13 @@ export class UISelect extends Widget implements IBindable
         this.title = this.elementById('selectTitle');
         this.select = this.elementById('selectEl');
 
+        if (!Misc.isNull(this.containerClass))
+        {
+            var classes = this.containerClass.split(' ');
+            for (var c = 0; c < classes.length; c++)
+                this.divContainer.classList.add(classes[c]);
+        }
+        
         this.select.onchange = function (ev)
         {
             if (self.onSelectionChanged != null)
@@ -4437,6 +4985,16 @@ export class UISelect extends Widget implements IBindable
         this.title.textContent = this.initialTitle;
 
     }
+
+    public setOnChange(changeFn: Function)
+    {
+        this.select.onchange = function (ev)
+        {
+            changeFn();
+        };
+    }
+
+
     public setSelectedOption(optionValue: any): void
     {
         try
@@ -4540,13 +5098,13 @@ export class UISelect extends Widget implements IBindable
      * Its works only when uses 'fromList(...)' UISelect function
      * @returns T
      */
-    public getSelectedItem<T extends any|object>(): T
+    public getSelectedItem<T extends any | object>(): T
     {
         var val = this.value(); //key value of object-item
-        for(var i = 0; i < this.itemsSource.length; i++)
+        for (var i = 0; i < this.itemsSource.length; i++)
         {
             var itemObj = this.itemsSource[i];
-            if(itemObj[this.valueProperty] == val)
+            if (itemObj[this.valueProperty] == val)
                 return itemObj as unknown as T;
         }
         return null;
@@ -4580,7 +5138,7 @@ export class UISelect extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        this.divContainer.hidden = (visible == false);
+        this.divContainer.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
     public setEnabled(enabled: boolean): void
@@ -4657,7 +5215,7 @@ export class UISpinner extends Widget
     }
     public setVisible(visible: boolean): void
     {
-        this.containerDiv.hidden = (visible == false);
+        this.containerDiv.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }
@@ -4781,13 +5339,11 @@ export class UITextBoxBinder extends WidgetBinder
     }
     fillPropertyModel(): void
     {
-        var text: string = this.textBox.getText();
-        this.setModelPropertyValue(text);
+        this.setModelPropertyValue(this.textBox.value());
     }
     getWidgetValue()
     {
-        var text: string = this.textBox.getText();
-        return text;
+        return this.textBox.value();
     }
 }
 
@@ -4812,35 +5368,40 @@ export class UITextBox extends Widget implements IBindable
     private initialText: string = null;
     private initialType: string = null;
     private initialMaxlength: number = null;
-    private initialMask: string = null; 
+    private initialMask: string = null;
     private containerClass: string = null;
+    private required: boolean = false;
+
 
     public lbTitle: HTMLLabelElement = null;
     public txInput: HTMLInputElement = null;
     public divContainer: HTMLDivElement = null;
 
-    constructor({ 
+    constructor({
         name,
-        type = 'text', 
+        type = 'text',
         title = '',
-        maxlength = 100, 
-        placeHolder = '', 
+        maxlength = 100,
+        placeHolder = '',
         text = '',
         mask = '',
-        containerClass = 'form-group'  }:
-        {
-            name: string;
-            type?: string;
-            mask?: string,
-            maxlength?: number,
-            title?: string;
-            placeHolder?: string;
-            text?: string;
-            containerClass?:string
-        })
+        containerClass = 'form-group',
+        isRequired = false
+    }: {
+        name: string;
+        type?: string;
+        mask?: string,
+        maxlength?: number,
+        title?: string;
+        placeHolder?: string;
+        text?: string;
+        containerClass?: string
+        isRequired?: boolean
+    })
     {
         super(name);
 
+        this.required = isRequired;
         this.initialType = (Misc.isNullOrEmpty(type) ? 'text' : type);
         this.initialTitle = (Misc.isNullOrEmpty(title) ? '' : title);
         this.initialPlaceHolder = (Misc.isNullOrEmpty(placeHolder) ? '' : placeHolder);
@@ -4849,6 +5410,15 @@ export class UITextBox extends Widget implements IBindable
         this.initialMask = (Misc.isNull(mask) ? '' : mask);
         this.containerClass = (Misc.isNull(containerClass) ? 'form-group' : containerClass);
     }
+    public setOnEnter(fnOnEnter: Function)
+    {
+        this.txInput.onkeydown = (ev) => 
+        {
+            if (ev.key == 'Enter')
+                fnOnEnter();
+        }
+    }
+
     getBinder(): WidgetBinder
     {
         return new UITextBoxBinder(this);
@@ -4893,7 +5463,7 @@ export class UITextBox extends Widget implements IBindable
         this.lbTitle = this.elementById('entryTitle');
         this.txInput = this.elementById('entryInput');
         this.divContainer = this.elementById('divContainer');
-        
+
         this.lbTitle.innerText = this.initialTitle;
         this.txInput.placeholder = this.initialPlaceHolder;
         this.txInput.value = this.initialText;
@@ -4901,6 +5471,9 @@ export class UITextBox extends Widget implements IBindable
         this.setMaxLength(this.initialMaxlength);
         this.setInputType(this.initialType);
         this.applyMask(this.initialMask);
+
+        if (this.required)
+            this.txInput.setAttribute('required', 'required');
     }
 
     public setMaxLength(maxlength: number): void
@@ -4921,10 +5494,24 @@ export class UITextBox extends Widget implements IBindable
     {
         return this.value();
     }
-
+    private isFloat = false;
     public setText(newText: string): void
     {
-        this.txInput.value = (Misc.isNullOrEmpty(newText) ? '' : newText);
+        const tp = this.txInput.type;
+        if (tp == 'text')
+            this.txInput.value = (Misc.isNullOrEmpty(newText) ? '' : newText);
+        if (tp == 'date')
+            this.txInput.valueAsDate = (Misc.isNullOrEmpty(newText) ? new Date() : new Date(newText));
+        if (tp == 'number')
+        {
+            if (newText.indexOf('.') == -1)
+                this.txInput.valueAsNumber = (Misc.isNullOrEmpty(newText) ? 0 : Number.parseInt(newText));
+            else
+            {
+                this.txInput.valueAsNumber = (Misc.isNullOrEmpty(newText) ? 0 : Number.parseFloat(newText));
+                this.isFloat = true;
+            }
+        }
     }
 
     public setTitle(newTitle: string): void
@@ -4932,8 +5519,16 @@ export class UITextBox extends Widget implements IBindable
         this.lbTitle.textContent = newTitle;
     }
 
-    public value(): string
+    public value(): object | any | string
     {
+        if (this.txInput.type == 'text') return this.txInput.value.toString();
+        if (this.txInput.type == 'number')
+        {
+            if (this.isFloat) return Number.parseFloat(this.txInput.value);
+            else return Number.parseInt(this.txInput.value);
+        }
+        if (this.txInput.type == 'date')
+            return new Date(this.txInput.value)
         return this.txInput.value;
     }
 
@@ -4969,7 +5564,7 @@ export class UITextBox extends Widget implements IBindable
 
     public setVisible(visible: boolean): void 
     {
-        this.divContainer.hidden = (visible == false);
+        this.divContainer.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }
@@ -5128,53 +5723,122 @@ export class UITextArea extends Widget implements IBindable
 
     public setVisible(visible: boolean): void 
     {
-        this.divContainer.hidden = (visible == false);
+        this.divContainer.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }
 export class UIToast extends Widget
 {
-    protected onWidgetDidLoad(): void
+    text: string;
+
+    private constructor(name: string, text: string)
     {
-        throw new Error("Method not implemented.");
+        super(name);
+        this.text = text;
     }
+
+    toastDiv: HTMLDivElement;
+
     protected htmlTemplate(): string
     {
-        throw new Error("Method not implemented.");
+        return `
+        <div class="d-flex justify-content-center">
+            <style>
+                .toast-success{
+                    background: rgb(221, 255, 221);
+                    border: solid 1px rgb(0, 94, 0);
+                }
+                .toast-error{
+                    background: rgb(255, 188, 188);
+                    border: solid 1px rgb(255, 79, 79);
+                }
+                .dv-toast {
+                    opacity: 0;
+                    position: absolute;
+                    min-width: 100px;
+                    max-width: 500px;
+                    min-height: 40px;
+                    margin-top: 10px;
+                    z-index: 10;
+                    border-radius: 8px;
+         
+                }
+            </style>
+            <div id="toast-div" class="dv-toast ${this.widgetName} ps-2 pe-2 shadow-lg d-flex justify-content-center align-items-center text-center">
+                <!-- toast text -->
+            </div>
+        </div>
+    `
     }
-    public setCustomPresenter(renderer: ICustomWidgetPresenter<Widget>): void
+
+    protected onWidgetDidLoad(): void
     {
-        throw new Error("Method not implemented.");
+        this.toastDiv = this.elementById('toast-div')
+        this.toastDiv.textContent = this.text
+        const $ = this;
+        this.toastDiv.onclick = () => $.toastDiv.remove()
     }
-    public value(): string
+
+    public static success(text: string, targetDivId: string)
     {
-        throw new Error("Method not implemented.");
+        const toast = new UIToast('toast-success', text)
+        UIToast.show(targetDivId, toast);
     }
-    public setEnabled(enabled: boolean): void
+
+
+    public static error(text: string, targetDivId: string)
     {
-        throw new Error("Method not implemented.");
+        const toast = new UIToast('toast-error', text)
+        UIToast.show(targetDivId, toast);
     }
-    public addCSSClass(className: string): void
+
+    private static show(targetDivId: string, toast: UIToast)
     {
-        throw new Error("Method not implemented.");
+        const ctx = new WidgetContext(UIPage.shell, [targetDivId]);
+        ctx.addWidget(targetDivId, toast);
+        ctx.build(new class noty implements INotifiable
+        {
+            onNotified(sender: any, args: any[]): void
+            {
+                var is = setInterval(() =>
+                {
+                    if (toast.toastDiv.style.opacity == '')
+                        toast.toastDiv.style.opacity = '0'
+
+                    if (parseFloat(toast.toastDiv.style.opacity) < 1.0)
+                    {
+                        toast.toastDiv.style.opacity = `${parseFloat(toast.toastDiv.style.opacity) + 0.08}`;
+                    }
+
+                    else
+                    {
+                        clearInterval(is);
+                        var t = setTimeout(() =>
+                        {
+
+                            var it = setInterval(() =>
+                            {
+                                if (parseFloat(toast.toastDiv.style.opacity) > 0)
+                                {
+                                    toast.toastDiv.style.opacity = `${parseFloat(toast.toastDiv.style.opacity) - 0.02}`;
+                                }
+                                else
+                                {
+                                    toast.toastDiv.remove();
+                                    ctx.clear();
+                                    clearInterval(it);
+                                }
+                            }, 50);
+
+                            clearTimeout(t);
+                        }, 1500);
+                    }
+
+                }, 50);
+            }
+
+        });
     }
-    public removeCSSClass(className: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public applyCSS(propertyName: string, propertyValue: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public setVisible(visible: boolean): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    
 }
 export class DataGridItem implements IDataGridItemTemplate
 {
@@ -5239,6 +5903,124 @@ export class DataGridItem implements IDataGridItemTemplate
 
         self.rowElement = tr;
         return tr;
+    }
+}
+export class ToolbarState
+{
+    public readonly name: string;
+    public readonly buttons: UIButton[];
+    public readonly stateCallback: Function;
+
+    public constructor(name: string, callback: Function, ...buttons: UIButton[])
+    {
+        this.name = name;
+        this.buttons = buttons;
+        this.stateCallback = callback;
+    }
+
+}
+
+export class UIToolBar extends Widget
+{
+    public static $: UIToolBar;
+
+    icon: string;
+    tittle: string;
+
+    public states: ToolbarState[];
+
+    optionsContext: WidgetContext;
+
+    constructor({ name, iconPath, barTittle }: {
+        name: string;
+        iconPath: string;
+        barTittle: string;
+    })
+    {
+        super(name);
+        this.icon = iconPath;
+        this.tittle = barTittle;
+        this.states = [];
+        UIToolBar.$ = this;
+    }
+
+    public defineState(name: string, callback: Function, ...buttons: UIButton[]): UIToolBar
+    {
+        this.states.push(new ToolbarState(name, callback, ...buttons));
+        return this;
+    }
+
+
+    currentState: ToolbarState;
+
+    public activateState(stateName: string)
+    {
+        this.currentState = null;
+        for (var e = 0; e < this.states.length; e++)
+            if (this.states[e].name == stateName)
+            {
+                this.currentState = this.states[e];
+                break;
+            }
+        if (Misc.isNull(this.currentState))
+            throw new Error(`The stete '${stateName}' does not registered in toolBar ${this.widgetName}`);
+
+        this.optionsContext.clear();
+        var stateButtons = this.currentState.buttons;
+        for (var b = 0; b < stateButtons.length; b++)
+            this.optionsContext.addWidget(this.containerId, stateButtons[b]);
+
+        const $ = this;
+        this.optionsContext.build(new class Noty implements INotifiable
+        {
+            onNotified(sender: any, args: any[]): void
+            {
+                var botoes = $.currentState.buttons;
+                for (var w = 0; w < botoes.length; w++)
+                {
+                    const btn = botoes[w];
+                    btn.setOnClickFn(() => UIToolBar.$.currentState.stateCallback(btn.widgetName));
+                }
+            }
+        }, false);
+    }
+
+    protected htmlTemplate(): string
+    {
+        return `
+<div class="d-flex flex-row card shadow-sm mx-2 p-0 mt-2" style="height:52px; background:whitesmoke">
+
+    <div style="width:55px; height:48px; padding: 3px">
+        <img style="width:45px; height:43px; padding:5px" class="card shadow-sm" id="ic_rotina" />
+    </div>
+
+    <label id="lb_titulo" class="h5 col-md-5 col-xs-2 mt-2 ps-0"> Nome Rotina </label>
+
+    <div id="dv_opcoes" class="col d-flex justify-content-end mt-2 mb-2 me-2" style="overflow-x:auto">
+      
+    </div>
+
+</div>
+       
+       `;
+    }
+
+    containerId: string;
+    protected onWidgetDidLoad(): void
+    {
+        const iconeEl = this.elementById<HTMLImageElement>('ic_rotina');
+        const tituloEl = this.elementById<HTMLLabelElement>('lb_titulo');
+        const dvOpcoes = this.elementById<HTMLDivElement>('dv_opcoes');
+
+        this.containerId = dvOpcoes.id;
+        iconeEl.src = this.icon;
+        tituloEl.textContent = this.tittle;
+        this.optionsContext = new WidgetContext(this.getPageShell(), [this.containerId])
+    }
+
+    public getOption(buttonName: string): UIButton
+    {
+        return this.optionsContext.get<UIButton>(`${this.containerId}/${buttonName}`)
     }
 }
 export interface IDataGridItemTemplateProvider
@@ -5451,9 +6233,11 @@ export class UITemplateView
 
         if(!Misc.isNull(data))
         {
-            for(var prop in data)
+            for (var prop in data)
             {
-                html = html.replace(`#${prop}`, data[prop])
+                var find = `#${prop}`;
+                while (html.indexOf(find) != -1)
+                    html = html.replace(find, data[prop])
             }
         }
 
@@ -5477,7 +6261,7 @@ export class UITemplateView
         this.templateString = domObj.children[0].outerHTML;
     }
 
-    content(): Element
+    public content(): Element
     {
         return this.templateDOM.children[0];
     }
@@ -5528,10 +6312,10 @@ export class UIDataGridBinder extends WidgetBinder
     }
     refreshUI(): void
     {
-        var viewModels:Array<any|object> = this.getModelPropertyValue();
+        var viewModels: Array<any | object> = this.getModelPropertyValue();
         this.dataGrid.fromList(viewModels);
     }
-    fillPropertyModel(): void  { }
+    fillPropertyModel(): void { }
 }
 
 export class UIDataGrid extends Widget implements IBindable
@@ -5551,17 +6335,56 @@ export class UIDataGrid extends Widget implements IBindable
 
     public MODEL_KEYS: Array<string> = [];
 
-    constructor({ name, autoGenCols = false, itemTemplateProvider = null }:
-        {
-            name: string,
-            autoGenCols?: boolean,
-            itemTemplateProvider?: IDataGridItemTemplateProvider
-        })
+    private baseTemplate: string = null;
+
+
+    private tableCssClasses: string = 'table table-hover table-bordered table-sm';
+    constructor({ name, autoGenCols = false, baseTemplate = null, cssClasses = null }: {
+        name: string,
+        autoGenCols?: boolean,
+        itemTemplateProvider?: IDataGridItemTemplateProvider,
+        baseTemplate?: string,
+        cssClasses?: string
+    })
     {
         super(name);
-        this.templateProvider = itemTemplateProvider;
         this.autoGenerateColumns = autoGenCols;
+        this.baseTemplate = baseTemplate;
+        if (!Misc.isNullOrEmpty(cssClasses))
+            this.tableCssClasses = cssClasses;
     }
+
+
+    protected htmlTemplate(): string
+    {
+        if (!Misc.isNullOrEmpty(this.baseTemplate))
+        {
+            if (this.baseTemplate.indexOf('gridHeader') == -1)
+                throw new Error(`UIDataGrid '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="gridHeader".`)
+            if (this.baseTemplate.indexOf('gridBody') == -1)
+                throw new Error(`UIDataGrid '${this.widgetName}' failed to load: custom base-template does not contains an <div/> with Id="gridBody".`)
+
+            return this.baseTemplate;
+        }
+        return `
+<table id="fsDataGrid" class="${this.tableCssClasses}">
+  <thead id="gridHeader">
+  </thead>
+  <tbody id="gridBody" style="overflow-y:scroll;">
+  </tbody>
+</table>        
+`;
+    }
+
+    protected onWidgetDidLoad(): void
+    {
+        this.table = this.elementById('fsDataGrid');
+        this.table.style.background = 'white';
+        this.tableHeader = this.elementById('gridHeader');
+        this.tableBody = this.elementById('gridBody');
+    }
+
+
     getBinder(): WidgetBinder
     {
         return new UIDataGridBinder(this);
@@ -5581,12 +6404,13 @@ export class UIDataGrid extends Widget implements IBindable
         }
     }
 
-    public setTemplateProvider(provider: IDataGridItemTemplateProvider)
+    public setTemplateProvider(provider: IDataGridItemTemplateProvider): UIDataGrid
     {
         this.templateProvider = provider;
+        return this;
     }
 
-    public addColumn(columnHeader: string, modelKey: string): void
+    public addColumn(columnHeader: string, modelKey: string): UIDataGrid
     {
         var shell = this.getPageShell();
         this.MODEL_KEYS.push(modelKey);
@@ -5598,6 +6422,8 @@ export class UIDataGrid extends Widget implements IBindable
         var th = shell.createElement('th', columnHeader);
         th.scope = 'col';
         thead.children[0].appendChild(th);
+
+        return this;
     }
 
     private generateColumns(list: Array<any>): void
@@ -5693,25 +6519,7 @@ export class UIDataGrid extends Widget implements IBindable
         item.select();
     }
 
-    protected htmlTemplate(): string
-    {
-        return `
-<table id="fsDataGrid" class="table table-hover table-bordered table-sm">
-  <thead id="gridHeader">
-  </thead>
-  <tbody id="gridBody" style="overflow-y:scrol; height: 100px">
-  </tbody>
-</table>        
-`;
-    }
 
-    protected onWidgetDidLoad(): void
-    {
-        this.table = this.elementById('fsDataGrid');
-        this.table.style.background = 'white';
-        this.tableHeader = this.elementById('gridHeader');
-        this.tableBody = this.elementById('gridBody');
-    }
 
     public setCustomPresenter(presenter: ICustomWidgetPresenter<Widget>): void
     {
@@ -5743,7 +6551,7 @@ export class UIDataGrid extends Widget implements IBindable
     }
     public setVisible(visible: boolean): void
     {
-        throw new Error("Method not implemented.");
+        this.table.style.visibility = (visible ? 'visible' : 'hidden')
     }
 
 }
@@ -5782,6 +6590,9 @@ export class YordManagedView extends UIView
 
     composeView(): void
     {
+        if (Misc.isNull(this.yordView.viewComposing))
+            return;
+
         for (var c = 0; c < this.yordView.viewComposing.length; c++)
         {
             var composingInfo = this.yordView.viewComposing[c];

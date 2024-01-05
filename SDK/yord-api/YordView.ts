@@ -5,6 +5,7 @@ import { IYordLayout } from "./IYordLayout";
 import { YordManagedView } from "./YordManagedView";
 import { YordViewContext } from "./YordViewContext";
 
+
 export abstract class YordView
 {
     public readonly viewName: string;
