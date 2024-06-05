@@ -1,8 +1,9 @@
 ../UIPage.ts
 ../UIView.ts
 ../FlatList.ts
+../FlatDataGrid.ts
 ../UIFlatView.ts
-../UIFlatViewBuilder.ts
+../ViewBuilder.ts
 ../UIFlatViewCache.ts
 ../Widget.ts
 ../WidgetContext.ts
@@ -17,7 +18,6 @@
 ../ICustomWidgetPresenter.ts
 ../ILayoutPresenter.ts
 ../INotifiable.ts
-../ISplittableView.ts
 ../NativeLib.ts
 ../PageShell.ts
 ../Row.ts
@@ -50,6 +50,7 @@
 ../controls/UIProgressBar.ts
 ../controls/UISelect.ts
 ../controls/UISpinner.ts
+../controls/UISpinnerBS5.ts
 ../controls/UISwitcher.ts
 ../controls/UITextBox.ts
 ../controls/UITextArea.ts

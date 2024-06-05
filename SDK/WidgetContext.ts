@@ -1,6 +1,8 @@
 import { PageShell } from "./PageShell";
 import { WidgetFragment, WidgetMessage, Widget } from "./Widget";
 import { INotifiable } from "./INotifiable";
+import { Misc } from "./Misc";
+import { DefaultExceptionPage } from "./DefaultExceptionPage";
 
 /**
  * A WidgetContext is able to manage a 
@@ -57,7 +59,7 @@ export class WidgetContext implements INotifiable
             if (fragment.fragmentId == fragmentName)
                 return fragment;
         }
-        return null as unknown as WidgetFragment;
+        return null
     }
 
     findWidget(fragmentName: string, widgetName: string)
@@ -75,6 +77,13 @@ export class WidgetContext implements INotifiable
         var widget: Widget = fragment.findWidget(widgetName);
         return widget as unknown as TWidget;
     }
+
+    gets(fragmentName: string): Widget[]
+    {
+        var fragment: WidgetFragment = this.findFragment(fragmentName);
+        return fragment.widgets
+    }
+
 
     pushMessage(widgetName: string, messageId: number, messageText: string, messageAnyObject: object)
     {
@@ -98,7 +107,10 @@ export class WidgetContext implements INotifiable
      */
     addWidget(fragmentName: string, widget: Widget)
     {
-        var fragment = this.findFragment(fragmentName);
+        var fragment = this.findFragment(fragmentName)
+        if (Misc.isNull(fragment))
+            throw new Error(`Cannot add a Widget named '${widget.widgetName}' to WidgetFragment '${fragmentName}'. Ensure that layout-html contains a div with Id="${fragmentName}"`)
+
         fragment.attatchWidget(widget);
 
         if (this.contextLoaded)
@@ -168,8 +180,15 @@ export class WidgetContext implements INotifiable
      */
     build(notifiable?: INotifiable, clear: boolean = false)
     {
-        this.fragmentsLoaded = 0;
         this.notifiableView = notifiable;
+        if (this.contextLoaded)
+        {
+            if (this.notifiableView != null)
+                this.notifiableView.onNotified('FSWidgetContext', []);
+            return;
+        }
+
+        this.fragmentsLoaded = 0;
 
         for (var i = 0; i < this.fragments.length; i++)
         {

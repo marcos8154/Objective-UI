@@ -33,12 +33,15 @@ export class UITextAreaBinder extends WidgetBinder
 
 export class UITextArea extends Widget implements IBindable
 {
+
+    public static toUpperCaseDefault: boolean = false;
+    toUpperCase: boolean;
     protected htmlTemplate(): string
     {
         return `
 <div id="divContainer" class="form-group">
     <label id="entryTitle" style="margin: 0px; padding: 0px; font-weight:normal !important;" for="inputEntry"> Entry Title </label>
-    <textarea id="entryInput" class="form-control form-control-sm"> </textarea>
+    <textarea id="entryInput" ${this.toUpperCase ? 'oninput="this.value = this.value.toUpperCase();"' : ''} class="form-control form-control-sm"> </textarea>
 </div>`
     }
     public setEnabled(enabled: boolean): void
@@ -56,13 +59,14 @@ export class UITextArea extends Widget implements IBindable
     public txInput: HTMLTextAreaElement = null;
     public divContainer: HTMLDivElement = null;
 
-    constructor({ name, title = '', height = '100px', maxlength = 255, text = ''}:
+    constructor({ name, title = '', height = '100px', maxlength = 255, text = '', toUpperCase = null }:
         {
             name: string
             title?: string
             height?: string
             maxlength?: number
-            text?: string
+            text?: string,
+            toUpperCase?: boolean
         })
     {
         super(name);
@@ -71,6 +75,10 @@ export class UITextArea extends Widget implements IBindable
         this.initialTitle = (Misc.isNullOrEmpty(title) ? '' : title);
         this.initialText = (Misc.isNullOrEmpty(text) ? '' : text);
         this.initialMaxlength = (Misc.isNullOrEmpty(maxlength) ? 100 : maxlength);
+        if (!Misc.isNull(toUpperCase))
+            this.toUpperCase = toUpperCase
+        else
+            this.toUpperCase = UITextArea.toUpperCaseDefault
     }
     getBinder(): WidgetBinder
     {

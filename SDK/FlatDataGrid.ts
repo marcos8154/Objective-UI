@@ -1,28 +1,29 @@
 import { Misc } from "./Misc";
 import { PageShell } from "./PageShell";
-import { IListItemTemplate } from "./controls/IListItemTemplate";
-import { IListItemTemplateProvider } from "./controls/IListItemTemplateProvider";
-import { UIList } from "./controls/UIList";
+import { IDataGridItemTemplate } from "./controls/IDataGridItemTemplate";
+import { IDataGridItemTemplateProvider } from "./controls/IDataGridItemTemplateProvider";
+import { UIDataGrid } from "./controls/UIDataGrid";
 import { UITemplateView } from "./controls/UITemplateView";
 
-export class FlatList implements IListItemTemplateProvider
+
+export class FlatDataGrid implements IDataGridItemTemplateProvider
 {
     private callFn: Function;
     constructor(fn: Function)
     {
         this.callFn = fn
     }
-    getListItemTemplate(sender: UIList, viewModel: any): IListItemTemplate
+    getDataGridItemTemplate(sender: UIDataGrid, viewModel: any): IDataGridItemTemplate
     {
         if (Misc.isNull(viewModel)) return
-        var item = new FlatListItem(viewModel)
+        var item = new FlatDataGridItem(viewModel)
         this.callFn(item)
         return item
     }
-
 }
 
-export class FlatListItem implements IListItemTemplate
+
+export class FlatDataGridItem implements IDataGridItemTemplate
 {
     public value: any;
     itemName: string;
@@ -33,10 +34,15 @@ export class FlatListItem implements IListItemTemplate
         this.value = vm;
     }
 
-    public anchorElement: HTMLAnchorElement;
 
+    setOwnerDataGrid(dataGrid: UIDataGrid): void
+    {
+        this.sh = dataGrid.getPageShell();
+    }
+
+    public tableRow: HTMLTableRowElement;
     /**  define o callback para isSelected()  */
-    public onCheckSelected(fn: Function): FlatListItem
+    public onCheckSelected(fn: Function): FlatDataGridItem
     {
         this.fn_isSelected = fn;
         return this;
@@ -44,28 +50,28 @@ export class FlatListItem implements IListItemTemplate
     private fn_isSelected: Function;
 
     /**  define o callback para select()*/
-    public onSelect(fn: Function): FlatListItem
+    public onSelect(fn: Function): FlatDataGridItem
     {
         this.fn_select = fn;
         return this;
     }
     private fn_select: Function;
     /**  define o callback para unSelect()*/
-    public onUnSelect(fn: Function): FlatListItem
+    public onUnSelect(fn: Function): FlatDataGridItem
     {
         this.fn_unSelect = fn;
         return this;
     }
     private fn_unSelect: Function;
     /**  define o callback para itemTemplate()*/
-    public onItemTemplate(fn: Function): FlatListItem
+    public onItemTemplate(fn: Function): FlatDataGridItem
     {
         this.fn_itemTemplate = fn;
         return this;
     }
     private fn_itemTemplate: Function;
     /**  define o um trecho html para ser usado pela funcão itemTemplate()*/
-    public withHTML(htmlString: string): FlatListItem
+    public withHTML(htmlString: string): FlatDataGridItem
     {
         this.fn_itemTemplateString = htmlString;
         return this;
@@ -73,25 +79,25 @@ export class FlatListItem implements IListItemTemplate
 
     public containsCssClass(className: string): boolean
     {
-        return this.anchorElement.classList.contains(className)
+        return this.tableRow.classList.contains(className)
     }
 
     public addCssClass(className: string)
     {
-        this.anchorElement.classList.add(className)
+        this.tableRow.classList.add(className)
     }
 
     public removeCssClass(className: string)
     {
-        this.anchorElement.classList.remove(className)
+        this.tableRow.classList.remove(className)
     }
 
     private fn_itemTemplateString: string;
 
 
-    setOwnerList(listView: UIList): void
+    setOwnerList(dataGrid: UIDataGrid): void
     {
-        this.sh = listView.getPageShell();
+        this.sh = dataGrid.getPageShell();
     }
     isSelected(): boolean
     {
@@ -108,9 +114,9 @@ export class FlatListItem implements IListItemTemplate
         if (Misc.isNull(this.fn_isSelected)) return;
         this.fn_unSelect(this);
     }
-    public templateView: UITemplateView
 
-    itemTemplate(): HTMLAnchorElement
+
+    itemTemplate(): HTMLTableRowElement
     {
         if (!Misc.isNull(this.fn_itemTemplate))
             return this.fn_itemTemplate(this);
@@ -118,11 +124,12 @@ export class FlatListItem implements IListItemTemplate
         if (!Misc.isNull(this.fn_itemTemplateString))
         {
             const templ = new UITemplateView(this.fn_itemTemplateString, this.sh, this.value);
-            this.templateView = templ
-            var anchor = templ.elementById('anchor') as HTMLAnchorElement;
-            this.anchorElement = anchor;
+            var anchor = templ.elementById('table-row') as HTMLTableRowElement;
+            this.tableRow = anchor;
             return anchor;
 
         }
     }
+
+
 }

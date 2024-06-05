@@ -35,12 +35,12 @@ export class UIButton extends Widget
         if (this.imageSrc != '' && this.imageSrc != null && this.imageSrc != undefined)
         {
             return `
-<button id="fsButton" type="button"> 
+<button id="fsButton" type="button" class="btn">
      <img alt="img" id="fsButtonImage" src="${this.imageSrc}" style="width: ${this.imageWidth}"></img> 
 </button>`
         }
         else
-            return `<button id="fsButton" type="button"> Button </button>`
+            return `<button id="fsButton" type="button" class="btn"> Button </button>`
     }
     protected onWidgetDidLoad(): void
     {

@@ -7,6 +7,8 @@ import { UITemplateView } from "./UITemplateView";
 import { ModalAction } from "./ModalAction";
 import { INotifiable } from "../INotifiable";
 import { Misc } from "../Misc";
+import { UIPage } from "../UIPage";
+import { DefaultExceptionPage } from "../DefaultExceptionPage";
 
 export class UIDialog extends Widget implements INotifiable
 {
@@ -22,21 +24,30 @@ export class UIDialog extends Widget implements INotifiable
     public titleElement: HTMLHeadElement;
     public bodyContainer: HTMLDivElement;
     public footerContainer: HTMLDivElement;
+    public btnClose: HTMLButtonElement;
+    public modalContent: HTMLDivElement;
 
     private shell: PageShell;
 
     private modalContext: WidgetContext;
 
+    private height: string = null;
 
     private customTemplate: string = null;
-    constructor(shell: PageShell, customTempl?: string)
+    onCloseFn: Function;
+    constructor(shell: PageShell, customTempl?: string, height?: string)
     {
         super('UIDialog');
 
         this.shell = shell;
-
+        this.height = height;
         if (!Misc.isNullOrEmpty(customTempl))
             this.customTemplate = customTempl;
+        else
+        {
+            if (PageShell.BOOTSTRAP_VERSION_NUMBER >= 5)
+                throw new DefaultExceptionPage(new Error(`UIDialog: this widget does not supports Bootstrap v${PageShell.BOOTSTRAP_VERSION}. Use 'UIDialogBS5' class instead it.`))
+        }
 
         // obtem o body da pagina
         var body: Element = shell.getPageBody();
@@ -63,6 +74,7 @@ export class UIDialog extends Widget implements INotifiable
     public closeDialog()
     {
         this.modalContainer.remove();
+        UIDialog.$ = null;
     }
 
     public action(action: ModalAction): UIDialog
@@ -116,18 +128,21 @@ export class UIDialog extends Widget implements INotifiable
 
             return this.customTemplate;
         }
+        var styleHeight: string = '';
+        if (!Misc.isNullOrEmpty(this.height))
+            styleHeight = `style="height:${this.height}"`
         return `
  <div id="UIModalView" class="modal fade" role="dialog">
     <div class="modal-dialog" role="document">        
-        <div class="modal-content">
+        <div id="modalContent" class="modal-content shadow-lg" ${styleHeight}>
             <div class="modal-header">
                 <h5 id="modalTitle" class="modal-title">Modal title</h5>
-                <button type="button" class="close" ${this.dataDismissAttrName}="modal" aria-label="Close">
+                <button id="btnClose" type="button" class="close" ${this.dataDismissAttrName}="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             
-            <div id="modalBody" class="modal-body">
+            <div id="modalBody" class="modal-body pt-1" style="background:white">
                 
             </div>
 
@@ -140,16 +155,25 @@ export class UIDialog extends Widget implements INotifiable
 
     }
 
+    public setHeight(height: string): UIDialog
+    {
+        this.height = height
+        if (!Misc.isNull(this.modalContent))
+            this.modalContent.style.height = height;
+        return this;
+    }
+
     protected onWidgetDidLoad(): void
     {
         var self = this;
 
         self.modalContainer = self.elementById('UIModalView');
+        self.modalContent = self.elementById('modalContent')
         self.titleElement = self.elementById('modalTitle');
         self.bodyContainer = self.elementById('modalBody');
         self.footerContainer = self.elementById('modalFooter');
+        self.btnClose = self.elementById('btnClose');
         self.titleElement.textContent = self.titleText;
-
 
         if (!Misc.isNullOrEmpty(self.contentTemplate))
             self.bodyContainer.appendChild(self.contentTemplate.content());
@@ -179,7 +203,8 @@ export class UIDialog extends Widget implements INotifiable
                 'showFunctionId'
             ],
             keepAfterCalled: true
-        }).setContent(`
+        })
+        self.showFunction.setContent(`
             var md = new bootstrap.Modal(document.getElementById(containerId), { backdrop: false })
             md.show();
             var refId = ('#' + containerId)
@@ -197,6 +222,12 @@ export class UIDialog extends Widget implements INotifiable
         this.modalContext.addWidget('modalContainer', this);
         this.modalContext.build(this);
         UIDialog.$ = this;
+    }
+
+    public setOnCloseFn(onClose: Function)
+    {
+        this.onCloseFn = onClose;
+        this.btnClose.onclick = () => onClose
     }
 
     onNotified(sender: any, args: Array<any>): void

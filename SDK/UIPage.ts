@@ -19,12 +19,18 @@ import { IAppStorageProvider } from "./IAppStorageProvider";
  */
 export abstract class UIPage
 {
-    public static readonly PRODUCT_VERSION: string = '1.0.14'
+    public static readonly PRODUCT_VERSION: string = '1.0.33'
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
     public static shell: PageShell;
 
     public static DEBUG_MODE: boolean = false;
+
+    public static isAppleMobileDevice(): boolean
+    {
+        const userAgent = window.navigator.userAgent;
+        return /iPad|iPhone|iPod/.test(userAgent)
+    }
 
 
     constructor(doc: Document)

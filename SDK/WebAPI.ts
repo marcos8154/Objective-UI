@@ -139,6 +139,14 @@ export class WebAPI
                     if (text.startsWith("{") || text.startsWith("["))
                         json = JSON.parse(text);
 
+
+                    if (statusCode == 400)
+                    {
+                        for (var prop in json.errors)
+                        {
+                            statusMsg += json.errors[prop]
+                        }
+                    }
                     var apiResponse = new APIResponse({
                         code: statusCode, msg: statusMsg, content: json
                     });
@@ -148,7 +156,7 @@ export class WebAPI
                 .then(function (res: APIResponse)
                 {
                     const code = res.statusCode;
-                    if (code == 200 || code == 201 || code == 202)
+                    if (code == 200 || code == 201 || code == 202 || code == 203 || code == 204)
                     {
                         if (self.fnOnSuccess != null)
                             self.fnOnSuccess(res);
@@ -161,7 +169,7 @@ export class WebAPI
                     else
                     {
                         if (self.fnOnError != null)
-                            self.fnOnError(new Error(`${code} - ${res.statusMessage}`))
+                            self.fnOnError(res)
                     }
 
                 })

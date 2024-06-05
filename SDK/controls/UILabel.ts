@@ -2,6 +2,7 @@ import { Widget } from "../Widget";
 import { IBindable } from "../IBindable";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
 import { WidgetBinder } from "../WidgetBinder";
+import { Misc } from "../Misc";
 
 export class UILabelBinder extends WidgetBinder
 {
@@ -32,17 +33,27 @@ export class UILabelBinder extends WidgetBinder
 export class UILabel extends Widget implements IBindable
 {
     private lblText: string;
+    private cssClass: string = 'label';
 
-    constructor({ name, text }: { name: string, text: string })
+    constructor({ name, text, cssClass = 'label' }:
+        {
+            name: string,
+            text: string,
+            cssClass?: string
+        })
     {
+
         super(name);
         this.lblText = text;
+
+        if (!Misc.isNullOrEmpty(cssClass))
+            this.cssClass = cssClass;
     }
 
     public label: HTMLLabelElement;
     protected htmlTemplate(): string
     {
-        return `<label id="uiLabel" class="label"> Default label </label>`;
+        return `<label id="uiLabel" class="${this.cssClass}"> Default label </label>`;
     }
 
     protected onWidgetDidLoad(): void

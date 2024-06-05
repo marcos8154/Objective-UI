@@ -25,6 +25,7 @@ and then make them available to the inherited class as DOM objects.
  */
 export abstract class Widget implements INotifiable
 {
+
     protected abstract htmlTemplate(): string;
 
     /**
@@ -266,6 +267,10 @@ export abstract class Widget implements INotifiable
         this.viewDictionary = [];
 
         var html: string = this.htmlTemplate();
+
+        if (Misc.isNullOrEmpty(html))
+            new Error(`Cannot render a Widget named '${this.widgetName}' because the html-template is empty. Ensure that function htmlTemplate() returns a valid html string.`)
+
         var parser = new DOMParser();
         var domObj = parser.parseFromString(html, "text/html");
         var allIds = domObj.querySelectorAll('*[id]');
@@ -294,6 +299,9 @@ export abstract class Widget implements INotifiable
         }
 
         self.parentFragment.appendChildElementToContainer(child as Element);
+
+        UIPage.shell.loadBSVersion();
+
         self.onWidgetDidLoad();
         onloadNotifiable.onNotified('FSWidget', [self, domObj]);
     }

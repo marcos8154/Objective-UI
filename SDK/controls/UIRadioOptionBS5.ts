@@ -6,12 +6,12 @@ import { WidgetBinder } from "../WidgetBinder";
 import { UITemplateView } from "./UITemplateView";
 import { Misc } from "../Misc";
 import { UIRadioGroup } from "./UIRadioGroup";
-import { RadioOption } from "./UIRadioOption";
+import { UIRadioOption } from "./UIRadioOption";
 
 /**
  * Exclusive Bootstrap 5.x UIRadioOption compat.
  */
-export class UIRadioOptionBS5 extends RadioOption
+export class UIRadioOptionBS5 extends UIRadioOption
 {
     constructor(text: string,
         value: string,

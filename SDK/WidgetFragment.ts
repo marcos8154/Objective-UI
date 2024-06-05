@@ -45,8 +45,10 @@ export class WidgetFragment implements INotifiable
             try
             {
                 this.widgets[i].onWidgetDetached();
+                this.containerElement.removeChild(this.widgets[i].getDOMElement());
             } catch { }
         }
+        this.containerElement.innerHTML = '';
         this.widgets = [];
     }
 
@@ -119,7 +121,8 @@ export class WidgetFragment implements INotifiable
             var self = this;
             var shell: PageShell = this.contextRoot.contextShell();
 
-            self.containerElement.style.opacity = '0';
+            if (PageShell.DISABLE_ANIMATION == false)
+                self.containerElement.style.opacity = '0';
 
             for (var i = 0; i < self.widgets.length; i++)
             {
@@ -127,7 +130,8 @@ export class WidgetFragment implements INotifiable
                 widget.renderView(this as INotifiable);
             }
 
-            if (UIPage.DEBUG_MODE){
+            if (UIPage.DEBUG_MODE)
+            {
                 const lb = document.createElement('label');
                 lb.textContent = `Fragment: #${self.containerElement.id}`;
                 lb.style.color = 'blue';
@@ -135,17 +139,20 @@ export class WidgetFragment implements INotifiable
                 self.containerElement.append(document.createElement('br'));
             }
 
-            var opacity = 0;
-            var interv = setInterval(function ()
+            if (PageShell.DISABLE_ANIMATION == false)
             {
-                if (opacity < 1)
+                var opacity = 0;
+                var interv = setInterval(function ()
                 {
-                    opacity = opacity + 0.070
-                    self.containerElement.style.opacity = opacity.toString();
-                
-                }
-                else clearInterval(interv);
-            });
+                    if (opacity < 1)
+                    {
+                        opacity = opacity + 0.070
+                        self.containerElement.style.opacity = opacity.toString();
+
+                    }
+                    else clearInterval(interv);
+                });
+            }
         }
     }
 

@@ -5,6 +5,7 @@ import { WidgetBinder } from "../WidgetBinder";
 import { IListItemTemplate } from "./IListItemTemplate";
 import { IListItemTemplateProvider } from "./IListItemTemplateProvider";
 import { ListItem } from "./ListItem";
+import { Misc } from "../Misc";
 
 export class UIListBinder extends WidgetBinder
 {
@@ -19,6 +20,12 @@ export class UIListBinder extends WidgetBinder
     {
         var viewModels: Array<any> = this.getModelPropertyValue();
         this.listView.fromList(viewModels, this.valueProperty, this.displayProperty);
+
+        if (this.isTargetDefined())
+        {
+            var value = this.getModelTargetPropertyValue();
+            this.listView.setSelectedValue(value);
+        }
     }
     getWidgetValue()
     {
@@ -26,7 +33,13 @@ export class UIListBinder extends WidgetBinder
         if (item == null) return null;
         return item.value;
     }
-    fillPropertyModel(): void { }
+    fillPropertyModel(): void
+    {
+        if (this.isTargetDefined())
+        {
+            this.fillModelTargetPropertyValue();
+        }
+    }
 }
 
 export class UIList extends Widget implements IBindable
@@ -60,12 +73,14 @@ export class UIList extends Widget implements IBindable
      * 
      * Parameters: **(item: IListItemTemplate, ev: Event)**
      */
-    constructor({ name }:
+    constructor({ name, multiSelect }:
         {
-            name: string;
+            name: string,
+            multiSelect?: boolean
         })
     {
         super(name);
+        this.multiSelect = (Misc.isNull(multiSelect) ? false : multiSelect)
     }
 
     public disableSelection(): UIList
@@ -175,14 +190,23 @@ export class UIList extends Widget implements IBindable
         this.divContainer = this.elementById('fsListView');
     }
 
+    public multiSelect = false
+
     public onItemClicked(senderItem: IListItemTemplate, ev: Event): void
     {
-        if (this.disableUnSel == false)
-            for (var i = 0; i < this.items.length; i++)
-                this.items[i].unSelect();
+        if (this.multiSelect)
+        {
+            if (senderItem.isSelected()) senderItem.unSelect();
+            else senderItem.select();
+        } else
+        {
+            if (this.disableUnSel == false)
+                for (var i = 0; i < this.items.length; i++)
+                    this.items[i].unSelect();
 
-        if (this.disableSel == false)
-            senderItem.select();
+            if (this.disableSel == false)
+                senderItem.select();
+        }
 
         if (this.itemClickedCallback != null && this.itemClickedCallback != undefined)
             this.itemClickedCallback(senderItem, ev);
@@ -226,10 +250,19 @@ export class UIList extends Widget implements IBindable
         for (var i = 0; i < this.items.length; i++)
         {
             var item = this.items[i];
-            if (item.value == itemValue)
-                item.select();
+            if (Misc.isNull(itemValue))
+                item.unSelect()
             else
-                item.unSelect();
+            {
+                if (item.value == itemValue)
+                {
+                    item.select();
+                    if (this.itemClickedCallback != null && this.itemClickedCallback != undefined)
+                        this.itemClickedCallback(itemValue);
+                }
+                else
+                    item.unSelect();
+            }
         }
     }
 
@@ -240,7 +273,12 @@ export class UIList extends Widget implements IBindable
             var item = this.items[i];
             item.unSelect();
         }
-        selectedItem.select();
+        if (!Misc.isNull(selectedItem))
+        {
+            selectedItem.select();
+            if (this.itemClickedCallback != null && this.itemClickedCallback != undefined)
+                this.itemClickedCallback(selectedItem);
+        }
     }
 
     public selectedItem(): IListItemTemplate

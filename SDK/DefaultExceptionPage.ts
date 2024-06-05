@@ -10,9 +10,11 @@ export class DefaultExceptionPage
 {
     constructor(error: Error)
     {
-        if(UIPage.DISABLE_EXCEPTION_PAGE)
+        if ((error instanceof Error) == false) return;
+        console.error(error);
+        if (UIPage.DISABLE_EXCEPTION_PAGE)
             return;
-            
+
         var errorsStr = `${error.stack}`.split('\n');
         var title = `${error}`;
         var paneId = Widget.generateUUID();
@@ -40,7 +42,7 @@ export class DefaultExceptionPage
             <button type="button" onclick="document.getElementById('exceptionPane_${paneId}').remove()" style="margin-left:30px; margin-bottom: 30px" class="btn btn-warning"> Hide </button>
         </div>
         `;
-        
+
         var c = new DOMParser().parseFromString(rawHtml, 'text/html').body;
         document.body.prepend(c);
     }

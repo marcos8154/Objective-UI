@@ -17,15 +17,15 @@ export class UITemplateView
      * @param shell 
      * @param data 
      */
-    constructor(htmlContent: string, shell: PageShell, data?:any|object)
+    constructor(htmlContent: string, shell: PageShell, data?: any | object)
     {
         this.shellPage = shell;
         this.viewDictionary = [];
         //  this.parentFragment.clear();
 
-        var html: string = htmlContent;
+        var html: string = htmlContent.trim();
 
-        if(!Misc.isNull(data))
+        if (!Misc.isNull(data))
         {
             for (var prop in data)
             {
@@ -57,18 +57,26 @@ export class UITemplateView
 
     public content(): Element
     {
-        return this.templateDOM.children[0];
+        var body = this.templateDOM.children[0].children[1];
+        if (body.innerHTML.indexOf('<') == -1)
+        {
+            var span = document.createElement('span') as HTMLSpanElement;
+            span.textContent = body.innerHTML;
+            return span
+        }
+        else
+            return body.children[0];
     }
 
     public elementById<TElement>(elementId: string): TElement
     {
-       for (var i = 0; i < this.viewDictionary.length; i++)
+        for (var i = 0; i < this.viewDictionary.length; i++)
         {
             var entry: ViewDictionaryEntry = this.viewDictionary[i];
             if (entry.getOriginalId() == elementId)
             {
                 var elementResult: any = this.templateDOM.getElementById(entry.getManagedId());
-                if(Misc.isNull(elementResult))
+                if (Misc.isNull(elementResult))
                     elementResult = document.getElementById(entry.getManagedId())
                 return elementResult;
             }

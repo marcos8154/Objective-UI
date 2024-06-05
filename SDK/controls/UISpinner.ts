@@ -1,6 +1,8 @@
 import { Widget } from "../Widget";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
 import { Misc } from "../Misc";
+import { PageShell } from "../PageShell";
+import { DefaultExceptionPage } from "../DefaultExceptionPage";
 
 export class UISpinner extends Widget
 {
@@ -18,12 +20,24 @@ export class UISpinner extends Widget
         })
     {
         super(name);
+
+
         this.colorCls = (Misc.isNullOrEmpty(colorClass) ? 'text-primary' : colorClass);
         this.initialVisible = (Misc.isNull(visible) ? true : visible);
+    }
+    private customTemplate: string = '';
+
+    protected defineTemplate(templateStr: string)
+    {
+        this.customTemplate = templateStr;
     }
 
     protected onWidgetDidLoad(): void
     {
+        if (Misc.isNullOrEmpty(this.customTemplate))
+            if (PageShell.BOOTSTRAP_VERSION_NUMBER < 5)
+                console.error(new Error(`UISpinner: this widget does not supports Bootstrap v${PageShell.BOOTSTRAP_VERSION}. Use 'UISpinnerBS5' class instead it.`))
+
         this.containerDiv = this.elementById('container');
         this.spanSpinner = this.elementById('spnSpinner');
 
@@ -34,6 +48,9 @@ export class UISpinner extends Widget
         var colorClass = this.colorCls;
         if (colorClass == 'primary') colorClass = 'text-primary';
         if (colorClass == '') colorClass = 'text-primary';
+
+        if (!Misc.isNullOrEmpty(this.customTemplate))
+            return this.customTemplate;
 
         return `
 <div id="container" class="spinner-border ${colorClass}" role="status">

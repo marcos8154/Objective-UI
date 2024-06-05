@@ -1,13 +1,14 @@
 import { BindingContext } from "./BindingContext";
 import { Misc } from "./Misc";
 import { PageShell } from "./PageShell";
-import { UIFlatViewBuilder } from "./UIFlatViewBuilder";
+import { ViewBuilder } from "./ViewBuilder";
 import { ViewCache } from "./UIFlatViewCache";
 import { UIPage } from "./UIPage";
 import { UIView } from "./UIView";
 import { ViewLayout } from "./ViewLayout";
 import { WidgetBinderBehavior } from "./WidgetBinderBehavior";
 import { DivContent } from "./yord-api/DivContent";
+import { DefaultExceptionPage } from "./DefaultExceptionPage";
 
 export abstract class UIFlatView extends UIView
 {
@@ -36,15 +37,18 @@ export abstract class UIFlatView extends UIView
         else
             ViewLayout.load(view.builder.layoutPath, function (html: string)
             {
+                if (Misc.isNullOrEmpty(html) || html.indexOf('<title>Error</title>') > -1)
+                    throw new DefaultExceptionPage(new Error(`No html-layout found for '${view.builder.layoutPath}'`))
+
                 view.builder.layoutHtml = html;
                 UIPage.shell.navigateToView(view)
                 UIFlatView.caches.push(new ViewCache(view.builder.layoutPath, html))
             });
     }
 
-    private builder: UIFlatViewBuilder;
+    private builder: ViewBuilder;
     private binding: BindingContext<any | object>;
-    protected abstract buildView(): UIFlatViewBuilder;
+    protected abstract buildView(): ViewBuilder;
 
     buildLayout(): ViewLayout
     {
@@ -65,9 +69,9 @@ export abstract class UIFlatView extends UIView
         this.builder.callLoadFn(this.viewContext());
     }
 
-    protected getViewModel<TViewModel>(): TViewModel
+    protected getViewModel<TViewModel>(callValidations: boolean = true): TViewModel
     {
-        return this.binding.getViewModel<TViewModel>();
+        return this.binding.getViewModel<TViewModel>(callValidations);
     }
 
     protected setViewModel<TViewModel>(instance: TViewModel, updateUI: boolean = true): void
@@ -75,8 +79,24 @@ export abstract class UIFlatView extends UIView
         this.binding.setViewModel(instance, updateUI);
     }
 
-    protected getBindingFor(modelPropertyName: string): WidgetBinderBehavior
+    public getBindingFor(modelPropertyName: string): WidgetBinderBehavior
     {
         return this.binding.getBindingFor(modelPropertyName);
+    }
+
+    public getBindingContext<TViewModel>(): BindingContext<TViewModel>
+    {
+        return this.binding;
+    }
+
+    /**
+     * Causes a UI refresh on all Widgets managed by this Data Binding Context
+     * based on the current values of the properties/keys of the ViewModelType instance
+     * 
+     * (remember that the ViewModelType instance is managed by this context as well)
+     */
+    public bindingRefreshUI(): void
+    {
+        return this.getBindingContext().refreshAll();
     }
 }

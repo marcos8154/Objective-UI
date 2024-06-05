@@ -3,6 +3,7 @@ import { IBindable } from "../IBindable";
 import { ICustomWidgetPresenter } from "../ICustomWidgetPresenter";
 import { WidgetBinder } from "../WidgetBinder";
 import { Misc } from "../Misc";
+import { PageShell } from "../PageShell";
 
 export class UICheckBoxBinder extends WidgetBinder
 {
@@ -41,12 +42,20 @@ export class UICheckBox extends Widget implements IBindable
     private labelText: string;
     private customBaseTemplate: string;
 
-    constructor({ name, text, checked = false, customTemplate = null }:
+    /**
+     * 
+     * @param fnOnChange 
+     * ```
+     * (checked: boolean, checkBox: UICheckBox) => {  }
+     * ```
+     */
+    constructor({ name, text, checked = false, customTemplate = null, onCheckedChanceFn = null }:
         {
             name: string;
             text: string;
             checked?: boolean;
-            customTemplate?: string
+            customTemplate?: string,
+            onCheckedChanceFn?: Function
         })
     {
         super(name);
@@ -54,6 +63,7 @@ export class UICheckBox extends Widget implements IBindable
         this.labelText = text;
         this.initialChecked = checked;
         this.customBaseTemplate = customTemplate;
+        this.onCheckedChange = onCheckedChanceFn;
     }
     getBinder(): WidgetBinder
     {
@@ -73,6 +83,9 @@ export class UICheckBox extends Widget implements IBindable
 
             return this.customBaseTemplate;
         }
+
+        if (PageShell.BOOTSTRAP_VERSION_NUMBER > 4.9)
+            throw new Error(`UICheckBox: this Widget does dot supports Bootstrap's v${PageShell.BOOTSTRAP_VERSION}; For use with v5.x, you should use 'UICheckBoxBS5' class. `)
         return `
 <div id="UICheckBox" class="custom-control custom-checkbox">
   <input id="checkElement" class="custom-control-input" type="checkbox" value="">
@@ -94,17 +107,27 @@ export class UICheckBox extends Widget implements IBindable
 
         self.checkElement.onchange = function (ev)
         {
-            if (self.onCheckedChange != null) self.onCheckedChange({ checked: self.checkElement.checked, event: ev });
+            if (self.onCheckedChange != null) self.onCheckedChange({ checked: self.checkElement.checked, checkBox: self });
         };
     }
 
 
+    /**
+     * 
+     * @param fnOnChange 
+     * ```
+     * (checked: boolean, checkBox: UICheckBox) => {  }
+     * ```
+     */
     public setOnCheckChange(fnOnChange: Function)
     {
-        this.checkElement.onchange = function (ev)
+        const $ = this;
+        this.onCheckedChange = fnOnChange
+        this.checkElement.onchange = () =>
         {
-            fnOnChange()
-        };
+            if (!Misc.isNull($.onCheckedChange))
+                $.onCheckedChange($.value(), $)
+        }
     }
 
     public setText(text: string): void
@@ -154,12 +177,14 @@ export class UICheckBox extends Widget implements IBindable
 
     public setVisible(visible: boolean): void
     {
-        this.divContainer.style.visibility = (visible  ? 'visible' : 'hidden');
+        this.divContainer.style.visibility = (visible ? 'visible' : 'hidden');
     }
 
     public setChecked(isChecked: boolean): void
     {
         this.checkElement.checked = isChecked;
+        if (!Misc.isNull(this.onCheckedChange))
+            this.onCheckedChange(isChecked, this)
     }
     public isChecked(): boolean
     {

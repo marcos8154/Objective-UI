@@ -92,17 +92,63 @@ export class UITextBoxBinder extends WidgetBinder
 
 export class UITextBox extends Widget implements IBindable
 {
+
+    public static toUpperCaseDefault: boolean = false;
+
+    toUpperCase: boolean;
+    floatPlaces: number;
     protected htmlTemplate(): string
     {
         return `
 <div id="divContainer" class="${this.containerClass}">
     <label id="entryTitle" style="margin: 0px; padding: 0px; font-weight:normal !important;" for="inputEntry"> Entry Title </label>
-    <input id="entryInput" class="form-control form-control-sm"  placeholder="Entry placeholder">
+    <div class="input-group">
+        <span id="entrySymbol" style="height: 31px" class="input-group-text" >R$</span>
+        <input id="entryInput" ${this.toUpperCase ? 'oninput="this.value = this.value.toUpperCase();"' : ''} class="form-control form-control-sm"  placeholder="Entry placeholder">
+    </div>
 </div>`
     }
+
+    onWidgetDidLoad(): void
+    {
+        this.lbTitle = this.elementById('entryTitle');
+        this.txInput = this.elementById('entryInput');
+        this.divContainer = this.elementById('divContainer');
+        this.spanSymbol = this.elementById('entrySymbol');
+
+        if (Misc.isNullOrEmpty(this.initialSymbol))
+            this.spanSymbol.remove()
+        else
+            this.spanSymbol.textContent = this.initialSymbol
+
+        if (Misc.isNullOrEmpty(this.initialTitle))
+            this.lbTitle.remove()
+        else
+            this.lbTitle.innerText = this.initialTitle;
+
+        if (this.isFloat)
+            this.txInput.inputMode = 'numeric';
+
+        this.txInput.placeholder = this.initialPlaceHolder;
+        this.txInput.value = this.initialText;
+
+        this.setMaxLength(this.initialMaxlength);
+        this.setInputType(this.initialType);
+        this.applyMask(this.initialMask);
+
+        if (this.required)
+            this.txInput.setAttribute('required', 'required');
+    }
+
+
     public setEnabled(enabled: boolean): void
     {
         this.txInput.disabled = (enabled == false);
+    }
+    public setSymbol(symbol: string)
+    {
+        if (Misc.isNull(this.spanSymbol)) return;
+        this.spanSymbol.textContent = symbol;
     }
 
 
@@ -114,11 +160,12 @@ export class UITextBox extends Widget implements IBindable
     private initialMask: string = null;
     private containerClass: string = null;
     private required: boolean = false;
-
+    private initialSymbol: string = null
 
     public lbTitle: HTMLLabelElement = null;
     public txInput: HTMLInputElement = null;
     public divContainer: HTMLDivElement = null;
+    public spanSymbol: HTMLSpanElement = null;
 
     constructor({
         name,
@@ -129,7 +176,11 @@ export class UITextBox extends Widget implements IBindable
         text = '',
         mask = '',
         containerClass = 'form-group',
-        isRequired = false
+        isRequired = false,
+        isFloat = false,
+        floatPlaces = 2,
+        symbol = '',
+        toUpperCase = null
     }: {
         name: string;
         type?: string;
@@ -140,10 +191,15 @@ export class UITextBox extends Widget implements IBindable
         text?: string;
         containerClass?: string
         isRequired?: boolean
+        isFloat?: boolean,
+        floatPlaces?: number
+        symbol?: string,
+        toUpperCase?: boolean
     })
     {
         super(name);
 
+        this.isFloat = isFloat;
         this.required = isRequired;
         this.initialType = (Misc.isNullOrEmpty(type) ? 'text' : type);
         this.initialTitle = (Misc.isNullOrEmpty(title) ? '' : title);
@@ -152,9 +208,19 @@ export class UITextBox extends Widget implements IBindable
         this.initialMaxlength = (Misc.isNullOrEmpty(maxlength) ? 100 : maxlength);
         this.initialMask = (Misc.isNull(mask) ? '' : mask);
         this.containerClass = (Misc.isNull(containerClass) ? 'form-group' : containerClass);
+        this.initialSymbol = symbol
+        this.floatPlaces = (Misc.isNull(floatPlaces) ? 2 : floatPlaces)
+
+        if (type == 'email') toUpperCase = false
+
+        if (!Misc.isNull(toUpperCase))
+            this.toUpperCase = toUpperCase
+        else
+            this.toUpperCase = UITextBox.toUpperCaseDefault
     }
     public setOnEnter(fnOnEnter: Function)
     {
+        this.txInput.enterKeyHint = 'done';
         this.txInput.onkeydown = (ev) => 
         {
             if (ev.key == 'Enter')
@@ -201,23 +267,7 @@ export class UITextBox extends Widget implements IBindable
         this.txInput.type = inputType;
     }
 
-    onWidgetDidLoad(): void
-    {
-        this.lbTitle = this.elementById('entryTitle');
-        this.txInput = this.elementById('entryInput');
-        this.divContainer = this.elementById('divContainer');
 
-        this.lbTitle.innerText = this.initialTitle;
-        this.txInput.placeholder = this.initialPlaceHolder;
-        this.txInput.value = this.initialText;
-
-        this.setMaxLength(this.initialMaxlength);
-        this.setInputType(this.initialType);
-        this.applyMask(this.initialMask);
-
-        if (this.required)
-            this.txInput.setAttribute('required', 'required');
-    }
 
     public setMaxLength(maxlength: number): void
     {
@@ -241,20 +291,31 @@ export class UITextBox extends Widget implements IBindable
     public setText(newText: string): void
     {
         const tp = this.txInput.type;
-        if (tp == 'text')
-            this.txInput.value = (Misc.isNullOrEmpty(newText) ? '' : newText);
+
+        if (tp == 'color')
+            this.txInput.value = newText
         if (tp == 'date')
             this.txInput.valueAsDate = (Misc.isNullOrEmpty(newText) ? new Date() : new Date(newText));
-        if (tp == 'number')
+        if (tp == 'number' || this.isFloat)
         {
-            if (newText.indexOf('.') == -1)
-                this.txInput.valueAsNumber = (Misc.isNullOrEmpty(newText) ? 0 : Number.parseInt(newText));
+            if (newText.toString().indexOf('.') == -1 && newText.toString().indexOf(',') == -1)
+            {
+                const val = (Misc.isNullOrEmpty(newText) ? 0 : Number.parseInt(newText.toString()));
+                if (this.txInput.type == 'number') this.txInput.valueAsNumber = val;
+                else this.txInput.value = val.toString();
+                return
+            }
             else
             {
-                this.txInput.valueAsNumber = (Misc.isNullOrEmpty(newText) ? 0 : Number.parseFloat(newText));
+                const val = (Misc.isNullOrEmpty(newText) ? 0 : Number.parseFloat(newText.toString().replace(',', '.')))
+                if (this.txInput.type == 'number') this.txInput.valueAsNumber = val;
+                else this.txInput.value = `${val.toFixed(this.floatPlaces)}`
                 this.isFloat = true;
+                return
             }
         }
+        if (tp == 'text')
+            this.txInput.value = (Misc.isNullOrEmpty(newText) ? '' : newText);
     }
 
     public setTitle(newTitle: string): void
@@ -262,16 +323,26 @@ export class UITextBox extends Widget implements IBindable
         this.lbTitle.textContent = newTitle;
     }
 
-    public value(): object | any | string
+    public value(): object | any | string | number
     {
-        if (this.txInput.type == 'text') return this.txInput.value.toString();
-        if (this.txInput.type == 'number')
+
+        if (this.txInput.type == 'number' || this.isFloat)
         {
-            if (this.isFloat) return Number.parseFloat(this.txInput.value);
+            var val = this.txInput.value
+            if (val.indexOf('.') > -1 && val.indexOf(',') > -1)
+            {
+                val = val.replace('.', '')
+                val = val.replace(',', '.')
+            }
+            else val = val.replace(',', '.')
+
+            if (this.isFloat) return Number.parseFloat(val).toFixed(this.floatPlaces);
             else return Number.parseInt(this.txInput.value);
         }
         if (this.txInput.type == 'date')
             return new Date(this.txInput.value)
+
+        if (this.txInput.type == 'text') return this.txInput.value.toString();
         return this.txInput.value;
     }
 

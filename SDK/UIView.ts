@@ -8,6 +8,10 @@ import { UITemplateView } from './controls/UITemplateView';
 import { AppStorage } from './AppStorage';
 import { UIDialog } from './controls/UIDialog';
 import { ModalAction } from './controls/ModalAction';
+import { UIDialogBS5 } from './controls/UIDialogBS5';
+import { VirtualFunction } from './VirtualFunction';
+import { Misc } from './Misc';
+import { UIPage } from './UIPage';
 
 /**
  * A UIView represents an interface view set of user controls.
@@ -133,21 +137,32 @@ onViewDidLoad(): void
 
     public showDialog(title: string, text: string): void
     {
-        var diag = new UIDialog(this.shellPage)
+        UIDialog.$ = (PageShell.BOOTSTRAP_VERSION_NUMBER >= 5 ? new UIDialogBS5(this.shellPage) : new UIDialog(this.shellPage))
             .setTitle(title)
             .setText(text)
             .action(new ModalAction({
                 buttonText: 'Ok',
                 dataDismiss: true
             }))
-        diag.show();
+        UIDialog.$.show();
+    }
+
+
+
+    public closeDialog()
+    {
+        if (Misc.isNull(UIDialog.$)) return;
+        UIDialog.$.closeDialog()
     }
 
     public createDialog(title: string): UIDialog
     {
-        var diag = new UIDialog(this.shellPage)
-            .setTitle(title);
-        return diag;
+        if (PageShell.BOOTSTRAP_VERSION_NUMBER < 5)
+            UIDialog.$ = new UIDialog(this.shellPage).setTitle(title)
+        else
+            UIDialog.$ = new UIDialogBS5(this.shellPage).setTitle(title)
+
+        return UIDialog.$;
     }
 
     public onNotified(sender: any, args: any[]): void
@@ -158,6 +173,9 @@ onViewDidLoad(): void
 
     public initialize(mainShell: PageShell)
     {
+        UIPage.shell.loadBSVersion();
+
+
         this.shellPage = mainShell;
 
         this.buildedLayout = this.buildLayout();

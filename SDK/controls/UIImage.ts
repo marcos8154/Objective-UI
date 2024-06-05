@@ -31,13 +31,17 @@ export class UIImage extends Widget implements IBindable
     private imgSrc: string;
     private imgAlt: string;
     private imgCssClass: string;
+    width: string;
+    height: string;
 
-    constructor({ name, src, cssClass, alt }:
+    constructor({ name, src, cssClass, alt, width, height }:
         {
             name: string,
             src?: string,
             cssClass?: string,
-            alt?: string
+            alt?: string,
+            width?: string,
+            height?: string
         })
     {
         super(name);
@@ -48,6 +52,8 @@ export class UIImage extends Widget implements IBindable
         this.imgCssClass = cssClass;
         this.imgSrc = src;
         this.imgAlt = `${alt}`;
+        this.width = width;
+        this.height = height;
     }
     getBinder(): WidgetBinder
     {
@@ -62,6 +68,13 @@ export class UIImage extends Widget implements IBindable
     protected onWidgetDidLoad(): void
     {
         this.image = this.elementById('fsImageView');
+
+        if (!Misc.isNullOrEmpty(this.width))
+            this.image.style.width = this.width
+
+        if (!Misc.isNullOrEmpty(this.height))
+            this.image.style.height = this.height
+
         this.image.alt = this.imgAlt;
         this.setSource(this.imgSrc);
 

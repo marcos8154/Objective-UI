@@ -1,5 +1,7 @@
 import { Widget } from "./Widget"
 import { WebAPI } from "./WebAPI";
+import { Misc } from "./Misc";
+import { DefaultExceptionPage } from "./DefaultExceptionPage";
 
 /**
  * It acts as a bridge between the `BindingContext<T>` 
@@ -14,6 +16,7 @@ import { WebAPI } from "./WebAPI";
  */
 export abstract class WidgetBinder
 {
+
     abstract getWidgetValue(): any | object;
     abstract refreshUI(): void;
     abstract fillPropertyModel(): void;
@@ -24,17 +27,42 @@ export abstract class WidgetBinder
 
     private _viewModel: any | object;
     public modelPropertyName: string;
-    private modelTargetPropertyName?: string;
+    public modelTargetProperty?: string;
 
     public bindingHasPath: boolean;
     public displayProperty: string;
     public valueProperty: string;
+
+    private validateFn: Function;
 
     constructor(widget: Widget) 
     {
         this.widget = widget;
         this.widgetName = widget.widgetName;
         this.bindingName = `${typeof (widget)}Binding ${this.widgetName} => ${typeof (widget)}`;
+    }
+
+    addValidation(validateFn: Function)
+    {
+        this.validateFn = validateFn;
+    }
+
+    public hasValidation()
+    {
+        return !Misc.isNull(this.validateFn);
+    }
+
+    public validate(): boolean
+    {
+        var val = this.getModelPropertyValue()
+        var result = this.validateFn(val)
+        if (Misc.isNull(result))
+            throw new DefaultExceptionPage(new Error(`WidgetBinder: invalid result of validation function for property '${this.modelPropertyName}'. Check if validation function contains a 'return true|false' instruction. `));
+
+        if (result == true || result == false)
+            return result as boolean;
+
+        throw new DefaultExceptionPage(new Error(`WidgetBinder: invalid result of validation function for property '${this.modelPropertyName}'. Check if validation function contains a 'return true|false' instruction. `));
     }
 
     getModelPropertyValue(): any | object
@@ -45,10 +73,20 @@ export abstract class WidgetBinder
         return value;
     }
 
-    setModelPropertyValue(value: any|object): void
+    setModelPropertyValue(value: any | object): void
     {
         if (this._viewModel == null || this.modelPropertyName == null || this.modelPropertyName == '')
             return;
+
+        var mValue = this.getModelPropertyValue()
+        if (typeof mValue == 'number')
+            value = parseFloat(value)
+        if (typeof mValue == 'boolean')
+            value = (`${value}`.toLocaleLowerCase() == 'true' ? true : false)
+
+        if (`${value}` == 'NaN')
+            value = 0
+
         this._viewModel[this.modelPropertyName] = value;
     }
 
@@ -68,35 +106,55 @@ export abstract class WidgetBinder
 
     hasTarget(targetValuePropertyName: string): WidgetBinder
     {
-        this.modelTargetPropertyName = targetValuePropertyName;
+        this.modelTargetProperty = targetValuePropertyName;
+        this.refreshUI();
         return this;
     }
 
     isTargetDefined(): boolean
     {
-        return this.modelTargetPropertyName != null;
+        return this.modelTargetProperty != null;
     }
 
     fillModelTargetPropertyValue(): void
     {
-        if(this.isTargetDefined() == false) return;
+        if (this.isTargetDefined() == false) return;
         var value = this.getWidgetValue();
-        this._viewModel[this.modelTargetPropertyName] = value;
+
+        var mValue = this.getModelTargetPropertyValue()
+        if (typeof mValue == 'number')
+            value = parseFloat(value);
+        if (typeof mValue == 'boolean')
+            value = (`${value}`.toLocaleLowerCase() == 'true' ? true : false)
+        if (`${value}` == 'NaN')
+            value = 0
+
+        this._viewModel[this.modelTargetProperty] = value;
     }
 
-    getModelTargetPropertyValue(): any|object
+    setModelTargetPropertyValue(value: any | object)
     {
-        if(this.isTargetDefined() == false) return;
-        var value = this._viewModel[this.modelTargetPropertyName];
+        this._viewModel[this.modelTargetProperty] = value;
+    }
+
+    getModelTargetPropertyValue(): any | object
+    {
+        if (this.isTargetDefined() == false) return;
+        var value = this._viewModel[this.modelTargetProperty];
         return value;
     }
 
-    setModel(viewModelInstance: any|object, propertyName: string): void
+    setModel(viewModelInstance: any | object, propertyName: string): void
     {
         this._viewModel = viewModelInstance;
         this.modelPropertyName = propertyName;
         this.bindingName = `${typeof (this.widget)}Binding ${this.widgetName} => ${typeof (this.widget)}.${this.modelPropertyName}`;
 
         this.refreshUI();
+    }
+
+    getViewModel<TModel>(): TModel
+    {
+        return this._viewModel as TModel
     }
 }

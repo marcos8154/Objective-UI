@@ -2,9 +2,12 @@ import { AppStorage } from "./AppStorage";
 import { UIPage } from "./UIPage";
 import { UIView } from "./UIView";
 import { IAppStorageProvider } from "./IAppStorageProvider";
-import { ISplittableView } from "./ISplittableView";
 import { NativeLib as NativeLib } from "./NativeLib";
 import { Misc } from "./Misc";
+import { UIFlatView } from "./UIFlatView";
+import { YordView } from "./yord-api/YordView";
+import { YordViewContext } from "./yord-api/YordViewContext";
+import { VirtualFunction } from "./VirtualFunction";
 
 
 /**
@@ -16,6 +19,23 @@ import { Misc } from "./Misc";
  */
 export class PageShell
 {
+    loadBSVersion()
+    {
+        if (PageShell.BOOTSTRAP_VERSION_NUMBER > 0) return;
+        new VirtualFunction({
+            fnName: 'getBSVersion',
+            fnContent: `
+                if(PageShell.BOOTSTRAP_VERSION == ''){
+                    try
+                    {
+                        PageShell.BOOTSTRAP_VERSION = bootstrap.Tooltip.VERSION
+                        PageShell.BOOTSTRAP_VERSION_NUMBER = parseFloat(bootstrap.Tooltip.VERSION)
+                    }catch(e){
+                        console.error('bootstrap.Tooltip.VERSION not found: ' + e.message)
+                    }
+                }`
+        }).call()
+    }
 
     /**defaults: '/lib/' */
     public static LIB_ROOT = '/lib/'
@@ -29,11 +49,18 @@ export class PageShell
     private appContainer: HTMLDivElement;
     private splitContainer: HTMLDivElement;
 
+    public static BOOTSTRAP_VERSION = '';
+    public static BOOTSTRAP_VERSION_NUMBER = 0.0;
+
+    public static DISABLE_ANIMATION = false;
+
     constructor(mainDocument: Document, fsPage: UIPage) 
     {
         this.baseDocument = mainDocument;
         this.importedLibs = [];
         this.page = fsPage;
+
+
     }
 
     /**
@@ -143,12 +170,13 @@ export class PageShell
      * @param ownerSplitView UIView currently displayed
      * @param splittedCallingView  New UIView that will be displayed next to the current one
      */
-    public requestSplitView(ownerSplitView: ISplittableView, splittedCallingView: UIView): void
+    public requestSplitView(splittedCallingView: UIView | UIFlatView | YordView): void
     {
         if (this.currentViewSplitted) return;
 
         var self = this;
         this.splitContainer.hidden = false;
+        this.splitContainer.style.removeProperty('width')
         var interv = setInterval(function ()
         {
             self.appContainer.classList.remove(...self.appContainer.classList);
@@ -158,9 +186,16 @@ export class PageShell
         this.currentViewSplitted = true;
 
         self.splitContainer.style.borderLeft = '3px solid gray';
-        this.navigateToView((splittedCallingView as unknown) as UIView);
 
-        (splittedCallingView as unknown as ISplittableView).onConnectViews(ownerSplitView);
+        if (splittedCallingView instanceof UIFlatView) UIFlatView.load(splittedCallingView)
+        else if (splittedCallingView instanceof UIView) this.navigateToView(splittedCallingView as unknown as UIView)
+        else if (splittedCallingView instanceof YordView)
+        {
+            const ctx = new YordViewContext(this)
+            ctx.addView(splittedCallingView)
+            ctx.goTo((splittedCallingView as unknown as YordView).viewName)
+        }
+        else throw new Error(`requestSplitView(): Unsupported instance of 'splittedCallingView' parameter`)
     }
 
     /**
@@ -253,7 +288,7 @@ export class PageShell
 
             if (!Misc.isNullOrEmpty(cssPath))
                 if (this.importedLibs[i].getCssFullPath() == cssPath)
-                    return this.importedLibs[i];          
+                    return this.importedLibs[i];
         }
         return null;
     }

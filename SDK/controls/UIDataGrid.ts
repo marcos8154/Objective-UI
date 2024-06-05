@@ -33,8 +33,20 @@ export class UIDataGridBinder extends WidgetBinder
     {
         var viewModels: Array<any | object> = this.getModelPropertyValue();
         this.dataGrid.fromList(viewModels);
+
+        if (this.isTargetDefined())
+        {
+            var value = this.getModelTargetPropertyValue();
+            this.dataGrid.setSelectedValue(value);
+        }
     }
-    fillPropertyModel(): void { }
+    fillPropertyModel(): void
+    {
+        if (this.isTargetDefined())
+        {
+            this.fillModelTargetPropertyValue();
+        }
+    }
 }
 
 export class UIDataGrid extends Widget implements IBindable
@@ -238,36 +250,20 @@ export class UIDataGrid extends Widget implements IBindable
         item.select();
     }
 
-
-
     public setCustomPresenter(presenter: ICustomWidgetPresenter<Widget>): void
     {
         presenter.render(this);
     }
     public value(): string
     {
-        throw new Error("Method not implemented.");
+        return this.selectedValue();
     }
-    public setEnabled(enabled: boolean): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public addCSSClass(className: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
-    public removeCSSClass(className: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
+
     public applyCSS(propertyName: string, propertyValue: string): void
     {
         this.table.style.setProperty(propertyName, propertyValue);
     }
-    public setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void
-    {
-        throw new Error("Method not implemented.");
-    }
+
     public setVisible(visible: boolean): void
     {
         this.table.style.visibility = (visible ? 'visible' : 'hidden')

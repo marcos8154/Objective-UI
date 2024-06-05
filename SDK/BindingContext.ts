@@ -4,13 +4,15 @@ import { IBindable } from "./IBindable";
 import { WidgetBinder } from "./WidgetBinder";
 import { WidgetBinderBehavior } from "./WidgetBinderBehavior";
 import { AppStorage } from "./AppStorage";
+import { Misc } from "./Misc";
+import { DefaultExceptionPage } from "./DefaultExceptionPage";
 
 /**
  * An efficient system of data binding and object synchronization (aka 'ViewModel') 
  * with the User Interface
  * 
- * Voce 
  */
+
 export class BindingContext<ViewModel>
 {
     public toString(): string
@@ -45,6 +47,36 @@ export class BindingContext<ViewModel>
         this.scanViewModel(view);
     }
 
+    /**
+     * 
+     * @param modelPropertyName 
+     * @param validateFn 
+     ```
+        function(propVal: any) {
+            // check value
+            // apply UI changes
+            // return true|false;
+        }
+     ```
+     */
+    public hasValidation(modelPropertyName: string, validateFn: Function)
+    {
+        const binder = this.getBinder(modelPropertyName);
+        if (Misc.isNull(binder))
+            throw new DefaultExceptionPage(new Error(`BindingContext<${typeof (this.viewModelInstance)}> : not found a WidgetBinder for model property '${modelPropertyName}'`));
+
+        binder.addValidation(validateFn);
+    }
+
+    private getBinder(modelPropertyName: string): WidgetBinder
+    {
+        for (var i = 0; i < this._binders.length; i++)
+        {
+            var binder: WidgetBinder = this._binders[i];
+            if (binder.modelPropertyName == modelPropertyName)
+                return binder;
+        }
+    }
 
     /**
      * Gets a WidgetBinderBehavior from which the behavior of data bindings will be changed.
@@ -78,14 +110,63 @@ export class BindingContext<ViewModel>
         }
     }
 
+
+    /**
+     * Causes a UI refresh on a single Widget managed by this Data Binding Context
+     * based on the current values of the properties/keys of the ViewModelType instance \
+     * \
+     * (remember that the ViewModelType instance is managed by this context as well)
+     */
+    public refreshSingle(name: string): void
+    {
+        for (var b = 0; b < this._binders.length; b++)
+        {
+            var binder: WidgetBinder = this._binders[b];
+            if (binder.modelPropertyName == name)
+                binder.refreshUI();
+        }
+    }
+
+    /**
+     * Causes a UI refresh on a these Widget's managed by this Data Binding Context
+     * based on the current values of the properties/keys of the ViewModelType instance \
+     * \
+     * (remember that the ViewModelType instance is managed by this context as well)
+     */
+    public refreshThese(...names: string[]): void
+    {
+        for (var b = 0; b < this._binders.length; b++)
+        {
+            var binder: WidgetBinder = this._binders[b];
+            for (var i = 0; i < names.length; i++)
+            {
+                if (binder.modelPropertyName == names[i])
+                    binder.refreshUI();
+            }
+
+        }
+    }
+
     /**
      * Get an instance of `ViewModel` based on Widgets values
      * @returns `ViewModel`
      */
-    public getViewModel<ViewModel>(): ViewModel
+    public getViewModel<ViewModel>(callValidations: boolean = true): ViewModel
     {
-        for(var i = 0; i < this._binders.length; i++)
-          this._binders[i].fillPropertyModel();
+        for (var i = 0; i < this._binders.length; i++)
+        {
+            const binder = this._binders[i]
+            binder.fillPropertyModel();
+
+            if (callValidations)
+            {
+                if (binder.hasValidation())
+                    if (!binder.validate())
+                        return null;
+            }
+
+
+        }
         return this.viewModelInstance as unknown as ViewModel;
     }
 
@@ -159,7 +240,8 @@ export class BindingContext<ViewModel>
             binder.setModel(this.viewModelInstance, modelKey);
             this._binders.push(binder);
             return binder;
-        } catch {
+        } catch
+        {
             return null;
         }
     }

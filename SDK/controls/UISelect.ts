@@ -26,10 +26,16 @@ export class UISelectBinder extends WidgetBinder
             this.select.fromList(models, this.valueProperty, this.displayProperty);
         else
             this.select.fromList(models);
+
+        if (this.isTargetDefined())
+        {
+            var value = this.getModelTargetPropertyValue();
+            this.select.setSelectedOption(value);
+        }
     }
     fillPropertyModel(): void
     {
-        if(this.isTargetDefined())
+        if (this.isTargetDefined())
         {
             this.fillModelTargetPropertyValue();
         }
@@ -57,16 +63,25 @@ export class UISelect extends Widget implements IBindable
 
     private containerClass: string = null;
 
-    constructor({ name, title, containerClass }:
+    /**
+     * 
+     * @param onChangeFn 
+     * ```
+     * (value: any, select: UISelect) => { } 
+     * ```
+    */
+    constructor({ name, title, containerClass, selectionChangeFn }:
         {
             name: string,
             title: string,
-            containerClass?: string
+            containerClass?: string,
+            selectionChangeFn?: Function
         })
     {
         super(name);
         this.initialTitle = title;
         this.containerClass = containerClass;
+        this.onSelectionChanged = selectionChangeFn;
     }
     getBinder(): WidgetBinder
     {
@@ -87,22 +102,33 @@ export class UISelect extends Widget implements IBindable
             for (var c = 0; c < classes.length; c++)
                 this.divContainer.classList.add(classes[c]);
         }
-        
+
+        const $ = this
         this.select.onchange = function (ev)
         {
-            if (self.onSelectionChanged != null)
-                self.onSelectionChanged(ev);
+            if (!Misc.isNull($.onSelectionChanged))
+                $.onSelectionChanged($.value(), $)
         };
         this.title.textContent = this.initialTitle;
 
     }
 
-    public setOnChange(changeFn: Function)
+    /**
+     * 
+     * @param onChangeFn 
+     * ```
+     * (value: any, select: UISelect) => { } 
+     * ```
+     */
+    public setOnChange(onChangeFn: Function)
     {
-        this.select.onchange = function (ev)
+        const $ = this;
+        this.onSelectionChanged = onChangeFn
+        this.select.onselectionchange = () =>
         {
-            changeFn();
-        };
+            if (!Misc.isNull($.onSelectionChanged))
+                $.onSelectionChanged($.value(), $)
+        }
     }
 
 
@@ -120,6 +146,8 @@ export class UISelect extends Widget implements IBindable
                 if (option.value == optionValue)
                 {
                     option.selected = true;
+                    if (!Misc.isNull(this.onSelectionChanged))
+                        this.onSelectionChanged(option.value, this)
                     return;
                 }
             }
@@ -221,7 +249,7 @@ export class UISelect extends Widget implements IBindable
         return null;
     }
 
-    public value(): string
+    public value(): any
     {
         return this.select.value;
     }
