@@ -105,6 +105,8 @@ export class UIRadioGroup extends Widget implements IBindable
             this.fieldSet.classList.add(`flex-column`);
         if (this.orientation == 'horizontal')
             this.fieldSet.classList.add(`flex-row`);
+        if (Misc.isNullOrEmpty(this.title))
+            this.groupTitle.remove();
 
         this.addOptions(this.initialOptions);
     }

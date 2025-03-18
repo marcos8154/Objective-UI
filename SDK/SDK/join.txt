@@ -70,3 +70,6 @@
 ../yord-api/YordView.ts
 ../yord-api/YordViewContext.ts
 ../yord-api/HtmlLayout.ts
+../i18n/Language.ts
+../i18n/LanguageEntry.ts
+../i18n/LanguageServer.ts

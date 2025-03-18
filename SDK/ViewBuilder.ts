@@ -1,5 +1,6 @@
 import { BindingContext } from "./BindingContext";
 import { DefaultExceptionPage } from "./DefaultExceptionPage";
+import { LanguageServer } from "./i18n/LanguageServer";
 import { Misc } from "./Misc";
 import { UIView } from "./UIView";
 import { Widget, WidgetContext } from "./Widget";
@@ -13,6 +14,8 @@ export class ViewBuilder
     public viewContent: DivContent[] = []
     public layoutHtml: string = null;
     private onLoadFn: Function;
+    preventClear: boolean;
+    dictionaryEnabled: boolean;
 
 
     private constructor(layoutPath: string)
@@ -43,13 +46,17 @@ export class ViewBuilder
         return this;
     }
 
-    public with(...content: DivContent[]): ViewBuilder
+    public preventClearFragment(): ViewBuilder
     {
-        if (!Misc.isNull(content))
-            this.viewContent = content;
+        this.preventClear = true
         return this;
     }
 
+    public useDictionary(): ViewBuilder
+    {
+        this.dictionaryEnabled = true
+        return this;
+    }
 
     private viewModelBind: any | object = null;
 
@@ -108,5 +115,14 @@ export class ViewBuilder
     {
         if (!Misc.isNull(this.onLoadFn))
             this.onLoadFn(ctx);
+    }
+
+    public languageSrv: LanguageServer = null
+
+    public i18n(language: LanguageServer): ViewBuilder
+    {
+        this.languageSrv = language
+        return this
+
     }
 }

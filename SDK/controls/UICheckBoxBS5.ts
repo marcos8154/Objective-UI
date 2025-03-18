@@ -17,7 +17,7 @@ export class UICheckBoxBS5 extends UICheckBox
         })
     {
         const customTemplate = `
-        <div id="UICheckBox" class="form-check">
+        <div id="UICheckBox" class="">
             <input id="checkElement" class="form-check-input" type="checkbox" value="">
             <label id="checkLabel" class="form-check-label" for="checkLabel">
                 Checked checkbox

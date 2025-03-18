@@ -5,6 +5,7 @@ import { Misc } from "../Misc";
 import { VirtualFunction } from "../VirtualFunction";
 import { WidgetBinder } from "../WidgetBinder";
 import { UIButton } from "./UIButton";
+import { UIPage } from "../UIPage";
 
 export class Mask
 {
@@ -97,14 +98,24 @@ export class UITextBox extends Widget implements IBindable
 
     toUpperCase: boolean;
     floatPlaces: number;
+    symbolRight: boolean;
     protected htmlTemplate(): string
     {
+        var contentGroup = `
+        <span id="entrySymbol" style="height: 31px" class="input-group-text" > </span>
+        <input id="entryInput" ${this.toUpperCase ? 'oninput="this.value = this.value.toUpperCase();"' : ''} class="form-control form-control-sm"  placeholder="Entry placeholder">`
+
+        if (this.symbolRight) contentGroup = `
+        <input id="entryInput" ${this.toUpperCase ? 'oninput="this.value = this.value.toUpperCase();"' : ''} class="form-control form-control-sm"  placeholder="Entry placeholder">
+        <span  style="height: 31px" class="input-group-text"> 
+            <button id="entrySymbol" class="btn btn-sm" style="border:none;"> </button>
+        </span>`
+
         return `
 <div id="divContainer" class="${this.containerClass}">
     <label id="entryTitle" style="margin: 0px; padding: 0px; font-weight:normal !important;" for="inputEntry"> Entry Title </label>
-    <div class="input-group">
-        <span id="entrySymbol" style="height: 31px" class="input-group-text" >R$</span>
-        <input id="entryInput" ${this.toUpperCase ? 'oninput="this.value = this.value.toUpperCase();"' : ''} class="form-control form-control-sm"  placeholder="Entry placeholder">
+    <div class="input-group"> 
+${contentGroup}
     </div>
 </div>`
     }
@@ -119,7 +130,20 @@ export class UITextBox extends Widget implements IBindable
         if (Misc.isNullOrEmpty(this.initialSymbol))
             this.spanSymbol.remove()
         else
-            this.spanSymbol.textContent = this.initialSymbol
+        {
+            if (this.initialSymbol.indexOf('.png') > -1)
+            {
+                const img = document.createElement('img');
+                img.id = `${this.widgetName}_symbol`;
+                img.src = this.initialSymbol;
+                img.style.width = '20px';
+                img.style.height = '20px';
+
+                this.spanSymbol.appendChild(img);
+            }
+            else
+                this.spanSymbol.textContent = this.initialSymbol
+        }
 
         if (Misc.isNullOrEmpty(this.initialTitle))
             this.lbTitle.remove()
@@ -130,7 +154,6 @@ export class UITextBox extends Widget implements IBindable
             this.txInput.inputMode = 'numeric';
 
         this.txInput.placeholder = this.initialPlaceHolder;
-        this.txInput.value = this.initialText;
 
         this.setMaxLength(this.initialMaxlength);
         this.setInputType(this.initialType);
@@ -138,6 +161,8 @@ export class UITextBox extends Widget implements IBindable
 
         if (this.required)
             this.txInput.setAttribute('required', 'required');
+
+        this.setText(this.initialText)
     }
 
 
@@ -180,6 +205,7 @@ export class UITextBox extends Widget implements IBindable
         isFloat = false,
         floatPlaces = 2,
         symbol = '',
+        symbolRight = false,
         toUpperCase = null
     }: {
         name: string;
@@ -194,6 +220,7 @@ export class UITextBox extends Widget implements IBindable
         isFloat?: boolean,
         floatPlaces?: number
         symbol?: string,
+        symbolRight?: boolean,
         toUpperCase?: boolean
     })
     {
@@ -209,6 +236,7 @@ export class UITextBox extends Widget implements IBindable
         this.initialMask = (Misc.isNull(mask) ? '' : mask);
         this.containerClass = (Misc.isNull(containerClass) ? 'form-group' : containerClass);
         this.initialSymbol = symbol
+        this.symbolRight = symbolRight
         this.floatPlaces = (Misc.isNull(floatPlaces) ? 2 : floatPlaces)
 
         if (type == 'email') toUpperCase = false
@@ -218,13 +246,67 @@ export class UITextBox extends Widget implements IBindable
         else
             this.toUpperCase = UITextBox.toUpperCaseDefault
     }
-    public setOnEnter(fnOnEnter: Function)
+
+    /**
+     * 
+     * @param fnOnEnter 
+     * ```
+     * setOnEnter((sender: UITextBox) => {
+     *    //   user has pressed enter
+     })
+     * ```
+     * @param useOnBlurIfAppleMobile iOS default NUMERIC keyboard does not have the 'Enter' properly key, so we use the blur event that responds on 'Ok' pressed
+     * @returns 
+     */
+    public setOnEnter(fnOnEnter: Function, useOnBlurIfAppleMobile: boolean = false)
+    {
+        if (UIPage.isAppleMobileDevice() && useOnBlurIfAppleMobile)
+        {
+            this.txInput.enterKeyHint = 'done';
+            this.txInput.onchange = (ev) => fnOnEnter(this);
+            return
+        }
+        // not apple mobile
+        this.txInput.onkeydown = (ev) => 
+        {
+            if (ev.key == 'Enter')
+                fnOnEnter(this);
+        }
+    }
+
+    /**
+     * 
+     * @param fnOnInput 
+     * ````
+     * setOnInput((sender: UITextBox) => {
+     *    //   user has typed something
+     * })
+     * ```
+     */
+    public setOnInput(fnOnInput: Function)
+    {
+        this.txInput.oninput = (ev) => fnOnInput(this);
+    }
+    /**
+     * 
+     * @param keyHandlers {[key: string]: Function}
+      ```
+       // example
+       myTextBox.setOnKeyDown({
+            'Enter': () => { },
+            'F': () => { },
+            'ArrowUp': () => { }
+        })
+        ```
+     */
+    public setOnKeyDown(keyHandlers: { [key: string]: Function })
     {
         this.txInput.enterKeyHint = 'done';
         this.txInput.onkeydown = (ev) => 
         {
-            if (ev.key == 'Enter')
-                fnOnEnter();
+            const handlers = keyHandlers[ev.key]
+            if (!Misc.isNull(handlers))
+                keyHandlers[ev.key]()
         }
     }
 
@@ -267,7 +349,16 @@ export class UITextBox extends Widget implements IBindable
         this.txInput.type = inputType;
     }
 
+    public focusAndSelect()
+    {
+        this.txInput.focus()
+        this.txInput.select()
+    }
 
+    public focus()
+    {
+        this.txInput.focus();
+    }
 
     public setMaxLength(maxlength: number): void
     {
@@ -346,7 +437,7 @@ export class UITextBox extends Widget implements IBindable
         return this.txInput.value;
     }
 
-    public addCSSClass(className: string): void 
+    public addCSSClass(className: string): void
     {
         this.txInput.classList.add(className);
     }
@@ -356,7 +447,7 @@ export class UITextBox extends Widget implements IBindable
         this.txInput.classList.remove(className);
     }
 
-    public applyCSS(propertyName: string, propertyValue: string): void 
+    public applyCSS(propertyName: string, propertyValue: string): void
     {
         this.txInput.style.setProperty(propertyName, propertyValue);
     }
@@ -366,7 +457,7 @@ export class UITextBox extends Widget implements IBindable
         marginTop: string,
         marginRight: string,
         marginBottom: string,
-        transform?: string): void 
+        transform?: string): void
     {
         this.divContainer.style.position = position;
         this.divContainer.style.left = marginLeft;
@@ -376,7 +467,7 @@ export class UITextBox extends Widget implements IBindable
         this.divContainer.style.transform = transform;
     }
 
-    public setVisible(visible: boolean): void 
+    public setVisible(visible: boolean): void
     {
         this.divContainer.style.visibility = (visible ? 'visible' : 'hidden')
     }

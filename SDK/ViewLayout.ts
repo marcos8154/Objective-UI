@@ -109,9 +109,9 @@ this.fromHTML(`
         this.rawHtml = rawHtmlLayoutString;
         return this;
     }
-    
 
-    render(shellPage: PageShell, customPresenter?: ILayoutPresenter): Element
+
+    render(shellPage: PageShell, customPresenter?: ILayoutPresenter, preventClear: boolean = false): Element
     {
         this.containerDivObj = shellPage.elementById(this.containerDivName) as HTMLDivElement;
 
@@ -120,7 +120,9 @@ this.fromHTML(`
             var parser = new DOMParser();
             var dom: Document = parser.parseFromString(this.rawHtml, 'text/html');
             this.layoutDOM = dom;
-            this.containerDivObj.innerHTML = '';
+
+            if (preventClear == false)
+                this.containerDivObj.innerHTML = '';
             var objDom = this.layoutDOM.children[0].children[1];
 
             if (UIPage.DEBUG_MODE)

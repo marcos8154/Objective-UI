@@ -13,7 +13,7 @@
  */
 export abstract class UIPage
 {
-    public static readonly PRODUCT_VERSION: string = '1.0.33'
+    public static readonly PRODUCT_VERSION: string = '1.0.53'
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
     public static shell: PageShell;
@@ -54,11 +54,11 @@ export abstract class UIPage
         this.mainShell.import(new NativeLib({ libName, cssPath, jsPath }));
     }
 
-    public navigateToView(view: UIView): void
+    public navigateToView(view: UIView, preventClear: boolean = false): void
     {
         try
         {
-            view.initialize(this.mainShell);
+            view.initialize(this.mainShell, preventClear);
         }
         catch (error)
         {
@@ -224,7 +224,7 @@ onViewDidLoad(): void
             this.onViewDidLoad();
     }
 
-    public initialize(mainShell: PageShell)
+    public initialize(mainShell: PageShell, preventClear: boolean = false)
     {
         UIPage.shell.loadBSVersion();
 
@@ -232,7 +232,7 @@ onViewDidLoad(): void
         this.shellPage = mainShell;
 
         this.buildedLayout = this.buildLayout();
-        this.buildedLayout.render(mainShell, this.customPresenter);
+        this.buildedLayout.render(mainShell, this.customPresenter, preventClear);
 
         var layoutCollection: string[] = this.buildedLayout.ElementsIdCollection();
 
@@ -326,9 +326,10 @@ export class FlatList implements IListItemTemplateProvider
 
 export class FlatListItem implements IListItemTemplate
 {
-    public value: any;
-    itemName: string;
-    sh: PageShell;
+    public value: any | object;
+    public itemName: string;
+    public sh: PageShell;
+    public tag: any | object;
 
     constructor(vm: any)
     {
@@ -336,6 +337,46 @@ export class FlatListItem implements IListItemTemplate
     }
 
     public anchorElement: HTMLAnchorElement;
+    private fn_handlers: Function[] = [];
+
+
+    /**
+     * 
+     * @param fn_handler Provide an callback function to handling UITemplateView after loads. Ex.:
+     * ```
+     * handle((template: UITemplateView) => {
+     *   //     const btnExample: HTMLButtonElement = template.elementById('btnExample');
+     *   //     btnExample.click(() => {   } );
+     * })
+     * ```
+     * @returns 
+     */
+    public handle(fn_handler: Function): FlatListItem
+    {
+        this.fn_handlers.push(fn_handler);
+        return this;
+    }
+
+
+    fn_getItemTemplate: Function = null;
+    /**
+     * 
+     * @param fn_handler 
+     * ```
+     * (item: FlatListItem) => {
+     *    const templ = new UITemplateView('', item.sh, item.value);
+     *    // ..... 
+     *    return templ
+     * }
+     * ```
+     * @returns 
+     */
+    public onItemTemplate(fn_handler: Function): FlatListItem
+    {
+
+        this.fn_getItemTemplate = fn_handler;
+        return this;
+    }
 
     /**  define o callback para isSelected()  */
     public onCheckSelected(fn: Function): FlatListItem
@@ -359,17 +400,18 @@ export class FlatListItem implements IListItemTemplate
         return this;
     }
     private fn_unSelect: Function;
-    /**  define o callback para itemTemplate()*/
-    public onItemTemplate(fn: Function): FlatListItem
-    {
-        this.fn_itemTemplate = fn;
-        return this;
-    }
-    private fn_itemTemplate: Function;
+    private html_template: string = '';
     /**  define o um trecho html para ser usado pela funcão itemTemplate()*/
     public withHTML(htmlString: string): FlatListItem
     {
-        this.fn_itemTemplateString = htmlString;
+        this.html_template = htmlString;
+        return this;
+    }
+
+    /**  define o um trecho html para ser usado pela funcão itemTemplate()*/
+    public template(htmlString: string): FlatListItem
+    {
+        this.html_template = htmlString;
         return this;
     }
 
@@ -387,9 +429,6 @@ export class FlatListItem implements IListItemTemplate
     {
         this.anchorElement.classList.remove(className)
     }
-
-    private fn_itemTemplateString: string;
-
 
     setOwnerList(listView: UIList): void
     {
@@ -414,17 +453,41 @@ export class FlatListItem implements IListItemTemplate
 
     itemTemplate(): HTMLAnchorElement
     {
-        if (!Misc.isNull(this.fn_itemTemplate))
-            return this.fn_itemTemplate(this);
-
-        if (!Misc.isNull(this.fn_itemTemplateString))
+        if (Misc.isNullOrEmpty(this.html_template))
         {
-            const templ = new UITemplateView(this.fn_itemTemplateString, this.sh, this.value);
-            this.templateView = templ
-            var anchor = templ.elementById('anchor') as HTMLAnchorElement;
-            this.anchorElement = anchor;
-            return anchor;
+            var anchor: HTMLAnchorElement = null
+            const templ = this.fn_getItemTemplate(this);
 
+            if (templ instanceof UITemplateView)
+            {
+                this.templateView = templ
+                anchor = templ.templateDOM.getElementsByTagName('a')[0] as HTMLAnchorElement;
+                if (Misc.isNull(anchor)) throw new Error('Invalid FlatListItem template. Anchor element not found in HTML snippet! Ensure that the template contains an <a> tag.');
+                this.anchorElement = anchor;
+
+                for (var i = 0; i < this.fn_handlers.length; i++)
+                    this.fn_handlers[i](templ);
+
+            }
+            if(templ instanceof HTMLAnchorElement)
+            {
+                this.anchorElement = templ;
+                anchor = templ
+            }
+            return anchor;
+        }
+        else
+        {
+            const templ = new UITemplateView(this.html_template, this.sh, this.value);
+            this.templateView = templ
+            var anchor = templ.templateDOM.getElementsByTagName('a')[0] as HTMLAnchorElement;
+            if (Misc.isNull(anchor)) throw new Error('Invalid FlatListItem template. Anchor element not found in HTML snippet! Ensure that the template contains an <a> tag.');
+            this.anchorElement = anchor;
+
+            for (var i = 0; i < this.fn_handlers.length; i++)
+                this.fn_handlers[i](templ);
+
+            return anchor;
         }
     }
 }
@@ -462,6 +525,32 @@ export class FlatDataGridItem implements IDataGridItemTemplate
         this.sh = dataGrid.getPageShell();
     }
 
+    private fn_handlers: Function[] = [];
+
+
+    /**
+     * 
+     * @param fn_handler Provide an callback function to handling UITemplateView after loads. Ex.:
+     * ```
+     * handle((template: UITemplateView) => {
+     *   //     const btnExample: HTMLButtonElement = template.elementById('btnExample');
+     *   //     btnExample.click(() => {   } );
+     * })
+     * ```
+     * @returns 
+     */
+    public handle(fn_handler: Function): FlatDataGridItem
+    {
+        this.fn_handlers.push(fn_handler);
+        return this;
+    }
+
+    public onItemTemplate(fn_handler: Function): FlatDataGridItem
+    {
+        this.fn_handlers.push(fn_handler);
+        return this;
+    }
+
     public tableRow: HTMLTableRowElement;
     /**  define o callback para isSelected()  */
     public onCheckSelected(fn: Function): FlatDataGridItem
@@ -486,16 +575,17 @@ export class FlatDataGridItem implements IDataGridItemTemplate
     }
     private fn_unSelect: Function;
     /**  define o callback para itemTemplate()*/
-    public onItemTemplate(fn: Function): FlatDataGridItem
-    {
-        this.fn_itemTemplate = fn;
-        return this;
-    }
-    private fn_itemTemplate: Function;
+
     /**  define o um trecho html para ser usado pela funcão itemTemplate()*/
     public withHTML(htmlString: string): FlatDataGridItem
     {
-        this.fn_itemTemplateString = htmlString;
+        this.html_template = htmlString;
+        return this;
+    }
+
+    public template(htmlString: string): FlatDataGridItem
+    {
+        this.html_template = htmlString;
         return this;
     }
 
@@ -514,7 +604,7 @@ export class FlatDataGridItem implements IDataGridItemTemplate
         this.tableRow.classList.remove(className)
     }
 
-    private fn_itemTemplateString: string;
+    private html_template: string;
 
 
     setOwnerList(dataGrid: UIDataGrid): void
@@ -540,17 +630,22 @@ export class FlatDataGridItem implements IDataGridItemTemplate
 
     itemTemplate(): HTMLTableRowElement
     {
-        if (!Misc.isNull(this.fn_itemTemplate))
-            return this.fn_itemTemplate(this);
-
-        if (!Misc.isNull(this.fn_itemTemplateString))
+        if (!Misc.isNull(this.html_template))
         {
-            const templ = new UITemplateView(this.fn_itemTemplateString, this.sh, this.value);
-            var anchor = templ.elementById('table-row') as HTMLTableRowElement;
-            this.tableRow = anchor;
-            return anchor;
+            const templ = new UITemplateView(this.html_template, this.sh, this.value);
+            var tableRow = templ.templateDOM.getElementsByTagName('tr')[0] as HTMLTableRowElement; //.elementById('table-row') as HTMLTableRowElement;
+            if (Misc.isNull(tableRow)) throw new Error('Invalid FlatDataGridItem template. Anchor element not found in HTML snippet! Ensure that the template contains an <tr> tag.');
+            this.tableRow = tableRow;
+
+            for (var i = 0; i < this.fn_handlers.length; i++)
+                this.fn_handlers[i](templ);
+
+            return tableRow;
 
         }
+        else
+            throw new Error('Invalid FlatDataGridItem template. Template not defined! Ensure that functions `withHTML()` and `template()` was be called.');
+
     }
 
 
@@ -558,6 +653,8 @@ export class FlatDataGridItem implements IDataGridItemTemplate
 export abstract class UIFlatView extends UIView
 {
     private static caches: ViewCache[] = [];
+    private viewDictionary: ViewDictionaryEntry[] = [];
+
 
     private static findCached(path: string)
     {
@@ -573,11 +670,11 @@ export abstract class UIFlatView extends UIView
     {
         view.builder = view.buildView();
 
-        const cached = this.findCached(view.builder.layoutPath);
+        const cached = (view.builder.dictionaryEnabled ? null : this.findCached(view.builder.layoutPath));
         if (!Misc.isNull(cached))
         {
             view.builder.layoutHtml = cached.content;
-            UIPage.shell.navigateToView(view)
+            UIPage.shell.navigateToView(view, view.builder.preventClear)
         }
         else
             ViewLayout.load(view.builder.layoutPath, function (html: string)
@@ -585,11 +682,77 @@ export abstract class UIFlatView extends UIView
                 if (Misc.isNullOrEmpty(html) || html.indexOf('<title>Error</title>') > -1)
                     throw new DefaultExceptionPage(new Error(`No html-layout found for '${view.builder.layoutPath}'`))
 
+                if (view.builder.dictionaryEnabled)
+                {
+                    var parser = new DOMParser();
+                    var domObj = parser.parseFromString(html, "text/html");
+                    var allIds = domObj.querySelectorAll('*[id]');
+
+                    for (var i = 0; i < allIds.length; i++)
+                    {
+                        var element = allIds[i];
+                        var currentId = element.getAttribute('id');
+                        if (currentId != null)
+                        {
+                            var newId = `${currentId}_${Misc.generateUUID()}`;
+                            view.addDictionaryEntry(currentId, newId);
+                            element.setAttribute('id', newId);
+                        }
+                    }
+
+                    html = domObj.getElementsByTagName('body')[0].innerHTML;
+                }
+
                 view.builder.layoutHtml = html;
-                UIPage.shell.navigateToView(view)
-                UIFlatView.caches.push(new ViewCache(view.builder.layoutPath, html))
+                UIPage.shell.navigateToView(view, view.builder.preventClear)
+
+                if (!view.builder.dictionaryEnabled)
+                    UIFlatView.caches.push(new ViewCache(view.builder.layoutPath, html))
             });
     }
+
+    /**
+     * Allows 2+ instances of same UIFlatView 
+
+    * @param originalId The Id of the element present in the HTML resource
+    * @param generatedId The self-generated Id value
+    */
+    private addDictionaryEntry(originalId: string, generatedId: string)
+    {
+        var entry = new ViewDictionaryEntry(originalId, generatedId);
+        this.viewDictionary.push(entry);
+    }
+
+    /**
+     * Retrieves a physical element 'Id' registered in dictionary
+     * @param originalId original element Id declared in html-layout
+     * @returns fisical random element Id registered in dictionary
+     */
+    public dict(originalId: string): string
+    {
+        for (var i = 0; i < this.viewDictionary.length; i++)
+        {
+            const entry = this.viewDictionary[i];
+            if (entry.originalId == originalId)
+                return entry.managedId
+        }
+    }
+
+    /**
+         * Retrieves a physical element (HTMLElement-object) registered in dictionary
+         * @param originalId original element Id declared in html-layout
+         * @returns fisical random element Id registered in dictionary
+     */
+    public dictElement<TElement>(originalId: string): TElement
+    {
+        for (var i = 0; i < this.viewDictionary.length; i++)
+        {
+            const entry = this.viewDictionary[i];
+            if (entry.originalId == originalId)
+                return document.getElementById(entry.managedId) as TElement
+        }
+    }
+
 
     private builder: ViewBuilder;
     private binding: BindingContext<any | object>;
@@ -604,13 +767,27 @@ export abstract class UIFlatView extends UIView
         for (var c = 0; c < this.builder.viewContent.length; c++)
         {
             var content: DivContent = this.builder.viewContent[c];
-            this.addWidgets(content.id, ...content.w);
+
+            if (this.builder.dictionaryEnabled)
+                this.addWidgets(this.dict(content.id), ...content.w);
+            else
+                this.addWidgets(content.id, ...content.w);
         }
     }
     onViewDidLoad(): void
     {
         if (this.builder.hasBinding())
             this.binding = this.builder.getBinding(this);
+
+        if (!Misc.isNull(this.builder.languageSrv))
+        {
+            try
+            {
+                const db = this.requestLocalStorage('i18n')
+                this.translateLanguage(db.get('lang'))
+            } catch { }
+        }
+
         this.builder.callLoadFn(this.viewContext());
     }
 
@@ -644,6 +821,31 @@ export abstract class UIFlatView extends UIView
     {
         return this.getBindingContext().refreshAll();
     }
+
+
+    public translateLanguage(langName: string): void
+    {
+        const srv = this.builder.languageSrv
+
+        const allWidgets = this.viewContext().getAll()
+        for (var w = 0; w < allWidgets.length; w++)
+        {
+            const widget = allWidgets[w]
+            var translation = srv.translate(widget.widgetName, langName)
+            if (Misc.isNullOrEmpty(translation)) continue
+
+            try
+            {
+                widget.setTitle(translation)
+            } catch
+            {
+                try
+                {
+                    widget.setText(translation)
+                } catch { }
+            }
+        }
+    }
 }
 export class ViewBuilder
 {
@@ -653,6 +855,8 @@ export class ViewBuilder
     public viewContent: DivContent[] = []
     public layoutHtml: string = null;
     private onLoadFn: Function;
+    preventClear: boolean;
+    dictionaryEnabled: boolean;
 
 
     private constructor(layoutPath: string)
@@ -683,13 +887,17 @@ export class ViewBuilder
         return this;
     }
 
-    public with(...content: DivContent[]): ViewBuilder
+    public preventClearFragment(): ViewBuilder
     {
-        if (!Misc.isNull(content))
-            this.viewContent = content;
+        this.preventClear = true
         return this;
     }
 
+    public useDictionary(): ViewBuilder
+    {
+        this.dictionaryEnabled = true
+        return this;
+    }
 
     private viewModelBind: any | object = null;
 
@@ -749,6 +957,15 @@ export class ViewBuilder
         if (!Misc.isNull(this.onLoadFn))
             this.onLoadFn(ctx);
     }
+
+    public languageSrv: LanguageServer = null
+
+    public i18n(language: LanguageServer): ViewBuilder
+    {
+        this.languageSrv = language
+        return this
+
+    }
 }
 export class ViewCache
 {
@@ -789,39 +1006,41 @@ export abstract class Widget implements INotifiable
     /**
      * Occurs when the Widget is detached from the WidgetContext
      */
-    public onWidgetDetached(): void { }
+    public onWidgetDetached(): void { throw new Error('Not implemented');}
 
     /**
      * Gets the default value of this widget; Note that not every Widget will implement the return of its value by this function.
      */
-    public value(): any | object | string { };
+    public value(): any | object | string { throw new Error('Not implemented');};
 
-    public setEnabled(enabled: boolean): void { };
+    public setEnabled(enabled: boolean): void { throw new Error('Not implemented');};
 
     /**
      * Determines if this Widget is visible on the page
      * @param visible True or False
      */
-    public setVisible(visible: boolean): void { };
+    public setVisible(visible: boolean): void {throw new Error('Not implemented'); };
 
     /**
      * Add a CSS class by name; Some Widgets may not implement this eventually.
      * @param className CSS class name
      */
-    public addCSSClass(className: string): void { }
+    public addCSSClass(className: string): void { throw new Error('Not implemented');}
 
     /**
      * Remove a CSS class by name; Some Widgets may not implement this eventually.
      * @param className CSS class name
      */
-    public removeCSSClass(className: string): void { }
+    public removeCSSClass(className: string): void { throw new Error('Not implemented'); }
 
+    public setTitle(className: string): void { throw new Error('Not implemented'); }
+    public setText(className: string): void { throw new Error('Not implemented'); }
     /**
      * Applies a CSS property value; Some Widgets may not implement this eventually.
      * @param propertyName CSS property name
      * @param propertyValue Property value
      */
-    public applyCSS(propertyName: string, propertyValue: string): void { }
+    public applyCSS(propertyName: string, propertyValue: string): void {throw new Error('Not implemented'); }
 
     /**
      * Change Widget Position
@@ -835,7 +1054,7 @@ export abstract class Widget implements INotifiable
         marginTop: string,
         marginRight: string,
         marginBottom: string,
-        transform?: string): void { }
+        transform?: string): void {throw new Error('Not implemented'); }
 
 
 
@@ -1146,6 +1365,17 @@ export class WidgetContext implements INotifiable
     {
         var fragment: WidgetFragment = this.findFragment(fragmentName);
         return fragment.widgets
+    }
+
+    getAll(): Widget[]
+    {
+        var widgets: Widget[] = [];
+        for (var i = 0; i < this.fragments.length; i++)
+        {
+            var fragment: WidgetFragment = this.fragments[i];
+          widgets.push(...fragment.widgets);
+        }
+        return widgets
     }
 
 
@@ -1777,6 +2007,7 @@ WebAPI
 export class WebAPI
 {
     public static urlBase: string;
+    private contentType: string = 'application/json';
     public static setURLBase(apiUrlBase: string)
     {
         WebAPI.urlBase = apiUrlBase;
@@ -1833,7 +2064,7 @@ export class WebAPI
         this.request = {};
         this.request.method = method;
         this.apiUrl = url;
-        this.withHeaders(new Headers({ 'content-type': 'application/json' }));
+        this.withHeaders(new Headers({'content-type': this.contentType  }));
     }
 
     public call(): void
@@ -1843,7 +2074,7 @@ export class WebAPI
             var statusCode: number;
             var statusMsg: string;
             var self = this;
-
+            if(Misc.isNull(self.request.headers)) self.withHeaders(new Headers({'content-type': self.contentType  }));
             fetch(self.apiUrl, self.request)
                 .then(function (ret: Response)
                 {
@@ -1853,20 +2084,21 @@ export class WebAPI
                 })
                 .then(function (text: string)
                 {
-                    var json: any | object = null;
+                    var responseContent: any | object = null;
                     if (text.startsWith("{") || text.startsWith("["))
-                        json = JSON.parse(text);
-
+                        responseContent = JSON.parse(text);
+                    else
+                        responseContent = text
 
                     if (statusCode == 400)
                     {
-                        for (var prop in json.errors)
+                        for (var prop in responseContent.errors)
                         {
-                            statusMsg += json.errors[prop]
+                            statusMsg += responseContent.errors[prop]
                         }
                     }
                     var apiResponse = new APIResponse({
-                        code: statusCode, msg: statusMsg, content: json
+                        code: statusCode, msg: statusMsg, content: responseContent
                     });
 
                     return apiResponse;
@@ -1915,6 +2147,13 @@ export class WebAPI
                 this.fnOnError(error);
             }
         }
+    }
+
+    public setContentType(contentType: string): WebAPI
+    {
+        this.contentType = contentType;
+         this.withHeaders(new Headers({'content-type': this.contentType  }));
+        return this;
     }
 
     public dataResultTo(callBack: Function): WebAPI
@@ -2588,9 +2827,9 @@ export class PageShell
      * Renders and brings to the front a view generated by a UIView object
      * @param view 
      */
-    public navigateToView(view: UIView): void
+    public navigateToView(view: UIView, preventClear: boolean = false): void
     {
-        this.page.navigateToView(view);
+        this.page.navigateToView(view, preventClear);
     }
 
     /**
@@ -3133,9 +3372,9 @@ this.fromHTML(`
         this.rawHtml = rawHtmlLayoutString;
         return this;
     }
-    
 
-    render(shellPage: PageShell, customPresenter?: ILayoutPresenter): Element
+
+    render(shellPage: PageShell, customPresenter?: ILayoutPresenter, preventClear: boolean = false): Element
     {
         this.containerDivObj = shellPage.elementById(this.containerDivName) as HTMLDivElement;
 
@@ -3144,7 +3383,9 @@ this.fromHTML(`
             var parser = new DOMParser();
             var dom: Document = parser.parseFromString(this.rawHtml, 'text/html');
             this.layoutDOM = dom;
-            this.containerDivObj.innerHTML = '';
+
+            if (preventClear == false)
+                this.containerDivObj.innerHTML = '';
             var objDom = this.layoutDOM.children[0].children[1];
 
             if (UIPage.DEBUG_MODE)
@@ -3414,7 +3655,7 @@ export class WidgetFragment implements INotifiable
         {
             var existingWidget: Widget = this.widgets[i];
             if (widget.widgetName == existingWidget.widgetName)
-                throw `widget '${widget.widgetName}' has already been attached to this context.`;
+                throw new Error(`Widget named '${widget.widgetName}' has already been attached on div id '${this.fragmentId}'`);
         }
 
         widget.setParentFragment(this);
@@ -3906,6 +4147,8 @@ export class UIRadioGroup extends Widget implements IBindable
             this.fieldSet.classList.add(`flex-column`);
         if (this.orientation == 'horizontal')
             this.fieldSet.classList.add(`flex-row`);
+        if (Misc.isNullOrEmpty(this.title))
+            this.groupTitle.remove();
 
         this.addOptions(this.initialOptions);
     }
@@ -4474,7 +4717,7 @@ export class UICheckBoxBS5 extends UICheckBox
         })
     {
         const customTemplate = `
-        <div id="UICheckBox" class="form-check">
+        <div id="UICheckBox" class="">
             <input id="checkElement" class="form-check-input" type="checkbox" value="">
             <label id="checkLabel" class="form-check-label" for="checkLabel">
                 Checked checkbox
@@ -4763,7 +5006,7 @@ export class UIList extends Widget implements IBindable
     protected htmlTemplate(): string
     {
         return `
-<div id="fsListView" class="list-group">
+<div id="fsListView" class="list-group ${this.containerDivClass}">
 </div>`
     }
     public items: Array<IListItemTemplate> = [];
@@ -4781,6 +5024,7 @@ export class UIList extends Widget implements IBindable
 
     disableSel: boolean = false;
     disableUnSel: boolean = false;
+    containerDivClass: string = ''
 
 
     /**
@@ -4789,13 +5033,15 @@ export class UIList extends Widget implements IBindable
      * 
      * Parameters: **(item: IListItemTemplate, ev: Event)**
      */
-    constructor({ name, multiSelect }:
+    constructor({ name, multiSelect, containerClass }:
         {
             name: string,
-            multiSelect?: boolean
+            multiSelect?: boolean,
+            containerClass?: string
         })
     {
         super(name);
+        this.containerDivClass = containerClass
         this.multiSelect = (Misc.isNull(multiSelect) ? false : multiSelect)
     }
 
@@ -6000,14 +6246,24 @@ export class UITextBox extends Widget implements IBindable
 
     toUpperCase: boolean;
     floatPlaces: number;
+    symbolRight: boolean;
     protected htmlTemplate(): string
     {
+        var contentGroup = `
+        <span id="entrySymbol" style="height: 31px" class="input-group-text" > </span>
+        <input id="entryInput" ${this.toUpperCase ? 'oninput="this.value = this.value.toUpperCase();"' : ''} class="form-control form-control-sm"  placeholder="Entry placeholder">`
+
+        if (this.symbolRight) contentGroup = `
+        <input id="entryInput" ${this.toUpperCase ? 'oninput="this.value = this.value.toUpperCase();"' : ''} class="form-control form-control-sm"  placeholder="Entry placeholder">
+        <span  style="height: 31px" class="input-group-text"> 
+            <button id="entrySymbol" class="btn btn-sm" style="border:none;"> </button>
+        </span>`
+
         return `
 <div id="divContainer" class="${this.containerClass}">
     <label id="entryTitle" style="margin: 0px; padding: 0px; font-weight:normal !important;" for="inputEntry"> Entry Title </label>
-    <div class="input-group">
-        <span id="entrySymbol" style="height: 31px" class="input-group-text" >R$</span>
-        <input id="entryInput" ${this.toUpperCase ? 'oninput="this.value = this.value.toUpperCase();"' : ''} class="form-control form-control-sm"  placeholder="Entry placeholder">
+    <div class="input-group"> 
+${contentGroup}
     </div>
 </div>`
     }
@@ -6022,7 +6278,20 @@ export class UITextBox extends Widget implements IBindable
         if (Misc.isNullOrEmpty(this.initialSymbol))
             this.spanSymbol.remove()
         else
-            this.spanSymbol.textContent = this.initialSymbol
+        {
+            if (this.initialSymbol.indexOf('.png') > -1)
+            {
+                const img = document.createElement('img');
+                img.id = `${this.widgetName}_symbol`;
+                img.src = this.initialSymbol;
+                img.style.width = '20px';
+                img.style.height = '20px';
+
+                this.spanSymbol.appendChild(img);
+            }
+            else
+                this.spanSymbol.textContent = this.initialSymbol
+        }
 
         if (Misc.isNullOrEmpty(this.initialTitle))
             this.lbTitle.remove()
@@ -6033,7 +6302,6 @@ export class UITextBox extends Widget implements IBindable
             this.txInput.inputMode = 'numeric';
 
         this.txInput.placeholder = this.initialPlaceHolder;
-        this.txInput.value = this.initialText;
 
         this.setMaxLength(this.initialMaxlength);
         this.setInputType(this.initialType);
@@ -6041,6 +6309,8 @@ export class UITextBox extends Widget implements IBindable
 
         if (this.required)
             this.txInput.setAttribute('required', 'required');
+
+        this.setText(this.initialText)
     }
 
 
@@ -6083,6 +6353,7 @@ export class UITextBox extends Widget implements IBindable
         isFloat = false,
         floatPlaces = 2,
         symbol = '',
+        symbolRight = false,
         toUpperCase = null
     }: {
         name: string;
@@ -6097,6 +6368,7 @@ export class UITextBox extends Widget implements IBindable
         isFloat?: boolean,
         floatPlaces?: number
         symbol?: string,
+        symbolRight?: boolean,
         toUpperCase?: boolean
     })
     {
@@ -6112,6 +6384,7 @@ export class UITextBox extends Widget implements IBindable
         this.initialMask = (Misc.isNull(mask) ? '' : mask);
         this.containerClass = (Misc.isNull(containerClass) ? 'form-group' : containerClass);
         this.initialSymbol = symbol
+        this.symbolRight = symbolRight
         this.floatPlaces = (Misc.isNull(floatPlaces) ? 2 : floatPlaces)
 
         if (type == 'email') toUpperCase = false
@@ -6121,13 +6394,67 @@ export class UITextBox extends Widget implements IBindable
         else
             this.toUpperCase = UITextBox.toUpperCaseDefault
     }
-    public setOnEnter(fnOnEnter: Function)
+
+    /**
+     * 
+     * @param fnOnEnter 
+     * ```
+     * setOnEnter((sender: UITextBox) => {
+     *    //   user has pressed enter
+     })
+     * ```
+     * @param useOnBlurIfAppleMobile iOS default NUMERIC keyboard does not have the 'Enter' properly key, so we use the blur event that responds on 'Ok' pressed
+     * @returns 
+     */
+    public setOnEnter(fnOnEnter: Function, useOnBlurIfAppleMobile: boolean = false)
+    {
+        if (UIPage.isAppleMobileDevice() && useOnBlurIfAppleMobile)
+        {
+            this.txInput.enterKeyHint = 'done';
+            this.txInput.onchange = (ev) => fnOnEnter(this);
+            return
+        }
+        // not apple mobile
+        this.txInput.onkeydown = (ev) => 
+        {
+            if (ev.key == 'Enter')
+                fnOnEnter(this);
+        }
+    }
+
+    /**
+     * 
+     * @param fnOnInput 
+     * ````
+     * setOnInput((sender: UITextBox) => {
+     *    //   user has typed something
+     * })
+     * ```
+     */
+    public setOnInput(fnOnInput: Function)
+    {
+        this.txInput.oninput = (ev) => fnOnInput(this);
+    }
+    /**
+     * 
+     * @param keyHandlers {[key: string]: Function}
+      ```
+       // example
+       myTextBox.setOnKeyDown({
+            'Enter': () => { },
+            'F': () => { },
+            'ArrowUp': () => { }
+        })
+        ```
+     */
+    public setOnKeyDown(keyHandlers: { [key: string]: Function })
     {
         this.txInput.enterKeyHint = 'done';
         this.txInput.onkeydown = (ev) => 
         {
-            if (ev.key == 'Enter')
-                fnOnEnter();
+            const handlers = keyHandlers[ev.key]
+            if (!Misc.isNull(handlers))
+                keyHandlers[ev.key]()
         }
     }
 
@@ -6170,7 +6497,16 @@ export class UITextBox extends Widget implements IBindable
         this.txInput.type = inputType;
     }
 
+    public focusAndSelect()
+    {
+        this.txInput.focus()
+        this.txInput.select()
+    }
 
+    public focus()
+    {
+        this.txInput.focus();
+    }
 
     public setMaxLength(maxlength: number): void
     {
@@ -6249,7 +6585,7 @@ export class UITextBox extends Widget implements IBindable
         return this.txInput.value;
     }
 
-    public addCSSClass(className: string): void 
+    public addCSSClass(className: string): void
     {
         this.txInput.classList.add(className);
     }
@@ -6259,7 +6595,7 @@ export class UITextBox extends Widget implements IBindable
         this.txInput.classList.remove(className);
     }
 
-    public applyCSS(propertyName: string, propertyValue: string): void 
+    public applyCSS(propertyName: string, propertyValue: string): void
     {
         this.txInput.style.setProperty(propertyName, propertyValue);
     }
@@ -6269,7 +6605,7 @@ export class UITextBox extends Widget implements IBindable
         marginTop: string,
         marginRight: string,
         marginBottom: string,
-        transform?: string): void 
+        transform?: string): void
     {
         this.divContainer.style.position = position;
         this.divContainer.style.left = marginLeft;
@@ -6279,7 +6615,7 @@ export class UITextBox extends Widget implements IBindable
         this.divContainer.style.transform = transform;
     }
 
-    public setVisible(visible: boolean): void 
+    public setVisible(visible: boolean): void
     {
         this.divContainer.style.visibility = (visible ? 'visible' : 'hidden')
     }
@@ -7415,4 +7751,62 @@ export class HtmlLayout implements IYordLayout
         return new ViewLayout(this.containerDivId)
             .fromHTML(this.htmlString);
     }
+}
+export class Language
+{
+      constructor(name: string)
+      {
+            this.name = name;
+      }
+
+      public name: string;
+      public entries: Array<LanguageEntry> = [];
+
+      public addEntry(key: string, value: string): void
+      {
+            this.entries.push(new LanguageEntry(key, value));
+      }
+}
+export class LanguageEntry
+{
+      public key: string = '';
+      public value: string = '';
+
+      constructor(key: string, value: string)
+      {
+            this.key = key;
+            this.value = value;
+      }
+}
+export abstract class LanguageServer
+{
+      private languages: Array<Language> = []
+
+      protected getLanguage(name: string): Language
+      {
+            for (var i = 0; i < this.languages.length; i++)
+                  if (this.languages[i].name == name)
+                        return this.languages[i]
+            return null
+      }
+
+      protected add(key: string, langName: string, value: string): void
+      {
+            var lang = this.getLanguage(langName)
+            if (Misc.isNull(lang))
+            {
+                  lang = new Language(langName);
+                  this.languages.push(lang)
+            }
+
+            lang.addEntry(key, value)
+      }
+
+      public translate(key: string, langName: string): string
+      {
+            for (var i = 0; i < this.languages.length; i++)
+                  if (this.languages[i].name == langName)
+                        return this.languages[i].entries.find(x => x.key == key)?.value
+            return '';
+      }
 }

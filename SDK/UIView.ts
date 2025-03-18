@@ -171,7 +171,7 @@ onViewDidLoad(): void
             this.onViewDidLoad();
     }
 
-    public initialize(mainShell: PageShell)
+    public initialize(mainShell: PageShell, preventClear: boolean = false)
     {
         UIPage.shell.loadBSVersion();
 
@@ -179,7 +179,7 @@ onViewDidLoad(): void
         this.shellPage = mainShell;
 
         this.buildedLayout = this.buildLayout();
-        this.buildedLayout.render(mainShell, this.customPresenter);
+        this.buildedLayout.render(mainShell, this.customPresenter, preventClear);
 
         var layoutCollection: string[] = this.buildedLayout.ElementsIdCollection();
 

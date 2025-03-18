@@ -40,6 +40,32 @@ export class FlatDataGridItem implements IDataGridItemTemplate
         this.sh = dataGrid.getPageShell();
     }
 
+    private fn_handlers: Function[] = [];
+
+
+    /**
+     * 
+     * @param fn_handler Provide an callback function to handling UITemplateView after loads. Ex.:
+     * ```
+     * handle((template: UITemplateView) => {
+     *   //     const btnExample: HTMLButtonElement = template.elementById('btnExample');
+     *   //     btnExample.click(() => {   } );
+     * })
+     * ```
+     * @returns 
+     */
+    public handle(fn_handler: Function): FlatDataGridItem
+    {
+        this.fn_handlers.push(fn_handler);
+        return this;
+    }
+
+    public onItemTemplate(fn_handler: Function): FlatDataGridItem
+    {
+        this.fn_handlers.push(fn_handler);
+        return this;
+    }
+
     public tableRow: HTMLTableRowElement;
     /**  define o callback para isSelected()  */
     public onCheckSelected(fn: Function): FlatDataGridItem
@@ -64,16 +90,17 @@ export class FlatDataGridItem implements IDataGridItemTemplate
     }
     private fn_unSelect: Function;
     /**  define o callback para itemTemplate()*/
-    public onItemTemplate(fn: Function): FlatDataGridItem
-    {
-        this.fn_itemTemplate = fn;
-        return this;
-    }
-    private fn_itemTemplate: Function;
+
     /**  define o um trecho html para ser usado pela funcão itemTemplate()*/
     public withHTML(htmlString: string): FlatDataGridItem
     {
-        this.fn_itemTemplateString = htmlString;
+        this.html_template = htmlString;
+        return this;
+    }
+
+    public template(htmlString: string): FlatDataGridItem
+    {
+        this.html_template = htmlString;
         return this;
     }
 
@@ -92,7 +119,7 @@ export class FlatDataGridItem implements IDataGridItemTemplate
         this.tableRow.classList.remove(className)
     }
 
-    private fn_itemTemplateString: string;
+    private html_template: string;
 
 
     setOwnerList(dataGrid: UIDataGrid): void
@@ -118,17 +145,22 @@ export class FlatDataGridItem implements IDataGridItemTemplate
 
     itemTemplate(): HTMLTableRowElement
     {
-        if (!Misc.isNull(this.fn_itemTemplate))
-            return this.fn_itemTemplate(this);
-
-        if (!Misc.isNull(this.fn_itemTemplateString))
+        if (!Misc.isNull(this.html_template))
         {
-            const templ = new UITemplateView(this.fn_itemTemplateString, this.sh, this.value);
-            var anchor = templ.elementById('table-row') as HTMLTableRowElement;
-            this.tableRow = anchor;
-            return anchor;
+            const templ = new UITemplateView(this.html_template, this.sh, this.value);
+            var tableRow = templ.templateDOM.getElementsByTagName('tr')[0] as HTMLTableRowElement; //.elementById('table-row') as HTMLTableRowElement;
+            if (Misc.isNull(tableRow)) throw new Error('Invalid FlatDataGridItem template. Anchor element not found in HTML snippet! Ensure that the template contains an <tr> tag.');
+            this.tableRow = tableRow;
+
+            for (var i = 0; i < this.fn_handlers.length; i++)
+                this.fn_handlers[i](templ);
+
+            return tableRow;
 
         }
+        else
+            throw new Error('Invalid FlatDataGridItem template. Template not defined! Ensure that functions `withHTML()` and `template()` was be called.');
+
     }
 
 

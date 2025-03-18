@@ -19,7 +19,7 @@ import { IAppStorageProvider } from "./IAppStorageProvider";
  */
 export abstract class UIPage
 {
-    public static readonly PRODUCT_VERSION: string = '1.0.33'
+    public static readonly PRODUCT_VERSION: string = '1.0.53'
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
     public static shell: PageShell;
@@ -60,11 +60,11 @@ export abstract class UIPage
         this.mainShell.import(new NativeLib({ libName, cssPath, jsPath }));
     }
 
-    public navigateToView(view: UIView): void
+    public navigateToView(view: UIView, preventClear: boolean = false): void
     {
         try
         {
-            view.initialize(this.mainShell);
+            view.initialize(this.mainShell, preventClear);
         }
         catch (error)
         {

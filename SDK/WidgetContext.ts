@@ -84,6 +84,17 @@ export class WidgetContext implements INotifiable
         return fragment.widgets
     }
 
+    getAll(): Widget[]
+    {
+        var widgets: Widget[] = [];
+        for (var i = 0; i < this.fragments.length; i++)
+        {
+            var fragment: WidgetFragment = this.fragments[i];
+          widgets.push(...fragment.widgets);
+        }
+        return widgets
+    }
+
 
     pushMessage(widgetName: string, messageId: number, messageText: string, messageAnyObject: object)
     {

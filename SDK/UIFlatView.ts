@@ -9,10 +9,15 @@ import { ViewLayout } from "./ViewLayout";
 import { WidgetBinderBehavior } from "./WidgetBinderBehavior";
 import { DivContent } from "./yord-api/DivContent";
 import { DefaultExceptionPage } from "./DefaultExceptionPage";
+import { ViewDictionaryEntry } from "./ViewDictionaryEntry";
+import { WidgetContext } from "./WidgetContext";
+import { LanguageServer } from "./i18n/LanguageServer";
 
 export abstract class UIFlatView extends UIView
 {
     private static caches: ViewCache[] = [];
+    private viewDictionary: ViewDictionaryEntry[] = [];
+
 
     private static findCached(path: string)
     {
@@ -28,11 +33,11 @@ export abstract class UIFlatView extends UIView
     {
         view.builder = view.buildView();
 
-        const cached = this.findCached(view.builder.layoutPath);
+        const cached = (view.builder.dictionaryEnabled ? null : this.findCached(view.builder.layoutPath));
         if (!Misc.isNull(cached))
         {
             view.builder.layoutHtml = cached.content;
-            UIPage.shell.navigateToView(view)
+            UIPage.shell.navigateToView(view, view.builder.preventClear)
         }
         else
             ViewLayout.load(view.builder.layoutPath, function (html: string)
@@ -40,11 +45,77 @@ export abstract class UIFlatView extends UIView
                 if (Misc.isNullOrEmpty(html) || html.indexOf('<title>Error</title>') > -1)
                     throw new DefaultExceptionPage(new Error(`No html-layout found for '${view.builder.layoutPath}'`))
 
+                if (view.builder.dictionaryEnabled)
+                {
+                    var parser = new DOMParser();
+                    var domObj = parser.parseFromString(html, "text/html");
+                    var allIds = domObj.querySelectorAll('*[id]');
+
+                    for (var i = 0; i < allIds.length; i++)
+                    {
+                        var element = allIds[i];
+                        var currentId = element.getAttribute('id');
+                        if (currentId != null)
+                        {
+                            var newId = `${currentId}_${Misc.generateUUID()}`;
+                            view.addDictionaryEntry(currentId, newId);
+                            element.setAttribute('id', newId);
+                        }
+                    }
+
+                    html = domObj.getElementsByTagName('body')[0].innerHTML;
+                }
+
                 view.builder.layoutHtml = html;
-                UIPage.shell.navigateToView(view)
-                UIFlatView.caches.push(new ViewCache(view.builder.layoutPath, html))
+                UIPage.shell.navigateToView(view, view.builder.preventClear)
+
+                if (!view.builder.dictionaryEnabled)
+                    UIFlatView.caches.push(new ViewCache(view.builder.layoutPath, html))
             });
     }
+
+    /**
+     * Allows 2+ instances of same UIFlatView 
+
+    * @param originalId The Id of the element present in the HTML resource
+    * @param generatedId The self-generated Id value
+    */
+    private addDictionaryEntry(originalId: string, generatedId: string)
+    {
+        var entry = new ViewDictionaryEntry(originalId, generatedId);
+        this.viewDictionary.push(entry);
+    }
+
+    /**
+     * Retrieves a physical element 'Id' registered in dictionary
+     * @param originalId original element Id declared in html-layout
+     * @returns fisical random element Id registered in dictionary
+     */
+    public dict(originalId: string): string
+    {
+        for (var i = 0; i < this.viewDictionary.length; i++)
+        {
+            const entry = this.viewDictionary[i];
+            if (entry.originalId == originalId)
+                return entry.managedId
+        }
+    }
+
+    /**
+         * Retrieves a physical element (HTMLElement-object) registered in dictionary
+         * @param originalId original element Id declared in html-layout
+         * @returns fisical random element Id registered in dictionary
+     */
+    public dictElement<TElement>(originalId: string): TElement
+    {
+        for (var i = 0; i < this.viewDictionary.length; i++)
+        {
+            const entry = this.viewDictionary[i];
+            if (entry.originalId == originalId)
+                return document.getElementById(entry.managedId) as TElement
+        }
+    }
+
 
     private builder: ViewBuilder;
     private binding: BindingContext<any | object>;
@@ -59,13 +130,27 @@ export abstract class UIFlatView extends UIView
         for (var c = 0; c < this.builder.viewContent.length; c++)
         {
             var content: DivContent = this.builder.viewContent[c];
-            this.addWidgets(content.id, ...content.w);
+
+            if (this.builder.dictionaryEnabled)
+                this.addWidgets(this.dict(content.id), ...content.w);
+            else
+                this.addWidgets(content.id, ...content.w);
         }
     }
     onViewDidLoad(): void
     {
         if (this.builder.hasBinding())
             this.binding = this.builder.getBinding(this);
+
+        if (!Misc.isNull(this.builder.languageSrv))
+        {
+            try
+            {
+                const db = this.requestLocalStorage('i18n')
+                this.translateLanguage(db.get('lang'))
+            } catch { }
+        }
+
         this.builder.callLoadFn(this.viewContext());
     }
 
@@ -98,5 +183,30 @@ export abstract class UIFlatView extends UIView
     public bindingRefreshUI(): void
     {
         return this.getBindingContext().refreshAll();
+    }
+
+
+    public translateLanguage(langName: string): void
+    {
+        const srv = this.builder.languageSrv
+
+        const allWidgets = this.viewContext().getAll()
+        for (var w = 0; w < allWidgets.length; w++)
+        {
+            const widget = allWidgets[w]
+            var translation = srv.translate(widget.widgetName, langName)
+            if (Misc.isNullOrEmpty(translation)) continue
+
+            try
+            {
+                widget.setTitle(translation)
+            } catch
+            {
+                try
+                {
+                    widget.setText(translation)
+                } catch { }
+            }
+        }
     }
 }

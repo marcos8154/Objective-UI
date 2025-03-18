@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AssemblyName>obj-ui</AssemblyName>
     <BaseOutputPath>C:\ObjUI-release\NPM\</BaseOutputPath>
-    <AssemblyVersion>1.0.12</AssemblyVersion>
-    <FileVersion>1.0.12</FileVersion>
+    <AssemblyVersion>1.0.49</AssemblyVersion>
+    <FileVersion>1.0.49</FileVersion>
     <Version>1.0.12</Version>
   </PropertyGroup>
 

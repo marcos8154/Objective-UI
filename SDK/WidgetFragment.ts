@@ -172,7 +172,7 @@ export class WidgetFragment implements INotifiable
         {
             var existingWidget: Widget = this.widgets[i];
             if (widget.widgetName == existingWidget.widgetName)
-                throw `widget '${widget.widgetName}' has already been attached to this context.`;
+                throw new Error(`Widget named '${widget.widgetName}' has already been attached on div id '${this.fragmentId}'`);
         }
 
         widget.setParentFragment(this);

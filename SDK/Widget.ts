@@ -42,39 +42,41 @@ export abstract class Widget implements INotifiable
     /**
      * Occurs when the Widget is detached from the WidgetContext
      */
-    public onWidgetDetached(): void { }
+    public onWidgetDetached(): void { throw new Error('Not implemented');}
 
     /**
      * Gets the default value of this widget; Note that not every Widget will implement the return of its value by this function.
      */
-    public value(): any | object | string { };
+    public value(): any | object | string { throw new Error('Not implemented');};
 
-    public setEnabled(enabled: boolean): void { };
+    public setEnabled(enabled: boolean): void { throw new Error('Not implemented');};
 
     /**
      * Determines if this Widget is visible on the page
      * @param visible True or False
      */
-    public setVisible(visible: boolean): void { };
+    public setVisible(visible: boolean): void {throw new Error('Not implemented'); };
 
     /**
      * Add a CSS class by name; Some Widgets may not implement this eventually.
      * @param className CSS class name
      */
-    public addCSSClass(className: string): void { }
+    public addCSSClass(className: string): void { throw new Error('Not implemented');}
 
     /**
      * Remove a CSS class by name; Some Widgets may not implement this eventually.
      * @param className CSS class name
      */
-    public removeCSSClass(className: string): void { }
+    public removeCSSClass(className: string): void { throw new Error('Not implemented'); }
 
+    public setTitle(className: string): void { throw new Error('Not implemented'); }
+    public setText(className: string): void { throw new Error('Not implemented'); }
     /**
      * Applies a CSS property value; Some Widgets may not implement this eventually.
      * @param propertyName CSS property name
      * @param propertyValue Property value
      */
-    public applyCSS(propertyName: string, propertyValue: string): void { }
+    public applyCSS(propertyName: string, propertyValue: string): void {throw new Error('Not implemented'); }
 
     /**
      * Change Widget Position
@@ -88,7 +90,7 @@ export abstract class Widget implements INotifiable
         marginTop: string,
         marginRight: string,
         marginBottom: string,
-        transform?: string): void { }
+        transform?: string): void {throw new Error('Not implemented'); }
 
 
 

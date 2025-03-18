@@ -59,6 +59,7 @@ WebAPI
 export class WebAPI
 {
     public static urlBase: string;
+    private contentType: string = 'application/json';
     public static setURLBase(apiUrlBase: string)
     {
         WebAPI.urlBase = apiUrlBase;
@@ -115,7 +116,7 @@ export class WebAPI
         this.request = {};
         this.request.method = method;
         this.apiUrl = url;
-        this.withHeaders(new Headers({ 'content-type': 'application/json' }));
+        this.withHeaders(new Headers({'content-type': this.contentType  }));
     }
 
     public call(): void
@@ -125,7 +126,7 @@ export class WebAPI
             var statusCode: number;
             var statusMsg: string;
             var self = this;
-
+            if(Misc.isNull(self.request.headers)) self.withHeaders(new Headers({'content-type': self.contentType  }));
             fetch(self.apiUrl, self.request)
                 .then(function (ret: Response)
                 {
@@ -135,20 +136,21 @@ export class WebAPI
                 })
                 .then(function (text: string)
                 {
-                    var json: any | object = null;
+                    var responseContent: any | object = null;
                     if (text.startsWith("{") || text.startsWith("["))
-                        json = JSON.parse(text);
-
+                        responseContent = JSON.parse(text);
+                    else
+                        responseContent = text
 
                     if (statusCode == 400)
                     {
-                        for (var prop in json.errors)
+                        for (var prop in responseContent.errors)
                         {
-                            statusMsg += json.errors[prop]
+                            statusMsg += responseContent.errors[prop]
                         }
                     }
                     var apiResponse = new APIResponse({
-                        code: statusCode, msg: statusMsg, content: json
+                        code: statusCode, msg: statusMsg, content: responseContent
                     });
 
                     return apiResponse;
@@ -197,6 +199,13 @@ export class WebAPI
                 this.fnOnError(error);
             }
         }
+    }
+
+    public setContentType(contentType: string): WebAPI
+    {
+        this.contentType = contentType;
+         this.withHeaders(new Headers({'content-type': this.contentType  }));
+        return this;
     }
 
     public dataResultTo(callBack: Function): WebAPI

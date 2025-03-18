@@ -47,7 +47,7 @@ export class UIList extends Widget implements IBindable
     protected htmlTemplate(): string
     {
         return `
-<div id="fsListView" class="list-group">
+<div id="fsListView" class="list-group ${this.containerDivClass}">
 </div>`
     }
     public items: Array<IListItemTemplate> = [];
@@ -65,6 +65,7 @@ export class UIList extends Widget implements IBindable
 
     disableSel: boolean = false;
     disableUnSel: boolean = false;
+    containerDivClass: string = ''
 
 
     /**
@@ -73,13 +74,15 @@ export class UIList extends Widget implements IBindable
      * 
      * Parameters: **(item: IListItemTemplate, ev: Event)**
      */
-    constructor({ name, multiSelect }:
+    constructor({ name, multiSelect, containerClass }:
         {
             name: string,
-            multiSelect?: boolean
+            multiSelect?: boolean,
+            containerClass?: string
         })
     {
         super(name);
+        this.containerDivClass = containerClass
         this.multiSelect = (Misc.isNull(multiSelect) ? false : multiSelect)
     }
 
