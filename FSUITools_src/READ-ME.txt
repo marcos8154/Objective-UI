@@ -10,7 +10,7 @@
     [VSCode] https://code.visualstudio.com/docs/?dv=win
     [NPM   ] https://nodejs.org/
 
-2 - "OBJ-UI.exe" requires .NET 6 (or highter) installed:
+2 - "OBJ-UI.exe" requires .NET 8 (or highter) installed:
 	[.NET Runtime] https://dotnet.microsoft.com/en-us/download
 
 3 - the work will be more comfortable if you create an environment variable (user) in your OS pointing to this CLI directory.

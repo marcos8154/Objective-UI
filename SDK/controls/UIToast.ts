@@ -21,6 +21,10 @@ export class UIToast extends Widget
         return `
         <div class="d-flex justify-content-center">
             <style>
+                .toast-info{
+                    background: rgb(226, 248, 255);
+                    border: solid 1px rgb(24, 167, 202);
+                }
                 .toast-success{
                     background: rgb(221, 255, 221);
                     border: solid 1px rgb(0, 94, 0);
@@ -61,6 +65,13 @@ export class UIToast extends Widget
         const toast = new UIToast('toast-success', text)
         UIToast.show(targetDivId, toast);
     }
+
+    public static info(text: string, targetDivId: string)
+    {
+        const toast = new UIToast('toast-info', text)
+        UIToast.show(targetDivId, toast);
+    }
+
 
 
     public static error(text: string, targetDivId: string)

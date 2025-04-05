@@ -431,7 +431,7 @@ ${contentGroup}
             else return Number.parseInt(this.txInput.value);
         }
         if (this.txInput.type == 'date')
-            return new Date(this.txInput.value)
+            return this.txInput.value
 
         if (this.txInput.type == 'text') return this.txInput.value.toString();
         return this.txInput.value;

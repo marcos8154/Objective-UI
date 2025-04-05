@@ -13,7 +13,7 @@
  */
 export abstract class UIPage
 {
-    public static readonly PRODUCT_VERSION: string = '1.0.53'
+    public static readonly PRODUCT_VERSION: string = '1.0.55'
     public static DISABLE_EXCEPTION_PAGE: boolean = false;
     protected mainShell: PageShell;
     public static shell: PageShell;
@@ -3896,6 +3896,86 @@ export class DefaultExceptionPage
         document.body.prepend(c);
     }
 }
+export class ChartDataset
+{
+    public pointRadius: number = 0
+    public label: string = ''
+    public data: number[] = []
+    public borderWidth: number = 0
+    public tension: number = 0.3;
+
+    constructor({ label, data, pointRadius = 0, borderWidth = 0, tension = 0.03 }:{
+        label: string,
+        data: number[],
+        pointRadius?: number,
+        borderWidth?: number,
+        tension?: number
+    })
+    {
+        this.label = label;
+        this.data = data;
+        this.pointRadius = pointRadius
+        this.borderWidth = borderWidth;
+        this.tension = tension;
+    }
+}
+
+export class ChartContextEntry
+{
+    public id: string = '';
+    public textAny: string = '';
+    public labels: string[] = [];
+    public data: ChartDataset[] = [];
+
+    constructor({ labels = null, data = null }:
+        {
+            labels?: string[],
+            data?: ChartDataset[]
+        })
+    {
+        this.id = Widget.generateUUID();
+
+        if (!Misc.isNull(labels))
+            this.labels = labels;
+        if (!Misc.isNull(data))
+            this.data = data;
+    }
+
+    public addLabel(label: string): ChartContextEntry
+    {
+        this.labels.push(label);
+        return this;
+    }
+
+    public addDataSet(dataSet: ChartDataset): ChartContextEntry
+    {
+        this.data.push(dataSet);
+        return this;
+    }
+}
+
+export class ChartContext
+{
+    private static entries: ChartContextEntry[] = [];
+
+    public static add(entry: ChartContextEntry)
+    {
+        ChartContext.entries.push(entry);
+    }
+
+    public static get(entryId: string): ChartContextEntry
+    {
+        for (var i = 0; i < ChartContext.entries.length; i++)
+        {
+            let e: ChartContextEntry = ChartContext.entries[i];
+            if(e.id == entryId)
+            {
+                ChartContext.entries.slice(i, 1);
+                return e;
+            }
+        }
+    }
+}
 export class UIHeadBinder extends WidgetBinder
 {
     public head: UIHead;
@@ -6579,7 +6659,7 @@ ${contentGroup}
             else return Number.parseInt(this.txInput.value);
         }
         if (this.txInput.type == 'date')
-            return new Date(this.txInput.value)
+            return this.txInput.value
 
         if (this.txInput.type == 'text') return this.txInput.value.toString();
         return this.txInput.value;
@@ -6805,6 +6885,10 @@ export class UIToast extends Widget
         return `
         <div class="d-flex justify-content-center">
             <style>
+                .toast-info{
+                    background: rgb(226, 248, 255);
+                    border: solid 1px rgb(24, 167, 202);
+                }
                 .toast-success{
                     background: rgb(221, 255, 221);
                     border: solid 1px rgb(0, 94, 0);
@@ -6845,6 +6929,13 @@ export class UIToast extends Widget
         const toast = new UIToast('toast-success', text)
         UIToast.show(targetDivId, toast);
     }
+
+    public static info(text: string, targetDivId: string)
+    {
+        const toast = new UIToast('toast-info', text)
+        UIToast.show(targetDivId, toast);
+    }
+
 
 
     public static error(text: string, targetDivId: string)
@@ -7617,6 +7708,348 @@ export class UIDataGrid extends Widget implements IBindable
     public setVisible(visible: boolean): void
     {
         this.table.style.visibility = (visible ? 'visible' : 'hidden')
+    }
+
+}
+export class PieChart extends Widget
+{
+
+    private entryId: string;
+    private title: string;
+    private canvasGl: HTMLCanvasElement;
+
+    private entry: ChartContextEntry;
+
+    constructor(name: string, title: string, entry: ChartContextEntry)
+    {
+        super(name)
+
+        this.title = title;
+        this.entry = entry
+    }
+
+    protected htmlTemplate(): string
+    {
+        return ` 
+<div id="div-container" class="card shadow" style="max-height: 400px; width:100%; padding:15px" >
+    <h4> ${this.title} </h4>
+    <canvas id="grafico-pizza"  style="width:100%; max-height: 330px;"></canvas>
+</div>
+        `
+    }
+
+    protected onWidgetDidLoad(): void
+    {
+        let dvContainer = this.elementById('div-container') as HTMLDivElement
+        let canvasGl = this.elementById('grafico-pizza') as HTMLCanvasElement
+        this.canvasGl = canvasGl;
+        if (!Misc.isNull(this.entry))
+            this.refreshData(this.entry);
+    }
+
+    public refreshData(entry: ChartContextEntry)
+    {
+        this.entryId = entry.id;
+        ChartContext.add(entry);
+        let fn = new VirtualFunction({
+            fnName: `exibeGfPizza_${this.entryId}`,
+            keepAfterCalled: false,
+            fnContent: `
+                let chartStatus = Chart.getChart("${this.canvasGl.id}"); // <canvas> id
+                if (chartStatus != undefined) {
+                     chartStatus.destroy();
+                }
+
+                const canvas = document.getElementById('${this.canvasGl.id}');
+                const ctx = ChartContext.get('${this.entryId}');
+                new Chart(canvas, 
+                {
+                    type: 'pie',
+                    data: 
+                    {
+                        labels: ctx.labels,
+                        datasets: ctx.data
+                    },
+                    options: {
+                        showAllTooltips: true,
+                        maintainAspectRatio: false,
+                        plugins: 
+                        {
+                            legend: 
+                            {
+                                display: true,
+                                position: 'left',
+                                align: 'end',
+                                labels: 
+                                {
+                                    color: 'black',
+                                    font: 
+                                    {
+                                        weight: 'bold'
+                                    },
+                                }
+                            },
+
+                            tooltip: {
+                                enabled: true
+                            },
+
+                            datalabels: {
+                                formatter: function(value, context) 
+                                {
+                                    var label = context.chart.data.labels[context.dataIndex];
+                                    if(label.length > 8)
+                                    {
+                                        var parts = label.split(' ');
+                                        var newLabel = (parts[0] + " ");
+                                        for(var i = 1; i < parts.length; i++)
+                                        {
+                                            newLabel += parts[i][0] + ". ";
+                                        }
+
+                                        label = newLabel;
+                                    }
+                                
+                                    return  label + ": " + context.dataset.data[context.dataIndex];
+                                }
+                            }
+                       }
+                    }
+                });
+            `}).call()
+    }
+
+    public setCustomPresenter(presenter: ICustomWidgetPresenter<Widget>): void {
+        throw new Error("Method not implemented.");
+    }
+    public value(): string {
+        throw new Error("Method not implemented.");
+    }
+    public setEnabled(enabled: boolean): void {
+        throw new Error("Method not implemented.");
+    }
+    public addCSSClass(className: string): void {
+        throw new Error("Method not implemented.");
+    }
+    public removeCSSClass(className: string): void {
+        throw new Error("Method not implemented.");
+    }
+    public applyCSS(propertyName: string, propertyValue: string): void {
+        throw new Error("Method not implemented.");
+    }
+    public setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void {
+        throw new Error("Method not implemented.");
+    }
+    public setVisible(visible: boolean): void {
+        throw new Error("Method not implemented.");
+    }
+}
+export class LineChart extends Widget
+{
+    private entryId: string;
+    public canvas: HTMLCanvasElement;
+    public divContainer: HTMLDivElement;
+    private title: string;
+
+    private entry: ChartContextEntry = null;
+    constructor(name: string, title: string, entry?: ChartContextEntry)
+    {
+        super(name)
+
+        this.title = title;
+        this.entry = entry;
+    }
+
+    public resize(): void
+    {
+        this.canvas.style.width = '100%';
+    }
+
+    protected htmlTemplate(): string
+    {
+        return ` 
+<div id="div-container" class="card shadow" style="max-height: 400px; width:100%;padding:15px" >
+    <h4> ${this.title} </h4>
+    <canvas id="grafico-linhas" style="width:100%; max-height: 300px;"></canvas>
+</div>
+        `
+    }
+
+    protected onWidgetDidLoad(): void
+    {
+        let dvContainer = this.elementById('div-container') as HTMLDivElement
+        let canvasGl = this.elementById('grafico-linhas') as HTMLCanvasElement
+
+        this.divContainer = dvContainer;
+        this.canvas = canvasGl;
+
+        if (!Misc.isNull(this.entry))
+            this.refreshData(this.entry);
+    }
+
+    public refreshData(entry: ChartContextEntry)
+    {
+        this.entryId = entry.id;
+        ChartContext.add(entry);
+        return new VirtualFunction({
+            fnName: `exibeGfLinhas_${this.entryId}`,
+            keepAfterCalled: false,
+            fnContent: `
+                let chartStatus = Chart.getChart("${this.canvas.id}"); // <canvas> id
+                if (chartStatus != undefined) {
+                     chartStatus.destroy();
+                }
+                const canvas = document.getElementById('${this.canvas.id}');
+                const ctx = ChartContext.get('${this.entryId}');
+                new Chart(canvas, 
+                {
+                    type: 'line',
+                    data: 
+                    {
+                        labels: ctx.labels,
+                        datasets: ctx.data
+                    },
+                    options: {
+
+                        maintainAspectRatio: false
+                    }
+                });
+            `
+        }).call();
+    }
+
+    public setCustomPresenter(presenter: ICustomWidgetPresenter<Widget>): void
+    {
+    }
+    public value(): string
+    {
+        return this.entryId;
+    }
+    public setEnabled(enabled: boolean): void
+    {
+        throw new Error("Method not implemented.");
+    }
+    public addCSSClass(className: string): void
+    {
+        throw new Error("Method not implemented.");
+    }
+    public removeCSSClass(className: string): void
+    {
+        throw new Error("Method not implemented.");
+    }
+    public applyCSS(propertyName: string, propertyValue: string): void
+    {
+        throw new Error("Method not implemented.");
+    }
+    public setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void
+    {
+        throw new Error("Method not implemented.");
+    }
+    public setVisible(visible: boolean): void
+    {
+        throw new Error("Method not implemented.");
+    }
+
+}
+export class BarChart extends Widget
+{
+    private entryId: string;
+    public canvas: HTMLCanvasElement;
+    public divContainer: HTMLDivElement;
+    private title: string;
+    private entryObj?: ChartContextEntry = null;
+
+    constructor(name: string, title: string, entry?: ChartContextEntry)
+    {
+        super(name)
+        this.title = title;
+        this.entryObj = entry;
+    }
+
+    protected htmlTemplate(): string
+    {
+        return ` 
+<div id="div-container" class="card shadow" style="max-height: 400px; width:100%; padding:15px" >
+    <h4> ${this.title} </h4>
+    <canvas id="grafico-barras"  style="width:100%; max-height: 300px;"></canvas>
+</div>
+        `
+    }
+
+    public resize(): void
+    {
+        this.canvas.style.width = '100%';
+    }
+
+    protected onWidgetDidLoad(): void
+    {
+        let dvContainer = this.elementById('div-container') as HTMLDivElement
+        let canvasGl = this.elementById('grafico-barras') as HTMLCanvasElement
+
+        this.divContainer = dvContainer;
+        this.canvas = canvasGl;
+
+        if (!Misc.isNull(this.entryObj))
+            this.refreshData(this.entryObj);
+    }
+
+    public refreshData(entry: ChartContextEntry)
+    {
+        this.entryId = entry.id;
+        ChartContext.add(entry);
+
+        let fn = new VirtualFunction({
+            fnName: `exibeGfBarras_${this.entryId}`,
+            keepAfterCalled: false,
+            fnContent: `
+                const canvas = document.getElementById('${this.canvas.id}');
+                const ctx = ChartContext.get('${this.entryId}');
+                new Chart(canvas, 
+                {
+                    type: 'bar',
+                    data: 
+                    {
+                        labels: ctx.labels,
+                        datasets: ctx.data
+                    },
+                    options: {
+
+                        maintainAspectRatio: false
+                    }
+                });
+            `}).call()
+    }
+
+    public setCustomPresenter(presenter: ICustomWidgetPresenter<Widget>): void
+    {
+    }
+    public value(): string
+    {
+        return this.entryId;
+    }
+    public setEnabled(enabled: boolean): void
+    {
+        throw new Error("Method not implemented.");
+    }
+    public addCSSClass(className: string): void
+    {
+        throw new Error("Method not implemented.");
+    }
+    public removeCSSClass(className: string): void
+    {
+        throw new Error("Method not implemented.");
+    }
+    public applyCSS(propertyName: string, propertyValue: string): void
+    {
+        throw new Error("Method not implemented.");
+    }
+    public setPosition(position: string, marginLeft: string, marginTop: string, marginRight: string, marginBottom: string, transform?: string): void
+    {
+        throw new Error("Method not implemented.");
+    }
+    public setVisible(visible: boolean): void
+    {
+        throw new Error("Method not implemented.");
     }
 
 }

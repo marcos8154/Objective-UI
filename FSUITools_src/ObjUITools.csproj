@@ -6,9 +6,9 @@
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AssemblyName>obj-ui</AssemblyName>
     <BaseOutputPath>C:\ObjUI-release\NPM\</BaseOutputPath>
-    <AssemblyVersion>1.0.49</AssemblyVersion>
-    <FileVersion>1.0.49</FileVersion>
-    <Version>1.0.12</Version>
+    <AssemblyVersion>1.0.55</AssemblyVersion>
+    <FileVersion>1.0.55</FileVersion>
+    <Version>1.0.55</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

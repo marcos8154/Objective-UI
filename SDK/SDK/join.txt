@@ -33,6 +33,7 @@
 ../VirtualFunction.ts
 ../Jquery.ts
 ../DefaultExceptionPage.ts
+../ChartContext.ts
 ../controls/UIHead.ts
 ../controls/ModalAction.ts
 ../controls/UIRadioGroup.ts
@@ -64,6 +65,9 @@
 ../controls/ListItem.ts
 ../controls/UITemplateView.ts
 ../controls/UIDataGrid.ts
+../controls/PieChart.ts
+../controls/LineChart.ts
+../controls/BarChart.ts
 ../yord-api/DivContent.ts
 ../yord-api/IYordLayout.ts
 ../yord-api/YordManagedView.ts
